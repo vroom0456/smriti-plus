@@ -8,10 +8,18 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-// Change this to your backend URL
-const API_BASE_URL = __DEV__
-  ? 'http://localhost:8000'
-  : 'https://smriti-plus-api.railway.app';
+// Backend URL resolution with smart fallback
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined' && window.location) {
+    // If testing on localhost, hit local backend
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+  }
+  return 'https://smriti-plus-api.railway.app';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 let inMemoryToken: string | null = null;
 
