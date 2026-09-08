@@ -1,0 +1,152 @@
+{
+  "app": {
+    "name": "स्मृति+",
+    "tagline": "याद रखें। जुड़ें। जुड़े रहें।",
+    "disclaimer": "स्मृति+ मानसिक सक्रियता और दैनिक सहायता प्रदान करता है; यह चिकित्सीय निदान या उपचार नहीं है।"
+  },
+  "nav": {
+    "home": "होम",
+    "games": "खेल",
+    "reminders": "स्मरण (रिमाइंडर)",
+    "settings": "सेटिंग्स",
+    "dashboard": "डैशबोर्ड",
+    "group": "समूह",
+    "family": "परिवार",
+    "voiceAssistant": "स्मृति+ से बात करें",
+    "memories": "यादें",
+    "personalize": "व्यक्तिगत सेटिंग्स"
+  },
+  "auth": {
+    "signIn": "लॉग इन करें",
+    "email": "ईमेल",
+    "password": "पासवर्ड / पिन",
+    "phone": "फ़ोन नंबर",
+    "otp": "ओटीपी",
+    "loginFailed": "लॉग इन विफल रहा",
+    "checkCredentials": "कृपया अपनी जानकारी जांचें।",
+    "signOut": "लॉग आउट",
+    "signOutConfirm": "क्या आप लॉग आउट करना चाहते हैं?"
+  },
+  "home": {
+    "goodMorning": "शुभ प्रभात",
+    "goodAfternoon": "शुभ दोपहर",
+    "goodEvening": "शुभ संध्या",
+    "playGame": "खेल खेलें",
+    "todayReminders": "आज के रिमाइंडर",
+    "talkSmriti": "स्मृति+ से बात करें",
+    "callFamily": "परिवार को कॉल करें",
+    "personalizedRecommendation": "आपके लिए सुझाव",
+    "dayStreak": "{{count}} दिनों का क्रम!"
+  },
+  "games": {
+    "title": "खेल खेलें",
+    "subtitle": "मन को सक्रिय रखने के लिए एक खेल चुनें",
+    "memoryRecall": "याददाश्त स्मरण",
+    "memoryMatching": "जोड़े मिलाना",
+    "spotDifference": "अंतर पहचानें",
+    "patternComplete": "पैटर्न पूरा करें",
+    "gameComplete": "खेल पूरा हुआ!",
+    "backToGames": "खेलों पर वापस जाएं",
+    "level": "स्तर {{level}}",
+    "pairs": "{{matched}}/{{total}} जोड़े",
+    "round": "दौर {{current}} / {{total}}",
+    "whatComesNext": "आगे क्या आएगा?",
+    "rememberItems": "इन वस्तुओं को याद रखें!",
+    "whichDidYouSee": "आपने कौन सी वस्तुएं देखीं?",
+    "tapAllRemember": "याद रहने वाली सभी वस्तुओं को छुएं",
+    "submit": "जमा करें ({{count}} चुने गए)",
+    "findOddOne": "अलग वस्तु खोजें!",
+    "encouragement": {
+      "excellent": "बहुत बढ़िया! आपकी याददाश्त शानदार है!",
+      "great": "शानदार प्रयास! ऐसे ही जारी रखें!",
+      "good": "अच्छा प्रयास! हर खेल मन को ताज़ा करता है!"
+    }
+  },
+  "reminders": {
+    "title": "आज के रिमाइंडर",
+    "upcoming": "आने वाले",
+    "completedMissed": "पूरे हुए / छूटे हुए",
+    "done": "पूरा हुआ ✓",
+    "missed": "छूट गया",
+    "snoozed": "स्थगित",
+    "pending": "लंबित",
+    "noReminders": "आज के लिए कोई रिमाइंडर नहीं है। अपने दिन का आनंद लें!",
+    "sayDone": "'पूरा हुआ' कहें या टिक बटन दबाएं",
+    "categories": {
+      "medication": "दवा",
+      "hydration": "पानी पीना",
+      "meal": "भोजन",
+      "activity": "टहलना / व्यायाम",
+      "appointment": "मुलाकात"
+    }
+  },
+  "caregiver": {
+    "dashboard": "देखभालकर्ता डैशबोर्ड",
+    "monitoring": "निगरानी: {{name}}",
+    "sessionsThisWeek": "सत्र",
+    "thisWeek": "इस सप्ताह",
+    "adherence": "अनुपालन",
+    "missed": "छूटे हुए",
+    "streak": "क्रम",
+    "alerts": "चेतावनी",
+    "trendTitle": "14 दिनों की गतिविधि",
+    "recentSessions": "हालिया खेल सत्र",
+    "activeReminders": "सक्रिय रिमाइंडर",
+    "noLinkedElders": "कोई बुजुर्ग लिंक नहीं मिले।",
+    "goodAccuracy": "सटीक परिणाम",
+    "active": "सक्रिय"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "textSize": "अक्षर का आकार",
+    "language": "भाषा",
+    "standard": "सामान्य",
+    "large": "बड़ा",
+    "extraLarge": "बहुत बड़ा",
+    "syncStatus": "ऑफ़लाइन सिंक स्थिति",
+    "connection": "कनेक्शन",
+    "online": "ऑनलाइन",
+    "offline": "ऑफ़लाइन",
+    "lastSync": "पिछला सिंक",
+    "pendingEvents": "लंबित इवेंट्स",
+    "failedEvents": "विफल इवेंट्स",
+    "privacy": "गोपनीयता और डेटा",
+    "whatWeStore": "हम क्या सुरक्षित रखते हैं",
+    "reviewConsent": "सहमति समीक्षा",
+    "requestDeletion": "डेटा हटाने का अनुरोध",
+    "about": "स्मृति+ के बारे में",
+    "version": "संस्करण {{version}}",
+    "devDebug": "डेवलपर डिबग पैनल"
+  },
+  "family": {
+    "title": "परिवार / सहायता",
+    "noContact": "कोई पारिवारिक संपर्क लिंक नहीं है।",
+    "askCaregiver": "अपने देखभालकर्ता से संपर्क जोड़ने के लिए कहें।",
+    "call": "कॉल करें"
+  },
+  "voice": {
+    "title": "स्मृति+ से बात करें",
+    "tapMic": "माइक दबाएं और स्वाभाविक रूप से बोलें।",
+    "examples": "\"मुझे पानी पीने की याद दिलाना\" या \"खेल शुरू करो\" कहें।",
+    "touchAvailable": "बटन हमेशा नीचे उपलब्ध हैं",
+    "iHeard": "मैंने सुना: {{text}} — क्या यह सही है?",
+    "listening": "सुन रहा हूँ...",
+    "thinking": "सोच रहा हूँ..."
+  },
+  "consent": {
+    "title": "आपकी गोपनीयता महत्वपूर्ण है",
+    "description": "स्मृति+ केवल आपके अनुभव को बेहतर बनाने के लिए आवश्यक जानकारी सुरक्षित रखता है।",
+    "whatWeCollect": "हम क्या एकत्र करते हैं",
+    "gamePerformance": "खेल का प्रदर्शन (कठिनाई अनुकूलित करने के लिए)",
+    "reminderHistory": "रिमाइंडर इतिहास (अनुपालन ट्रैक करने के लिए)",
+    "preferences": "भाषा और पहुँच सेटिंग्स",
+    "noSell": "हम आपका डेटा किसी को नहीं बेचते।",
+    "agree": "मैं समझता हूँ और सहमत हूँ",
+    "version": "सहमति संस्करण {{version}}"
+  },
+  "errors": {
+    "generic": "कुछ त्रुटि हुई। कृपया पुनः प्रयास करें।",
+    "network": "इंटरनेट कनेक्शन नहीं है। ऑफ़लाइन काम कर रहा है।",
+    "syncFailed": "कुछ आइटम सिंक नहीं हो सके। वे बाद में सिंक होंगे।"
+  }
+}

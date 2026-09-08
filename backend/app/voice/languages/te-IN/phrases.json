@@ -1,0 +1,23 @@
+{
+  "languageCode": "te-IN",
+  "languageName": "Telugu",
+  "nativeName": "తెలుగు",
+  "honorifics": ["అండి", "గారు", "అమ్మ", "తాతయ్య", "అయ్యా"],
+  "familyTerms": {
+    "amma": "Mother",
+    "nanna": "Father",
+    "akka": "Elder Sister",
+    "anna": "Elder Brother",
+    "thammudu": "Younger Brother",
+    "chelli": "Younger Sister"
+  },
+  "slangAndColloquial": {
+    "cheyyi": "చేయి",
+    "pettu": "పెట్టు",
+    "gurtu cheyyi": "గుర్తు చేయి",
+    "malli cheppu": "మళ్ళీ చెప్పు",
+    "nemmadiga matladu": "నెమ్మదిగా మాట్లాడు"
+  },
+  "affirmations": ["అవును", "సరే", "అలాగే", "చేయి"],
+  "negations": ["లేదు", "వద్దు", "ఆపు", "రద్దు చేయి"]
+}

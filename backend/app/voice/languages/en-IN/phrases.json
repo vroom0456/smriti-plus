@@ -1,0 +1,21 @@
+{
+  "languageCode": "en-IN",
+  "languageName": "English (Indian)",
+  "nativeName": "English",
+  "honorifics": ["Sir", "Ma'am"],
+  "familyTerms": {
+    "amma": "Mother",
+    "mummy": "Mother",
+    "papa": "Father",
+    "daughter": "Daughter",
+    "son": "Son"
+  },
+  "slangAndColloquial": {
+    "call once": "call",
+    "put one reminder": "create reminder",
+    "do one thing": "action",
+    "slow down": "slower"
+  },
+  "affirmations": ["yes", "yeah", "sure", "okay", "correct"],
+  "negations": ["no", "cancel", "stop", "don't"]
+}

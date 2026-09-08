@@ -1,0 +1,20 @@
+{
+  "languageCode": "hi-IN",
+  "languageName": "Hindi",
+  "nativeName": "हिन्दी",
+  "honorifics": ["जी", "बाबूजी", "माताजी", "साहब"],
+  "familyTerms": {
+    "mummy": "Mother",
+    "papa": "Father",
+    "didi": "Elder Sister",
+    "bhaiya": "Elder Brother"
+  },
+  "slangAndColloquial": {
+    "laga do": "लगा दो",
+    "yaad dilana": "याद दिलाना",
+    "phir se bolo": "फिर से बोलो",
+    "dheere bolo": "धीरे बोलो"
+  },
+  "affirmations": ["हाँ", "ठीक है", "सही है"],
+  "negations": ["नहीं", "मत करो", "रोक दो"]
+}

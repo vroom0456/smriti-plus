@@ -1,0 +1,152 @@
+{
+  "app": {
+    "name": "SMRITI+",
+    "tagline": "गोसोआव लाखि। बाहागो ला। जोंजों थाफा।",
+    "disclaimer": "SMRITI+ आ गोसो सिबां आरो सानफ्रोमबोनि हेफाजाबनि थाखाय; बेयो डिमेन्सियानि नायबिजिरनाय एबा फाहामथाय खालामा।"
+  },
+  "nav": {
+    "home": "न'",
+    "games": "गेमफोर",
+    "reminders": "गोसोखांथि",
+    "settings": "सेटिं",
+    "dashboard": "डेशबर्ड",
+    "group": "हानजा",
+    "family": "नख'र",
+    "voiceAssistant": "SMRITI+ जों रायलाय",
+    "memories": "गोसोखांथि",
+    "personalize": "गावनि हिसाबै"
+  },
+  "auth": {
+    "signIn": "हाब",
+    "email": "इमैल",
+    "password": "पासवर्ड / PIN",
+    "phone": "फन नम्बर",
+    "otp": "OTP",
+    "loginFailed": "हाबनो हायाखै",
+    "checkCredentials": "अननानै नंथामनि नम्बर नायफिन।",
+    "signOut": "ओंखारलां",
+    "signOutConfirm": "नोंथां ओंखारलांनो सानदों नामा?"
+  },
+  "home": {
+    "goodMorning": "फुंनि मोजां",
+    "goodAfternoon": "सानजौफुनि मोजां",
+    "goodEvening": "बेलासिनि मोजां",
+    "playGame": "गेम गेले",
+    "todayReminders": "दिनैनि गोसोखांथि",
+    "talkSmriti": "SMRITI+ जों रायलाय",
+    "callFamily": "नख'रनो कल खालाम",
+    "personalizedRecommendation": "नंथामनि थाखाय बिथांखि",
+    "dayStreak": "{{count}} साननि लिरथि!"
+  },
+  "games": {
+    "title": "गेम गेले",
+    "subtitle": "गोसोखौ मोजां लाखिनो गेम सायख'",
+    "memoryRecall": "गोसोखांथि गोसोआव लाबो",
+    "memoryMatching": "ज'रा मिलाय",
+    "spotDifference": "फाराग दिहुन",
+    "patternComplete": "नमुना आबुं खालाम",
+    "gameComplete": "गेम जोबबाय!",
+    "backToGames": "गेमसिम गिदिंफिन",
+    "level": "थाखो {{level}}",
+    "pairs": "{{matched}}/{{total}} ज'रा",
+    "round": "राउन्ड {{current}} / {{total}}",
+    "whatComesNext": "उनाव मा फैगोन?",
+    "rememberItems": "बे बेसादफोरखौ गोसोआव लाखि!",
+    "whichDidYouSee": "नोंथां मा बेसाद नुदोंमोन?",
+    "tapAllRemember": "गोसोआव थानाय बेसादफोरखौ थु",
+    "submit": "जमा हर ({{count}})",
+    "findOddOne": "गुबुन बेसादखौ दिहुन!",
+    "encouragement": {
+      "excellent": "साब्रोम! नोंथांनि गोसोखांथि साबसिन!",
+      "great": "मोजां खामानि! सोलिबाय था!",
+      "good": "मोजां नाजानाय! गेलेब्ला गोसोआ गोजोन जायो!"
+    }
+  },
+  "reminders": {
+    "title": "दिनैनि गोसोखांथि",
+    "upcoming": "फैगौ",
+    "completedMissed": "जाफुंबाय / बारग'बाय",
+    "done": "जाबाय ✓",
+    "missed": "बारग'बाय",
+    "snoozed": "दावगाहोबाय",
+    "pending": "जाथ'आखै",
+    "noReminders": "दिनैनि थाखाय जेबो गोसोखांथि गैया। मोजां सान!",
+    "sayDone": "'जाबाय' बुं एबा बेयाव थु",
+    "categories": {
+      "medicine": "मुली",
+      "hydration": "दै लोंनाय",
+      "meal": "ओंखाम",
+      "activity": "खामानि",
+      "appointment": "दाक्तर लोगो हमनाय"
+    }
+  },
+  "caregiver": {
+    "dashboard": "सामायगिरिनि डेशबर्ड",
+    "monitoring": "नायबिजिरनाय: {{name}}",
+    "sessionsThisWeek": "सत्र",
+    "thisWeek": "बे सप्ताहाव",
+    "adherence": "नेम मानिनाय",
+    "missed": "बारग'नाय",
+    "streak": "लिरथि",
+    "alerts": "सांग्रांथि",
+    "trendTitle": "14 साननि हाबाफारिनि महर",
+    "recentSessions": "दासो गेलेनाय गेम सत्र",
+    "activeReminders": "मावगासिनो थानाय गोसोखांथि",
+    "noLinkedElders": "जेबो बयोसगोनां सुबुं ज'रा लायाखै। डेशबर्ड नायनो बयोसगोनां ज'रा ला।",
+    "goodAccuracy": "गेबेंथि मोजां",
+    "active": "मावगासिनो"
+  },
+  "settings": {
+    "title": "सेटिं",
+    "textSize": "हाबथा महरनि गेदेर",
+    "language": "राव",
+    "standard": "साधारन",
+    "large": "गेदेर",
+    "extraLarge": "जोबोर गेदेर",
+    "syncStatus": "अफलाइन सिंक थासारि",
+    "connection": "फोनांजाब",
+    "online": "अनलाइन",
+    "offline": "अफलाइन",
+    "lastSync": "दासो सिंक जानाय",
+    "pendingEvents": "नेना थानाय बेसाद",
+    "failedEvents": "फेल जानाय बेसाद",
+    "privacy": "गोपनीयता आरो डाटा",
+    "whatWeStore": "जों मा दोनखोमायो",
+    "reviewConsent": "मानिनायखौ नायफिन",
+    "requestDeletion": "डाटा हुखुमोरनो खावलाय",
+    "about": "SMRITI+ नि बागै",
+    "version": "भार्सन {{version}}",
+    "devDebug": "डेभ डिबाग पेनेल"
+  },
+  "family": {
+    "title": "नख'र / हेफाजाब",
+    "noContact": "जेबो नख'रनि फोन नम्बर ज'रा लायाखै।",
+    "askCaregiver": "नोंथांनि सामायगिरिखौ नम्बर होनायनि थाखाय बुं।",
+    "call": "कल खालाम"
+  },
+  "voice": {
+    "title": "SMRITI+ जों रायलाय",
+    "tapMic": "माइक्रोफोनखौ थुनानै बुं।",
+    "examples": "\"दै लोंनो गोसोखांहो\" एबा \"गेम गेलेनो फै\" बुं।",
+    "touchAvailable": "गाहायाव थुनायनि राहा सदोब दं",
+    "iHeard": "आं खोनाबाय: {{text}} — बेयो गेबें नामा?",
+    "listening": "खोनासंगासिनो...",
+    "thinking": "सानगासिनो..."
+  },
+  "consent": {
+    "title": "नोंथांनि गोपनीयताया जोंनि थाखाय गोनांथार",
+    "description": "SMRITI+ आ नोंथांनि मोजांनि थाखाय नांगौ डाटाखौल' दोनो:",
+    "whatWeCollect": "जों मा लायो",
+    "gamePerformance": "गेम गेलेनायनि गेबेंथि (थाखो सलायनो)",
+    "reminderHistory": "गोसोखांथि आबुं खालामनायनि जारिमिन",
+    "preferences": "राव आरो सेटिंफोर",
+    "noSell": "जों नोंथांनि डाटाखौ फालांगि खालामा एबा गुबुननो हरा।",
+    "agree": "आं बुजिबाय आरो मानिना लाबाय",
+    "version": "मानिनाय भार्सन {{version}}"
+  },
+  "errors": {
+    "generic": "माबा गोरोन्थि जाबाय। अननानै फिन नाजा।",
+    "network": "इन्टारनेट गैया। अफलाइनाव मावगासिनो।",
+    "syncFailed": "माखासे डाटा सिंक जायाखै। फिन नाजागोन।"
+  }
+}

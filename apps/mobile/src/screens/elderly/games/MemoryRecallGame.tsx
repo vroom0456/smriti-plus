@@ -1,0 +1,362 @@
+/**
+ * SMRITI+ — Memory Recall Game
+ *
+ * Show N objects, hide them, ask the user to recall/select them.
+ * Implements standard session payload. Difficulty controls object count.
+ */
+
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { v4 as uuidv4 } from 'uuid';
+import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
+import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
+import { useAuthStore } from '../../../state/authStore';
+import { api } from '../../../services/api';
+import { offlineStore } from '../../../services/offlineStore';
+import { ArrowLeft } from 'lucide-react-native';
+
+const ALL_ITEMS = [
+  { id: '1', emoji: '🍎', label: 'Apple' },
+  { id: '2', emoji: '🌸', label: 'Flower' },
+  { id: '3', emoji: '🐘', label: 'Elephant' },
+  { id: '4', emoji: '⭐', label: 'Star' },
+  { id: '5', emoji: '🏠', label: 'House' },
+  { id: '6', emoji: '🌙', label: 'Moon' },
+  { id: '7', emoji: '🐦', label: 'Bird' },
+  { id: '8', emoji: '🍵', label: 'Tea' },
+  { id: '9', emoji: '🎋', label: 'Bamboo' },
+  { id: '10', emoji: '🐟', label: 'Fish' },
+  { id: '11', emoji: '☂️', label: 'Umbrella' },
+  { id: '12', emoji: '📚', label: 'Book' },
+  { id: '13', emoji: '🔔', label: 'Bell' },
+  { id: '14', emoji: '🎨', label: 'Paint' },
+  { id: '15', emoji: '🪴', label: 'Plant' },
+];
+
+const ITEMS_PER_LEVEL: Record<number, number> = {
+  1: 3, 2: 4, 3: 5, 4: 6, 5: 8,
+};
+
+type Phase = 'memorize' | 'recall' | 'result';
+
+interface MemoryRecallGameProps {
+  gameId: string;
+  difficulty: number;
+  targetTimeMs: number;
+  onComplete: (session: any) => void;
+  onBack: () => void;
+}
+
+export default function MemoryRecallGame({
+  gameId, difficulty, targetTimeMs, onComplete, onBack,
+}: MemoryRecallGameProps) {
+  const user = useAuthStore((s: any) => s.user);
+  const itemCount = ITEMS_PER_LEVEL[difficulty] || 4;
+  const [phase, setPhase] = useState<Phase>('memorize');
+  const [targetItems, setTargetItems] = useState<typeof ALL_ITEMS>([]);
+  const [allOptions, setAllOptions] = useState<typeof ALL_ITEMS>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [startTime] = useState(Date.now());
+  const [timer, setTimer] = useState(3 + difficulty); // seconds to memorize
+  const [sessionResult, setSessionResult] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<any>(null);
+
+  // Generate round
+  useEffect(() => {
+    const shuffled = [...ALL_ITEMS].sort(() => Math.random() - 0.5);
+    const targets = shuffled.slice(0, itemCount);
+    const distractors = shuffled.slice(itemCount, itemCount + Math.min(itemCount + 2, shuffled.length - itemCount));
+    const options = [...targets, ...distractors].sort(() => Math.random() - 0.5);
+
+    setTargetItems(targets);
+    setAllOptions(options);
+  }, [itemCount]);
+
+  // Memorize countdown
+  useEffect(() => {
+    if (phase !== 'memorize') return;
+    const interval = setInterval(() => {
+      setTimer((t) => {
+        if (t <= 1) {
+          clearInterval(interval);
+          setPhase('recall');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelected(newSelected);
+  };
+
+  const handleSubmit = async () => {
+    const correct = targetItems.filter((item) => selected.has(item.id)).length;
+    const accuracy = correct / targetItems.length;
+    const responseTime = Date.now() - startTime;
+    const sessionId = uuidv4();
+
+    const session = {
+      id: sessionId,
+      game_id: gameId,
+      accuracy: Math.round(accuracy * 1000) / 1000,
+      response_time_ms: responseTime,
+      completed: true,
+      attempts: 1,
+      difficulty_level: difficulty,
+      streak_at_time: 0,
+      device_id: 'mobile-app',
+    };
+
+    setSessionResult({ ...session, correct, total: targetItems.length });
+    setPhase('result');
+
+    // 1. Offline-first: save locally in SQLite + sync_queue
+    try {
+      await offlineStore.recordGameSession({
+        elder_id: user?.id || 'demo-elder-id',
+        game_id: gameId,
+        difficulty_level: difficulty,
+        score: correct,
+        max_score: targetItems.length,
+        accuracy_percentage: Math.round(accuracy * 100),
+        response_time_ms: responseTime,
+        metrics_payload: { correct, total: targetItems.length },
+      });
+    } catch (localErr) {
+      console.warn('[OfflineStore] Failed to save local session:', localErr);
+    }
+
+    // 2. Submit to API & get recommendation
+    let rec: any = null;
+    try {
+      const resp = await api.post<any>(`/games/${gameId}/session`, session);
+      if (resp?.recommendation) {
+        rec = resp.recommendation;
+      }
+    } catch (err) {
+      console.log('Session will sync later via background engine:', err);
+    }
+
+    if (!rec) {
+      if (accuracy >= 0.85) {
+        rec = {
+          reason: 'Excellent recall! Your memory retention was swift and accurate.',
+          current_level: Math.min(5, difficulty + 1),
+        };
+      } else if (accuracy < 0.5) {
+        rec = {
+          reason: 'That was challenging. Next round will give you more time to observe each item.',
+          current_level: Math.max(1, difficulty - 1),
+        };
+      } else {
+        rec = {
+          reason: 'Steady recall performance! Maintaining your current comfortable level.',
+          current_level: difficulty,
+        };
+      }
+    }
+    setRecommendation(rec);
+
+    onComplete(session);
+  };
+
+  const getEncouragement = () => {
+    if (!sessionResult) return '';
+    if (sessionResult.accuracy >= 0.85) return 'Superb! You recalled nearly everything accurately.';
+    if (sessionResult.accuracy >= 0.6) return 'Well done! You are building strong recall skills.';
+    return 'Good effort! Practice makes continuous progress.';
+  };
+
+  // MEMORIZE phase
+  if (phase === 'memorize') {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.phaseTitle}>Remember these items!</Text>
+        <Text style={styles.timer}>{timer}s</Text>
+        <View style={styles.itemGrid}>
+          {targetItems.map((item) => (
+            <View key={item.id} style={styles.memorizeItem}>
+              <Text style={styles.itemEmoji}>{item.emoji}</Text>
+              <Text style={styles.itemLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // RESULT phase
+  if (phase === 'result' && sessionResult) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.completeTitle}>Game Complete</Text>
+        <ProgressRing
+          progress={sessionResult.accuracy}
+          size={120}
+          color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent}
+          label="Recall"
+        />
+        <Text style={styles.encouragement}>{getEncouragement()}</Text>
+        <Text style={styles.statText}>
+          {`Remembered: ${sessionResult.correct}/${sessionResult.total}`}
+        </Text>
+
+        {recommendation && (
+          <View style={styles.recommendationCard}>
+            <Text style={styles.recommendationLabel}>Personalized Recommendation</Text>
+            <Text style={styles.recommendationText}>{recommendation.reason}</Text>
+          </View>
+        )}
+
+        <PrimaryButton title="Back to Games" onPress={onBack} style={styles.backBtn} />
+      </View>
+    );
+  }
+
+  // RECALL phase
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <TouchableOpacity
+        onPress={onBack}
+        style={styles.backButtonTop}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel="Back to games"
+      >
+        <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+        <Text style={styles.backButtonTopText}>Back</Text>
+      </TouchableOpacity>
+      <Text style={styles.phaseTitle}>Which items did you see?</Text>
+      <Text style={styles.subtitle}>Tap all the items you remember</Text>
+
+      <View style={styles.optionsGrid}>
+        {allOptions.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            onPress={() => toggleSelect(item.id)}
+            activeOpacity={0.7}
+            style={[
+              styles.optionItem,
+              selected.has(item.id) && styles.optionSelected,
+            ]}
+          >
+            <Text style={styles.itemEmoji}>{item.emoji}</Text>
+            <Text style={styles.itemLabel}>{item.label}</Text>
+            {selected.has(item.id) && (
+              <Text style={styles.checkmark}>✓</Text>
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <PrimaryButton
+        title={`Submit (${selected.size} selected)`}
+        onPress={handleSubmit}
+        disabled={selected.size === 0}
+        style={styles.submitBtn}
+      />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, paddingTop: 56 },
+  center: { alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  scrollContent: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  backButtonTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.pill,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 44,
+  },
+  backButtonTopText: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textDark,
+  },
+  phaseTitle: {
+    ...typography.elderly.h2,
+    fontSize: 24,
+    fontWeight: '800',
+    color: colors.textDark,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+    letterSpacing: -0.4,
+  },
+  subtitle: {
+    ...typography.elderly.caption,
+    fontSize: 15,
+    color: colors.muted,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  timer: { fontSize: 48, fontWeight: '700', color: colors.teal, marginBottom: spacing.xl },
+  itemGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.md },
+  memorizeItem: {
+    backgroundColor: colors.white, borderRadius: borderRadius.lg, padding: spacing.lg,
+    alignItems: 'center', minWidth: 90, ...shadows.card,
+  },
+  optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, justifyContent: 'center' },
+  optionItem: {
+    backgroundColor: colors.white, borderRadius: borderRadius.lg, padding: spacing.lg,
+    alignItems: 'center', minWidth: 90, minHeight: 90, ...shadows.card, borderWidth: 2, borderColor: 'transparent',
+    position: 'relative',
+  },
+  optionSelected: { borderColor: colors.teal, backgroundColor: colors.tealBg },
+  itemEmoji: { fontSize: 36, marginBottom: spacing.xs },
+  itemLabel: { ...typography.elderly.caption, color: colors.textDark },
+  checkmark: { position: 'absolute', top: 4, right: 8, color: colors.teal, fontSize: 20, fontWeight: '700' },
+  submitBtn: { marginTop: spacing.xl },
+  completeTitle: { ...typography.elderly.h1, color: colors.navy, marginBottom: spacing.xl },
+  encouragement: { ...typography.elderly.body, color: colors.teal, textAlign: 'center', marginVertical: spacing.lg },
+  statText: { ...typography.elderly.caption, color: colors.muted },
+  backBtn: { marginTop: spacing.xl, width: '80%' },
+  recommendationCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    width: '90%',
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    ...shadows.card,
+  },
+  recommendationLabel: {
+    ...typography.elderly.caption,
+    color: colors.teal,
+    fontWeight: '700',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  recommendationText: {
+    ...typography.elderly.body,
+    color: colors.navy,
+    lineHeight: 24,
+  },
+});

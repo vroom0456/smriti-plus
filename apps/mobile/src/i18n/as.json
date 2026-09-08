@@ -1,0 +1,152 @@
+{
+  "app": {
+    "name": "SMRITI+",
+    "tagline": "মনত ৰাখক। জড়িত হওক। সংযোগ কৰক।",
+    "disclaimer": "SMRITI+ জ্ঞানমূলক সংযোগ আৰু দৈনিক সাহায্যৰ বাবে; ই ডিমেনচিয়া নিৰ্ণয় বা চিকিৎসা নকৰে।"
+  },
+  "nav": {
+    "home": "ঘৰ",
+    "games": "খেল",
+    "reminders": "সোঁৱৰণী",
+    "settings": "ছেটিংছ",
+    "dashboard": "ডেচবৰ্ড",
+    "group": "গোট",
+    "family": "পৰিয়াল",
+    "voiceAssistant": "SMRITI+ ৰ সৈতে কথা পাতক",
+    "memories": "স্মৃতিসমূহ",
+    "personalize": "ব্যক্তিগতকৰণ"
+  },
+  "auth": {
+    "signIn": "প্ৰৱেশ কৰক",
+    "email": "ইমেইল",
+    "password": "পাছৱৰ্ড / পিন",
+    "phone": "ফোন নম্বৰ",
+    "otp": "অ'টিপি",
+    "loginFailed": "প্ৰৱেশ ব্যৰ্থ হ'ল",
+    "checkCredentials": "অনুগ্ৰহ কৰি আপোনাৰ তথ্য পৰীক্ষা কৰক।",
+    "signOut": "প্ৰস্থান কৰক",
+    "signOutConfirm": "আপুনি প্ৰস্থান কৰিব বিচাৰে নেকি?"
+  },
+  "home": {
+    "goodMorning": "সুপ্ৰভাত",
+    "goodAfternoon": "শুভ অপৰাহ্ন",
+    "goodEvening": "শুভ সন্ধিয়া",
+    "playGame": "খেল খেলক",
+    "todayReminders": "আজিৰ সোঁৱৰণী",
+    "talkSmriti": "SMRITI+ ৰ সৈতে কথা পাতক",
+    "callFamily": "পৰিয়ালক কল কৰক",
+    "personalizedRecommendation": "আপোনাৰ বাবে পৰামৰ্শ",
+    "dayStreak": "{{count}} দিনৰ ধাৰাবাহিকতা!"
+  },
+  "games": {
+    "title": "খেল খেলক",
+    "subtitle": "মন সজীৱ ৰাখিবলৈ এটা খেল বাছনি কৰক",
+    "memoryRecall": "স্মৃতি সোঁৱৰণ",
+    "memoryMatching": "যোৰ মিলোৱা",
+    "spotDifference": "পাৰ্থক্য নিৰ্ণয়",
+    "patternComplete": "ধাৰা সম্পূৰ্ণ কৰক",
+    "gameComplete": "খেল সমাপ্ত!",
+    "backToGames": "খেললৈ উভতি যাওক",
+    "level": "স্তৰ {{level}}",
+    "pairs": "{{matched}}/{{total}} যোৰ",
+    "round": "ৰাউণ্ড {{current}} / {{total}}",
+    "whatComesNext": "ইয়াৰ পিছত কি আহিব?",
+    "rememberItems": "এই বস্তুবোৰ মনত ৰাখক!",
+    "whichDidYouSee": "আপুনি কোনবোৰ বস্তু দেখিছিল?",
+    "tapAllRemember": "মনত থকা বস্তুবোৰ স্পৰ্শ কৰক",
+    "submit": "জমা দিয়ক ({{count}})",
+    "findOddOne": "বেলেগ বস্তুটো বিচাৰি উলিয়াওক!",
+    "encouragement": {
+      "excellent": "চমৎকাৰ! আপোনাৰ স্মৃতিশক্তি অসাধাৰণ!",
+      "great": "বৰ ভাল কাম! এনেকৈয়ে চলাই যাওক!",
+      "good": "ভাল প্ৰচেষ্টা! প্ৰতিটো খেলেই আপোনাক শক্তিশালী কৰে!"
+    }
+  },
+  "reminders": {
+    "title": "আজিৰ সোঁৱৰণী",
+    "upcoming": "অনাগত",
+    "completedMissed": "সম্পূৰ্ণ / অগ্ৰাহ্য",
+    "done": "হৈ গ'ল ✓",
+    "missed": "বাদ পৰিল",
+    "snoozed": "পিছুওৱা হ'ল",
+    "pending": "বাকী আছে",
+    "noReminders": "আজিৰ বাবে কোনো সোঁৱৰণী নাই। ভালদৰে দিনটো কটাওক!",
+    "sayDone": "'হৈ গ'ল' কওক বা স্পৰ্শ কৰক",
+    "categories": {
+      "medicine": "দৰব",
+      "hydration": "পানী খোৱা",
+      "meal": "আহাৰ",
+      "activity": "কাৰ্যকলাপ",
+      "appointment": "চিকিৎসকৰ সাক্ষাৎ"
+    }
+  },
+  "caregiver": {
+    "dashboard": "যত্নদাতাৰ ডেচবৰ্ড",
+    "monitoring": "তদাৰক: {{name}}",
+    "sessionsThisWeek": "সত্ৰ",
+    "thisWeek": "এই সপ্তাহত",
+    "adherence": "নিয়ম মানি চলা",
+    "missed": "বাদ পৰা",
+    "streak": "ধাৰাবাহিকতা",
+    "alerts": "সতৰ্কবাৰ্তা",
+    "trendTitle": "১৪ দিনৰ কাৰ্যকলাপৰ গতিধাৰা",
+    "recentSessions": "শেহতীয়া খেল সত্ৰ",
+    "activeReminders": "সক্ৰিয় সোঁৱৰণীসমূহ",
+    "noLinkedElders": "কোনো জ্যেষ্ঠ ব্যক্তি সংযোগ কৰা হোৱা নাই। ডেচবৰ্ড চাবলৈ এজন জ্যেষ্ঠ ব্যক্তি সংযোগ কৰক।",
+    "goodAccuracy": "উন্নত নিখুঁততা",
+    "active": "সক্ৰিয়"
+  },
+  "settings": {
+    "title": "ছেটিংছ",
+    "textSize": "আখৰৰ আকাৰ",
+    "language": "ভাষা",
+    "standard": "সাধাৰণ",
+    "large": "ডাঙৰ",
+    "extraLarge": "অতিকৈ ডাঙৰ",
+    "syncStatus": "অফলাইন ছিংক অৱস্থা",
+    "connection": "সংযোগ",
+    "online": "অনলাইন",
+    "offline": "অফলাইন",
+    "lastSync": "শেহতীয়া ছিংক",
+    "pendingEvents": "বাকী থকা তথ্য",
+    "failedEvents": "ব্যৰ্থ হোৱা তথ্য",
+    "privacy": "গোপনীয়তা আৰু তথ্য",
+    "whatWeStore": "আমি কি সংৰক্ষণ কৰোঁ",
+    "reviewConsent": "সন্মতি পৰ্যালোচনা",
+    "requestDeletion": "তথ্য মচি পেলোৱাৰ অনুৰোধ",
+    "about": "SMRITI+ ৰ বিষয়ে",
+    "version": "সংস্কৰণ {{version}}",
+    "devDebug": "ডেভ ডিবাগ পেনেল"
+  },
+  "family": {
+    "title": "পৰিয়াল / সাহায্য",
+    "noContact": "কোনো পৰিয়ালৰ সংযোগ এতিয়াও কৰা হোৱা নাই।",
+    "askCaregiver": "যত্নদাতাক তেওঁলোকৰ নম্বৰ সংযোগ কৰিবলৈ অনুৰোধ কৰক।",
+    "call": "কল কৰক"
+  },
+  "voice": {
+    "title": "SMRITI+ ৰ সৈতে কথা পাতক",
+    "tapMic": "মাইক্ৰ'ফোনটো স্পৰ্শ কৰি কওক।",
+    "examples": "\"মোক পানী খাবলৈ সোঁৱৰাই দিয়া\" বা \"খেল খেলোঁ আহা\" আদি কওক।",
+    "touchAvailable": "তলত সদায় স্পৰ্শ নিয়ন্ত্ৰণ উপলব্ধ",
+    "iHeard": "মই শুনিলোঁ: {{text}} — এইটো সঠিক নেকি?",
+    "listening": "শুনি আছোঁ...",
+    "thinking": "ভাবি আছোঁ..."
+  },
+  "consent": {
+    "title": "আপোনাৰ গোপনীয়তা আমাৰ বাবে গুৰুত্বপূৰ্ণ",
+    "description": "SMRITI+ এ কেৱল আপোনাৰ অভিজ্ঞতা উন্নত কৰিবলৈ প্ৰয়োজনীয় তথ্য সংগ্ৰহ কৰে:",
+    "whatWeCollect": "আমি কি সংগ্ৰহ কৰোঁ",
+    "gamePerformance": "খেলৰ প্ৰদৰ্শন (স্তৰ সালসলনি কৰিবলৈ)",
+    "reminderHistory": "সোঁৱৰণী সম্পূৰ্ণ কৰাৰ তথ্য (নিয়মিততা জানিবলৈ)",
+    "preferences": "ভাষা আৰু সুবিধাৰ পছন্দসমূহ",
+    "noSell": "আমি আপোনাৰ তথ্য কেতিয়াও বিক্ৰী নকৰোঁ বা বাহিৰত প্ৰকাশ নকৰোঁ।",
+    "agree": "মই বুজি পালোঁ আৰু সন্মত হ'লোঁ",
+    "version": "সন্মতি সংস্কৰণ {{version}}"
+  },
+  "errors": {
+    "generic": "কিবা ভুল হ'ল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।",
+    "network": "ইন্টাৰনেট সংযোগ নাই। অফলাইনত কাম চলি আছে।",
+    "syncFailed": "কিছুমান তথ্য ছিংক কৰিব পৰা নগল। পুনৰ চেষ্টা কৰা হ'ব।"
+  }
+}

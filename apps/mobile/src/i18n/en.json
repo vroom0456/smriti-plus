@@ -1,0 +1,152 @@
+{
+  "app": {
+    "name": "SMRITI+",
+    "tagline": "Remember. Engage. Connect.",
+    "disclaimer": "SMRITI+ supports cognitive engagement and daily assistance; it does not diagnose or treat dementia."
+  },
+  "nav": {
+    "home": "Home",
+    "games": "Games",
+    "reminders": "Reminders",
+    "settings": "Settings",
+    "dashboard": "Dashboard",
+    "group": "Group",
+    "family": "Family",
+    "voiceAssistant": "Talk to SMRITI+",
+    "memories": "Memories",
+    "personalize": "Personalize"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "email": "Email",
+    "password": "Password / PIN",
+    "phone": "Phone Number",
+    "otp": "OTP",
+    "loginFailed": "Login Failed",
+    "checkCredentials": "Please check your credentials.",
+    "signOut": "Sign Out",
+    "signOutConfirm": "Are you sure you want to sign out?"
+  },
+  "home": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "playGame": "Play a Game",
+    "todayReminders": "Reminders",
+    "talkSmriti": "Talk to SMRITI+",
+    "callFamily": "Call Family",
+    "personalizedRecommendation": "Recommended Game",
+    "dayStreak": "{{count}} day streak!"
+  },
+  "games": {
+    "title": "Play a Game",
+    "subtitle": "Choose a game to exercise your mind",
+    "memoryRecall": "Memory Recall",
+    "memoryMatching": "Memory Matching",
+    "spotDifference": "Spot the Difference",
+    "patternComplete": "Pattern Complete",
+    "gameComplete": "Game Complete!",
+    "backToGames": "Back to Games",
+    "level": "Level {{level}}",
+    "pairs": "{{matched}}/{{total}} pairs",
+    "round": "Round {{current}} of {{total}}",
+    "whatComesNext": "What comes next?",
+    "rememberItems": "Remember these items!",
+    "whichDidYouSee": "Which items did you see?",
+    "tapAllRemember": "Tap all the items you remember",
+    "submit": "Submit ({{count}} selected)",
+    "findOddOne": "Find the odd one out!",
+    "encouragement": {
+      "excellent": "Wonderful! You have an excellent memory!",
+      "great": "Great job! Keep it up!",
+      "good": "Good try! Every game makes you stronger!"
+    }
+  },
+  "reminders": {
+    "title": "Reminders",
+    "upcoming": "Upcoming",
+    "completedMissed": "Completed / Missed",
+    "done": "Done ✓",
+    "missed": "Missed",
+    "snoozed": "Snoozed",
+    "pending": "Pending",
+    "noReminders": "No reminders for today. Enjoy your day!",
+    "sayDone": "Say 'done' or tap the check",
+    "categories": {
+      "medicine": "Medicine",
+      "hydration": "Drink Water",
+      "meal": "Meal",
+      "activity": "Activity",
+      "appointment": "Appointment"
+    }
+  },
+  "caregiver": {
+    "dashboard": "Caregiver Dashboard",
+    "monitoring": "Monitoring: {{name}}",
+    "sessionsThisWeek": "Sessions",
+    "thisWeek": "This week",
+    "adherence": "Adherence",
+    "missed": "Missed",
+    "streak": "Streak",
+    "alerts": "Alerts",
+    "trendTitle": "14-Day Activity Trend",
+    "recentSessions": "Recent Game Sessions",
+    "activeReminders": "Active Reminders",
+    "noLinkedElders": "No linked elders found. Link an elder to view the dashboard.",
+    "goodAccuracy": "Good accuracy",
+    "active": "Active"
+  },
+  "settings": {
+    "title": "Settings",
+    "textSize": "Text Size",
+    "language": "Language",
+    "standard": "Standard",
+    "large": "Large",
+    "extraLarge": "Extra Large",
+    "syncStatus": "Offline Sync Status",
+    "connection": "Connection",
+    "online": "Online",
+    "offline": "Offline",
+    "lastSync": "Last Sync",
+    "pendingEvents": "Pending Events",
+    "failedEvents": "Failed Events",
+    "privacy": "Privacy & Data",
+    "whatWeStore": "What we store",
+    "reviewConsent": "Review consent",
+    "requestDeletion": "Request data deletion",
+    "about": "About SMRITI+",
+    "version": "Version {{version}}",
+    "devDebug": "Dev Debug Panel"
+  },
+  "family": {
+    "title": "Family / Help",
+    "noContact": "No family contact linked yet.",
+    "askCaregiver": "Ask your caregiver to help link their contact.",
+    "call": "Call"
+  },
+  "voice": {
+    "title": "Talk to SMRITI+",
+    "tapMic": "Tap the microphone and speak.",
+    "examples": "Say things like \"remind me to drink water\" or \"play a game.\"",
+    "touchAvailable": "Touch controls always available below",
+    "iHeard": "I heard: {{text}} — is that right?",
+    "listening": "Listening...",
+    "thinking": "Thinking..."
+  },
+  "consent": {
+    "title": "Your Privacy Matters",
+    "description": "SMRITI+ collects only the data needed to personalize your experience. Here's what we store and why:",
+    "whatWeCollect": "What we collect",
+    "gamePerformance": "Game performance (to adjust difficulty)",
+    "reminderHistory": "Reminder completion history (to track adherence)",
+    "preferences": "Language and accessibility preferences",
+    "noSell": "We never sell your data or share it outside your care team.",
+    "agree": "I Understand and Agree",
+    "version": "Consent Version {{version}}"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "No network connection. Working offline.",
+    "syncFailed": "Some items could not sync. They will be retried."
+  }
+}
