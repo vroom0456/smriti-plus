@@ -36,6 +36,7 @@ import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { voiceService } from '../../services/voice';
 import { useAuthStore } from '../../state/authStore';
+import { useBackNavigation } from '../../navigation/useBackNavigation';
 
 interface FamilyMember {
   id: string;
@@ -55,6 +56,7 @@ interface FamilyVoiceNote {
 
 export default function FamilyCornerScreen() {
   const navigation = useNavigation<any>();
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, { fallbackTab: 'Home' });
   const { user } = useAuthStore();
   const [contacts, setContacts] = useState<FamilyMember[]>([]);
   const [voiceMessages, setVoiceMessages] = useState<FamilyVoiceNote[]>([]);
@@ -171,18 +173,19 @@ export default function FamilyCornerScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Top Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={16} color={colors.textDark} style={{ marginRight: 6 }} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Top Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={goBackSafe}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft size={16} color={colors.textDark} style={{ marginRight: 6 }} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
         <Text style={styles.title}>Family Corner</Text>
         <Text style={styles.subtitle}>
           Your loved ones are just one tap away.
@@ -320,6 +323,7 @@ export default function FamilyCornerScreen() {
         </Text>
       </View>
     </ScrollView>
+  </View>
   );
 }
 

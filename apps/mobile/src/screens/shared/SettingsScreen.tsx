@@ -19,13 +19,15 @@ import {
   Switch,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { PrimaryButton } from '../../components/UIComponents';
 import { useAuthStore } from '../../state/authStore';
 import { setLanguage, getLanguage, SupportedLanguage } from '../../i18n';
 import { languageRegistry } from '../../services/languageRegistry';
 import { voiceIntelligence } from '../../services/voiceIntelligence';
-import { Check, Globe } from 'lucide-react-native';
+import { Check, Globe, ArrowLeft } from 'lucide-react-native';
+import { useBackNavigation } from '../../navigation/useBackNavigation';
 
 const LANGUAGE_GROUPS = [
   {
@@ -51,6 +53,8 @@ const LANGUAGE_GROUPS = [
 ];
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<any>();
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, { fallbackTab: 'Home' });
   const { user, logout } = useAuthStore();
   const [textSize, setTextSize] = useState('large');
   const [activeLang, setActiveLang] = useState<string>(getLanguage() || 'en');
@@ -88,8 +92,21 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Settings</Text>
+    <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={goBackSafe}
+          accessibilityRole="button"
+          accessibilityLabel="Go back to Home"
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={16} color={colors.textDark} style={{ marginRight: 6 }} />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Settings</Text>
 
       {/* 1. Language Selection with Native Scripts (MDoNER + Telugu + English) */}
       <View style={styles.section}>
@@ -304,10 +321,32 @@ export default function SettingsScreen() {
         style={styles.logoutBtn}
       />
     </ScrollView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.full,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 42,
+    justifyContent: 'center',
+    ...shadows.subtle,
+  },
+  backButtonText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textDark,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,

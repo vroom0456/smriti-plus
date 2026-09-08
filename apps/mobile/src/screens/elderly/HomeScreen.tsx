@@ -111,20 +111,20 @@ export default function ElderHomeScreen({ navigation }: any) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.teal]} />
       }
     >
-      {/* ── Top Header Section (Date, Warm Greeting, Streak) ────── */}
+      {/* ── Top Header Section (Date & Streak meta row, Full-width Greeting) ────── */}
       <View style={styles.greetingHeader}>
-        <View style={styles.greetingTextGroup}>
+        <View style={styles.topMetaRow}>
           <Text style={styles.dateLabel} numberOfLines={1}>{dayStr}, {dateFormatted}</Text>
-          <Text style={styles.greeting} numberOfLines={1} ellipsizeMode="tail">
-            {summary?.greeting || `Hello, ${user?.name}`}
-          </Text>
+          {(summary?.current_streak ?? 0) > 0 && (
+            <View style={styles.streakBadge}>
+              <Flame size={15} color="#D97706" strokeWidth={2.5} />
+              <Text style={styles.streakCount}>{summary?.current_streak}d streak</Text>
+            </View>
+          )}
         </View>
-        {(summary?.current_streak ?? 0) > 0 && (
-          <View style={styles.streakBadge}>
-            <Flame size={16} color="#D97706" strokeWidth={2.5} />
-            <Text style={styles.streakCount}>{summary?.current_streak}d streak</Text>
-          </View>
-        )}
+        <Text style={styles.greeting} numberOfLines={2}>
+          {summary?.greeting || `Hello, ${user?.name || 'Friend'}`}
+        </Text>
       </View>
 
       {error && <AlertBanner type="warning" message={error} />}
@@ -220,23 +220,23 @@ const styles = StyleSheet.create({
 
   // ── Header (Date, Greeting, Streak) ──
   greetingHeader: {
+    marginBottom: spacing.xl,
+  },
+  topMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-  },
-  greetingTextGroup: {
-    flex: 1,
-    marginRight: spacing.sm,
+    marginBottom: 6,
   },
   dateLabel: {
     fontFamily: fontFamily.text,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginBottom: 2,
+    flex: 1,
+    marginRight: 8,
   },
   greeting: {
     ...typography.elderly.h1,
@@ -244,22 +244,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.textDark,
     letterSpacing: -0.6,
+    lineHeight: 36,
   },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 149, 0, 0.12)',
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: borderRadius.pill,
     borderWidth: 1,
     borderColor: 'rgba(255, 149, 0, 0.25)',
-    gap: 6,
+    gap: 5,
+    flexShrink: 0,
   },
   streakCount: {
     fontFamily: fontFamily.display,
     color: '#D97706',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
 

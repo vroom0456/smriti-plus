@@ -5,13 +5,15 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { colors, typography, spacing } from '../../theme/tokens';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
+import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { GameCard } from '../../components/UIComponents';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../state/authStore';
 import { offlineStore, DEFAULT_GAMES } from '../../services/offlineStore';
 import { useTranslation } from '../../i18n';
+import { useBackNavigation } from '../../navigation/useBackNavigation';
 import MemoryMatchingGame from './games/MemoryMatchingGame';
 import MemoryRecallGame from './games/MemoryRecallGame';
 import PatternGame from './games/PatternGame';
@@ -28,19 +30,25 @@ interface GameInfo {
   max_difficulty: number;
 }
 
-const GAME_ICONS: Record<string, string> = {
-  memory_recall: '🧠',
-  memory_matching: '🃏',
-  attention: '👁️',
-  pattern_recognition: '🧩',
-};
-
-export default function GamesListScreen() {
+export default function GamesListScreen({ navigation }: any) {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [games, setGames] = useState<GameInfo[]>(DEFAULT_GAMES);
   const [loading, setLoading] = useState(true);
   const [activeGame, setActiveGame] = useState<{ game: GameInfo; difficulty: number } | null>(null);
+
+  const handleBack = useCallback(() => {
+    if (activeGame) {
+      setActiveGame(null);
+      return true;
+    }
+    return false;
+  }, [activeGame]);
+
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, {
+    onCustomBack: activeGame ? handleBack : undefined,
+    fallbackTab: 'Home',
+  });
 
   const fetchGames = useCallback(async () => {
     try {
@@ -70,7 +78,6 @@ export default function GamesListScreen() {
         difficulty = diff.current_level;
       }
     } catch {
-      // Offline fallback: read from local SQLite
       try {
         difficulty = await offlineStore.getDifficulty(user?.id || 'demo-elder-id', game.id);
       } catch {
@@ -82,11 +89,6 @@ export default function GamesListScreen() {
 
   const handleGameComplete = () => { /* Session already submitted & persisted in game */ };
 
-  const handleBack = () => {
-    setActiveGame(null);
-    fetchGames(); // refresh
-  };
-
   // Render active game
   if (activeGame) {
     const { game, difficulty } = activeGame;
@@ -95,46 +97,74 @@ export default function GamesListScreen() {
       difficulty,
       targetTimeMs: game.target_time_ms,
       onComplete: handleGameComplete,
-      onBack: handleBack,
+      onBack: () => {
+        setActiveGame(null);
+        fetchGames();
+      },
     };
 
+    let gameElement: React.ReactNode;
     switch (game.category) {
       case 'memory_matching':
-        return <MemoryMatchingGame {...props} />;
+        gameElement = <MemoryMatchingGame {...props} />;
+        break;
       case 'memory_recall':
-        return <MemoryRecallGame {...props} />;
+        gameElement = <MemoryRecallGame {...props} />;
+        break;
       case 'pattern_recognition':
-        return <PatternGame {...props} />;
+        gameElement = <PatternGame {...props} />;
+        break;
       case 'attention':
-        return <AttentionGame {...props} />;
+        gameElement = <AttentionGame {...props} />;
+        break;
       default:
-        return <MemoryMatchingGame {...props} />;
+        gameElement = <MemoryMatchingGame {...props} />;
+        break;
     }
+
+    return (
+      <View style={{ flex: 1 }} {...panHandlers}>
+        {gameElement}
+      </View>
+    );
   }
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
+      <View style={[styles.container, styles.center]} {...panHandlers}>
         <ActivityIndicator size="large" color={colors.teal} />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{t('games.title') || 'Play a Game'}</Text>
-      <Text style={styles.subtitle}>{t('games.subtitle') || 'Choose a game to exercise your mind'}</Text>
+    <View style={{ flex: 1 }} {...panHandlers}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={goBackSafe}
+          accessibilityRole="button"
+          accessibilityLabel="Back to Home"
+          activeOpacity={0.75}
+        >
+          <ArrowLeft size={16} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
 
-      {games.map((game) => (
-        <GameCard
-          key={game.id}
-          name={game.name}
-          icon=""
-          description={game.description || ''}
-          onPress={() => startGame(game)}
-        />
-      ))}
-    </ScrollView>
+        <Text style={styles.title}>{t('games.title') || 'Play a Game'}</Text>
+        <Text style={styles.subtitle}>{t('games.subtitle') || 'Choose a game to exercise your mind'}</Text>
+
+        {games.map((game) => (
+          <GameCard
+            key={game.id}
+            name={game.name}
+            icon=""
+            description={game.description || ''}
+            onPress={() => startGame(game)}
+          />
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -148,6 +178,25 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingTop: 56,
     paddingBottom: 110,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: borderRadius.pill,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 44,
+  },
+  backText: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textDark,
   },
   title: { ...typography.elderly.h1, fontSize: 30, fontWeight: '800', color: colors.textDark, marginBottom: 4, letterSpacing: -0.6 },
   subtitle: { ...typography.elderly.caption, fontSize: 16, color: colors.muted, marginBottom: spacing.xl },

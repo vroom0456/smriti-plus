@@ -35,6 +35,7 @@ import { languageRegistry } from '../../services/languageRegistry';
 import { offlineStore } from '../../services/offlineStore';
 import { useAuthStore } from '../../state/authStore';
 import { useTranslation, getLanguage } from '../../i18n';
+import { useBackNavigation } from '../../navigation/useBackNavigation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -162,6 +163,18 @@ export default function VoiceAssistantScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const { t } = useTranslation();
+
+  const onCustomBack = () => {
+    try {
+      voiceIntelligence.stopSpeech();
+    } catch {}
+    return false;
+  };
+
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, {
+    onCustomBack,
+    fallbackTab: 'Home',
+  });
 
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE');
   const [transcript, setTranscript] = useState('');
@@ -466,12 +479,12 @@ export default function VoiceAssistantScreen() {
     : colors.teal;
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} {...panHandlers}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => navigation.goBack()}
+          onPress={goBackSafe}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           activeOpacity={0.75}

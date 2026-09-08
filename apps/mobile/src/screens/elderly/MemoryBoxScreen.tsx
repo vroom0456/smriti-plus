@@ -25,6 +25,7 @@ import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { voiceService } from '../../services/voice';
 import { useAuthStore } from '../../state/authStore';
+import { useBackNavigation } from '../../navigation/useBackNavigation';
 import {
   Sparkles,
   Users,
@@ -173,6 +174,19 @@ export default function MemoryBoxScreen() {
     setActiveMemory(null);
   };
 
+  const onCustomBack = useCallback(() => {
+    if (activeMemory) {
+      handleCloseModal();
+      return true;
+    }
+    return false;
+  }, [activeMemory]);
+
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, {
+    onCustomBack,
+    fallbackTab: 'Home',
+  });
+
   const toggleFavorite = (item: Memory) => {
     setMemories((prev) =>
       prev.map((m) => (m.id === item.id ? { ...m, is_favorite: !m.is_favorite } : m))
@@ -200,12 +214,12 @@ export default function MemoryBoxScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} {...panHandlers}>
       {/* Top Bar */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={goBackSafe}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           activeOpacity={0.75}

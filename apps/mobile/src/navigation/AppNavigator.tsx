@@ -81,7 +81,7 @@ const commonTabOptions = {
 function ElderlyTabs() {
   const { t } = useTranslation();
   return (
-    <Tab.Navigator screenOptions={commonTabOptions}>
+    <Tab.Navigator screenOptions={commonTabOptions} backBehavior="history">
       <Tab.Screen
         name="Home"
         component={ElderHomeScreen}
@@ -130,7 +130,7 @@ function ElderlyTabs() {
 function CaregiverTabs() {
   const { t } = useTranslation();
   return (
-    <Tab.Navigator screenOptions={commonTabOptions}>
+    <Tab.Navigator screenOptions={commonTabOptions} backBehavior="history">
       <Tab.Screen
         name="Dashboard"
         component={CaregiverDashboardScreen}
@@ -179,7 +179,7 @@ function CaregiverTabs() {
 function HealthWorkerTabs() {
   const { t } = useTranslation();
   return (
-    <Tab.Navigator screenOptions={commonTabOptions}>
+    <Tab.Navigator screenOptions={commonTabOptions} backBehavior="history">
       <Tab.Screen
         name="GroupOverview"
         component={GroupOverviewScreen}
@@ -235,7 +235,14 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
+          animation: 'slide_from_right',
+        }}
+      >
         {!hasCompletedOnboarding ? (
           showingConsent ? (
             <Stack.Screen name="Consent">

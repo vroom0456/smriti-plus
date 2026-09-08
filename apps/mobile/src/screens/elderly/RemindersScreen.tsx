@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { v4 as uuidv4 } from 'uuid';
-import { colors, typography, spacing } from '../../theme/tokens';
+import { colors, typography, spacing, borderRadius, fontFamily } from '../../theme/tokens';
 import { ReminderCard, AlertBanner } from '../../components/UIComponents';
 import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { useTranslation } from '../../i18n';
+import { useBackNavigation } from '../../navigation/useBackNavigation';
 
 interface ReminderData {
   id: string;
@@ -17,12 +19,14 @@ interface ReminderData {
   description?: string;
 }
 
-export default function RemindersScreen() {
+export default function RemindersScreen({ navigation }: any) {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [reminders, setReminders] = useState<ReminderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, { fallbackTab: 'Home' });
 
   const fetchReminders = useCallback(async () => {
     if (!user) return;
@@ -105,55 +109,68 @@ export default function RemindersScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
+      <View style={[styles.container, styles.center]} {...panHandlers}>
         <ActivityIndicator size="large" color={colors.teal} />
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchReminders(); }} />}
-    >
-      <Text style={styles.title}>{t('reminders.title') || "Reminders"}</Text>
+    <View style={{ flex: 1 }} {...panHandlers}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchReminders(); }} />}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={goBackSafe}
+          accessibilityRole="button"
+          accessibilityLabel="Back to Home"
+          activeOpacity={0.75}
+        >
+          <ArrowLeft size={16} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
 
-      {reminders.length === 0 && (
-        <AlertBanner type="info" message={t('reminders.noReminders') || "No active reminders. Enjoy your day!"} />
-      )}
+        <Text style={styles.title}>{t('reminders.title') || "Reminders"}</Text>
 
-      {pending.length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>{t('reminders.upcoming') || "Upcoming"}</Text>
-          {pending.map((r) => (
-            <ReminderCard
-              key={r.id}
-              title={r.title}
-              category={r.category}
-              scheduledTime={r.scheduled_time}
-              status="pending"
-              onDone={() => handleDone(r.id)}
-            />
-          ))}
-        </>
-      )}
+        {reminders.length === 0 && (
+          <AlertBanner type="info" message={t('reminders.noReminders') || "No active reminders. Enjoy your day!"} />
+        )}
 
-      {completed.length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>{t('reminders.completedMissed') || "Completed / Missed"}</Text>
-          {completed.map((r) => (
-            <ReminderCard
-              key={r.id}
-              title={r.title}
-              category={r.category}
-              scheduledTime={r.scheduled_time}
-              status={r.today_status as any}
-            />
-          ))}
-        </>
-      )}
-    </ScrollView>
+        {pending.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>{t('reminders.upcoming') || "Upcoming"}</Text>
+            {pending.map((r) => (
+              <ReminderCard
+                key={r.id}
+                title={r.title}
+                category={r.category}
+                scheduledTime={r.scheduled_time}
+                status="pending"
+                onDone={() => handleDone(r.id)}
+              />
+            ))}
+          </>
+        )}
+
+        {completed.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>{t('reminders.completedMissed') || "Completed / Missed"}</Text>
+            {completed.map((r) => (
+              <ReminderCard
+                key={r.id}
+                title={r.title}
+                category={r.category}
+                scheduledTime={r.scheduled_time}
+                status={r.today_status as any}
+              />
+            ))}
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -167,6 +184,25 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingTop: 56,
     paddingBottom: 110,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: borderRadius.pill,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 44,
+  },
+  backText: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textDark,
   },
   title: { ...typography.elderly.h1, fontSize: 30, fontWeight: '800', color: colors.textDark, marginBottom: spacing.lg, letterSpacing: -0.6 },
   sectionTitle: { ...typography.elderly.h3, fontSize: 20, fontWeight: '700', color: colors.textDark, marginBottom: spacing.md, marginTop: spacing.md, letterSpacing: -0.3 },
