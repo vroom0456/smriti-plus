@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
 import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
@@ -14,6 +14,7 @@ import { useAuthStore } from '../../../state/authStore';
 import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
 import { ArrowLeft } from 'lucide-react-native';
+import { useBackNavigation } from '../../../navigation/useBackNavigation';
 
 const ODD_ONE_OUT_SETS = [
   { majority: '🍎', odd: '🍊', label: 'Find the orange' },
@@ -40,6 +41,9 @@ interface AttentionGameProps {
 
 export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComplete, onBack }: AttentionGameProps) {
   const user = useAuthStore((s: any) => s.user);
+  const { panHandlers } = useBackNavigation(null, {
+    onCustomBack: onBack,
+  });
   const gridSize = GRID_SIZE[difficulty] || 6;
   const totalRounds = 3 + difficulty;
 
@@ -177,9 +181,22 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
       : 'Good effort! Concentration improves with each daily round.';
 
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.completeTitle}>Game Complete</Text>
-        <ProgressRing progress={sessionResult.accuracy} size={120}
+      <View style={[styles.container, styles.center]} {...panHandlers}>
+        <View style={styles.topBarResult}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={styles.backButtonTop}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="Back to games"
+          >
+            <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+            <Text style={styles.backButtonTopText}>Exit Game</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.completeTitle}>Game Complete!</Text>
+        <ProgressRing progress={sessionResult.accuracy} size={124}
           color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent} label="Accuracy" />
         <Text style={styles.enc}>{enc}</Text>
         <Text style={styles.stat}>{`Found: ${sessionResult.correct}/${sessionResult.total}`}</Text>
@@ -199,116 +216,181 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
   const cols = gridSize <= 4 ? 2 : gridSize <= 9 ? 3 : 4;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <TouchableOpacity
-        onPress={onBack}
-        style={styles.backButtonTop}
-        activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel="Back to games"
-      >
-        <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-        <Text style={styles.backButtonTopText}>Back</Text>
-      </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <TouchableOpacity
+          onPress={onBack}
+          style={styles.backButtonTop}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel="Back to games"
+        >
+          <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+          <Text style={styles.backButtonTopText}>Exit Game</Text>
+        </TouchableOpacity>
 
-      <Text style={styles.title}>Spot the Odd One Out</Text>
-      <Text style={styles.subtitle}>Round {round + 1}/{totalRounds} • ⏱ {timeLeft}s • Level {difficulty}</Text>
-      <Text style={styles.hint}>{currentSet.label}</Text>
+        <Text style={styles.title}>Spot the Odd One Out</Text>
+        <Text style={styles.subtitle}>Round {round + 1}/{totalRounds} • ⏱ {timeLeft}s • Level {difficulty}</Text>
+        <Text style={styles.hint}>{currentSet.label}</Text>
 
-      {feedback && (
-        <Text style={[styles.feedback, { color: feedback.startsWith('✓') ? colors.success : colors.error }]}>
-          {feedback}
-        </Text>
-      )}
+        {feedback && (
+          <Text style={[styles.feedback, { color: feedback.startsWith('✓') ? colors.success : colors.error }]}>
+            {feedback}
+          </Text>
+        )}
 
-      <View style={[styles.grid, { flexDirection: 'row', flexWrap: 'wrap' }]}>
-        {grid.map((cell, i) => (
-          <TouchableOpacity
-            key={i}
-            onPress={() => handleTap(i)}
-            activeOpacity={0.7}
-            style={[styles.cell, { width: `${Math.floor(90 / cols)}%` }]}
-          >
-            <Text style={styles.cellEmoji}>{cell.emoji}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={[styles.grid, { flexDirection: 'row', flexWrap: 'wrap' }]}>
+          {grid.map((cell, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={() => handleTap(i)}
+              activeOpacity={0.7}
+              style={[styles.cell, { width: `${Math.floor(90 / cols)}%` }]}
+            >
+              <Text style={styles.cellEmoji}>{cell.emoji}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <Text style={styles.scoreText}>Score: {score}/{round}</Text>
-    </ScrollView>
+        <Text style={styles.scoreText}>Score: {score}/{round}</Text>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingTop: 56 },
-  center: { alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  scrollContent: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'ios' ? 56 : 38,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  topBarResult: {
+    width: '100%',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: 100,
+  },
   backButtonTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.pill,
     alignSelf: 'flex-start',
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 44,
+    minHeight: 46,
+    ...shadows.subtle,
   },
   backButtonTopText: {
     fontFamily: fontFamily.display,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.textDark,
   },
   title: {
     ...typography.elderly.h2,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.textDark,
     letterSpacing: -0.4,
   },
   subtitle: {
     ...typography.elderly.caption,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.muted,
     marginTop: 4,
     marginBottom: spacing.sm,
   },
   hint: {
     ...typography.elderly.body,
-    fontSize: 16,
+    fontSize: 18,
     color: colors.teal,
     marginBottom: spacing.lg,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  feedback: { ...typography.elderly.bodyBold, textAlign: 'center', marginBottom: spacing.md },
-  grid: { justifyContent: 'center', marginBottom: spacing.lg, gap: spacing.sm },
+  feedback: {
+    ...typography.elderly.bodyBold,
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  grid: {
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
   cell: {
-    aspectRatio: 1, borderRadius: borderRadius.lg, backgroundColor: colors.white,
-    alignItems: 'center', justifyContent: 'center', margin: spacing.xs, minHeight: 60, ...shadows.card,
+    aspectRatio: 1,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: spacing.xs,
+    minHeight: 76,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    ...shadows.card,
   },
-  cellEmoji: { fontSize: 32 },
-  scoreText: { ...typography.elderly.caption, color: colors.muted, textAlign: 'center' },
-  completeTitle: { ...typography.elderly.h1, color: colors.navy, marginBottom: spacing.xl },
-  enc: { ...typography.elderly.body, color: colors.teal, textAlign: 'center', marginVertical: spacing.lg },
-  stat: { ...typography.elderly.caption, color: colors.muted },
-  backBtn: { marginTop: spacing.xl, width: '80%' },
+  cellEmoji: {
+    fontSize: 38,
+  },
+  scoreText: {
+    ...typography.elderly.caption,
+    fontSize: 16,
+    color: colors.muted,
+    textAlign: 'center',
+  },
+  completeTitle: {
+    ...typography.elderly.h1,
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.navy,
+    marginBottom: spacing.lg,
+  },
+  enc: {
+    ...typography.elderly.body,
+    fontSize: 18,
+    color: colors.teal,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  stat: {
+    ...typography.elderly.caption,
+    fontSize: 16,
+    color: colors.textDark,
+  },
+  backBtn: {
+    marginTop: spacing.lg,
+    width: '100%',
+    minHeight: 56,
+  },
   recommendationCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: 18,
     padding: spacing.md,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
-    width: '90%',
-    borderWidth: 1.5,
-    borderColor: colors.borderLight,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.border,
     ...shadows.card,
   },
   recommendationLabel: {
-    ...typography.elderly.caption,
+    fontFamily: fontFamily.display,
+    fontSize: 13,
     color: colors.teal,
     fontWeight: '700',
     marginBottom: 4,
@@ -316,8 +398,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   recommendationText: {
-    ...typography.elderly.body,
-    color: colors.navy,
-    lineHeight: 24,
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    color: colors.textDark,
+    lineHeight: 22,
   },
 });

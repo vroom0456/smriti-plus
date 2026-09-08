@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
 import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
@@ -14,6 +14,7 @@ import { useAuthStore } from '../../../state/authStore';
 import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
 import { ArrowLeft } from 'lucide-react-native';
+import { useBackNavigation } from '../../../navigation/useBackNavigation';
 
 const SHAPES = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⬛', '🔶', '💎', '🔺'];
 
@@ -50,6 +51,9 @@ function generatePattern(difficulty: number): { sequence: string[]; answer: stri
 
 export default function PatternGame({ gameId, difficulty, targetTimeMs, onComplete, onBack }: PatternGameProps) {
   const user = useAuthStore((s: any) => s.user);
+  const { panHandlers } = useBackNavigation(null, {
+    onCustomBack: onBack,
+  });
   const [round, setRound] = useState(0);
   const [pattern, setPattern] = useState(generatePattern(difficulty));
   const [score, setScore] = useState(0);
@@ -160,9 +164,22 @@ export default function PatternGame({ gameId, difficulty, targetTimeMs, onComple
       : 'Good try! Pattern practice builds cognitive agility.';
 
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.completeTitle}>Game Complete</Text>
-        <ProgressRing progress={sessionResult.accuracy} size={120}
+      <View style={[styles.container, styles.center]} {...panHandlers}>
+        <View style={styles.topBarResult}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={styles.backButtonTop}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="Back to games"
+          >
+            <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+            <Text style={styles.backButtonTopText}>Exit Game</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.completeTitle}>Game Complete!</Text>
+        <ProgressRing progress={sessionResult.accuracy} size={124}
           color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent} label="Score" />
         <Text style={styles.encouragement}>{enc}</Text>
         <Text style={styles.stat}>{`Correct: ${sessionResult.correct}/${sessionResult.total}`}</Text>
@@ -180,81 +197,100 @@ export default function PatternGame({ gameId, difficulty, targetTimeMs, onComple
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <TouchableOpacity
-        onPress={onBack}
-        style={styles.backButtonTop}
-        activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel="Back to games"
-      >
-        <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-        <Text style={styles.backButtonTopText}>Back</Text>
-      </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <TouchableOpacity
+          onPress={onBack}
+          style={styles.backButtonTop}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel="Back to games"
+        >
+          <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+          <Text style={styles.backButtonTopText}>Exit Game</Text>
+        </TouchableOpacity>
 
-      <Text style={styles.title}>Complete the Pattern</Text>
-      <Text style={styles.subtitle}>Round {total + 1} of {totalRounds} • Level {difficulty}</Text>
+        <Text style={styles.title}>Complete the Pattern</Text>
+        <Text style={styles.subtitle}>Round {total + 1} of {totalRounds} • Level {difficulty}</Text>
 
-      {/* Pattern sequence */}
-      <View style={styles.sequenceRow}>
-        {pattern.sequence.map((shape, i) => (
-          <View key={i} style={styles.sequenceItem}>
-            <Text style={styles.sequenceEmoji}>{shape}</Text>
+        {/* Pattern sequence */}
+        <View style={styles.sequenceRow}>
+          {pattern.sequence.map((shape, i) => (
+            <View key={i} style={styles.sequenceItem}>
+              <Text style={styles.sequenceEmoji}>{shape}</Text>
+            </View>
+          ))}
+          <View style={[styles.sequenceItem, styles.missingItem]}>
+            <Text style={styles.questionMark}>?</Text>
           </View>
-        ))}
-        <View style={[styles.sequenceItem, styles.missingItem]}>
-          <Text style={styles.questionMark}>?</Text>
         </View>
-      </View>
 
-      {feedback && (
-        <Text style={[styles.feedback, { color: feedback.startsWith('✓') ? colors.success : colors.error }]}>
-          {feedback}
-        </Text>
-      )}
+        {feedback && (
+          <Text style={[styles.feedback, { color: feedback.startsWith('✓') ? colors.success : colors.error }]}>
+            {feedback}
+          </Text>
+        )}
 
-      <Text style={styles.chooseLabel}>What comes next?</Text>
+        <Text style={styles.chooseLabel}>What comes next?</Text>
 
-      <View style={styles.choicesRow}>
-        {pattern.choices.map((choice, i) => (
-          <TouchableOpacity key={i} onPress={() => handleChoice(choice)} style={styles.choiceBtn} activeOpacity={0.7}>
-            <Text style={styles.choiceEmoji}>{choice}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.choicesRow}>
+          {pattern.choices.map((choice, i) => (
+            <TouchableOpacity key={i} onPress={() => handleChoice(choice)} style={styles.choiceBtn} activeOpacity={0.7}>
+              <Text style={styles.choiceEmoji}>{choice}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <Text style={styles.scoreText}>Score: {score}/{total}</Text>
-    </ScrollView>
+        <Text style={styles.scoreText}>Score: {score}/{total}</Text>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingTop: 56 },
-  center: { alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  scrollContent: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'ios' ? 56 : 38,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  topBarResult: {
+    width: '100%',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: 100,
+  },
   backButtonTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.pill,
     alignSelf: 'flex-start',
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 44,
+    minHeight: 46,
+    ...shadows.subtle,
   },
   backButtonTopText: {
     fontFamily: fontFamily.display,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.textDark,
   },
   title: {
     ...typography.elderly.h2,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.textDark,
     marginBottom: spacing.xs,
@@ -262,44 +298,121 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.elderly.caption,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.muted,
     marginBottom: spacing.xl,
   },
-  sequenceRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xl },
+  sequenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
   sequenceItem: {
-    width: 56, height: 56, borderRadius: borderRadius.md, backgroundColor: colors.white,
-    alignItems: 'center', justifyContent: 'center', ...shadows.card,
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    ...shadows.card,
   },
-  missingItem: { borderWidth: 2, borderColor: colors.teal, borderStyle: 'dashed', backgroundColor: colors.tealBg },
-  sequenceEmoji: { fontSize: 28 },
-  questionMark: { fontSize: 28, color: colors.teal, fontWeight: '700' },
-  feedback: { ...typography.elderly.bodyBold, textAlign: 'center', marginBottom: spacing.md },
-  chooseLabel: { ...typography.elderly.body, color: colors.textDark, textAlign: 'center', marginBottom: spacing.lg },
-  choicesRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, marginBottom: spacing.xl },
+  missingItem: {
+    borderWidth: 2.5,
+    borderColor: colors.teal,
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(0, 113, 227, 0.08)',
+  },
+  sequenceEmoji: {
+    fontSize: 34,
+  },
+  questionMark: {
+    fontSize: 32,
+    color: colors.teal,
+    fontWeight: '800',
+  },
+  feedback: {
+    ...typography.elderly.bodyBold,
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  chooseLabel: {
+    ...typography.elderly.body,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textDark,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  choicesRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    marginBottom: spacing.xl,
+  },
   choiceBtn: {
-    width: 72, height: 72, borderRadius: borderRadius.lg, backgroundColor: colors.white,
-    alignItems: 'center', justifyContent: 'center', ...shadows.elevated, minWidth: 56, minHeight: 56,
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    ...shadows.elevated,
   },
-  choiceEmoji: { fontSize: 36 },
-  scoreText: { ...typography.elderly.caption, color: colors.muted, textAlign: 'center' },
-  completeTitle: { ...typography.elderly.h1, color: colors.navy, marginBottom: spacing.xl },
-  encouragement: { ...typography.elderly.body, color: colors.teal, textAlign: 'center', marginVertical: spacing.lg },
-  stat: { ...typography.elderly.caption, color: colors.muted },
-  backBtn: { marginTop: spacing.xl, width: '80%' },
+  choiceEmoji: {
+    fontSize: 40,
+  },
+  scoreText: {
+    ...typography.elderly.caption,
+    fontSize: 16,
+    color: colors.muted,
+    textAlign: 'center',
+  },
+  completeTitle: {
+    ...typography.elderly.h1,
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.navy,
+    marginBottom: spacing.lg,
+  },
+  encouragement: {
+    ...typography.elderly.body,
+    fontSize: 18,
+    color: colors.teal,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  stat: {
+    ...typography.elderly.caption,
+    fontSize: 16,
+    color: colors.textDark,
+  },
+  backBtn: {
+    marginTop: spacing.lg,
+    width: '100%',
+    minHeight: 56,
+  },
   recommendationCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: 18,
     padding: spacing.md,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
-    width: '90%',
-    borderWidth: 1.5,
-    borderColor: colors.borderLight,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.border,
     ...shadows.card,
   },
   recommendationLabel: {
-    ...typography.elderly.caption,
+    fontFamily: fontFamily.display,
+    fontSize: 13,
     color: colors.teal,
     fontWeight: '700',
     marginBottom: 4,
@@ -307,8 +420,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   recommendationText: {
-    ...typography.elderly.body,
-    color: colors.navy,
-    lineHeight: 24,
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    color: colors.textDark,
+    lineHeight: 22,
   },
 });

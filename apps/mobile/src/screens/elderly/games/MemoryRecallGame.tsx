@@ -12,6 +12,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
@@ -20,6 +21,7 @@ import { useAuthStore } from '../../../state/authStore';
 import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
 import { ArrowLeft } from 'lucide-react-native';
+import { useBackNavigation } from '../../../navigation/useBackNavigation';
 
 const ALL_ITEMS = [
   { id: '1', emoji: '🍎', label: 'Apple' },
@@ -57,6 +59,9 @@ export default function MemoryRecallGame({
   gameId, difficulty, targetTimeMs, onComplete, onBack,
 }: MemoryRecallGameProps) {
   const user = useAuthStore((s: any) => s.user);
+  const { panHandlers } = useBackNavigation(null, {
+    onCustomBack: onBack,
+  });
   const itemCount = ITEMS_PER_LEVEL[difficulty] || 4;
   const [phase, setPhase] = useState<Phase>('memorize');
   const [targetItems, setTargetItems] = useState<typeof ALL_ITEMS>([]);
@@ -185,7 +190,19 @@ export default function MemoryRecallGame({
   // MEMORIZE phase
   if (phase === 'memorize') {
     return (
-      <View style={[styles.container, styles.center]}>
+      <View style={[styles.container, styles.center]} {...panHandlers}>
+        <View style={styles.topBarMemorize}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={styles.backButtonTop}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="Exit game and go back"
+          >
+            <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+            <Text style={styles.backButtonTopText}>Exit Game</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.phaseTitle}>Remember these items!</Text>
         <Text style={styles.timer}>{timer}s</Text>
         <View style={styles.itemGrid}>
@@ -203,11 +220,24 @@ export default function MemoryRecallGame({
   // RESULT phase
   if (phase === 'result' && sessionResult) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.completeTitle}>Game Complete</Text>
+      <View style={[styles.container, styles.center]} {...panHandlers}>
+        <View style={styles.topBarMemorize}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={styles.backButtonTop}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="Back to games"
+          >
+            <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+            <Text style={styles.backButtonTopText}>Exit Game</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.completeTitle}>Game Complete!</Text>
         <ProgressRing
           progress={sessionResult.accuracy}
-          size={120}
+          size={124}
           color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent}
           label="Recall"
         />
@@ -230,77 +260,96 @@ export default function MemoryRecallGame({
 
   // RECALL phase
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <TouchableOpacity
-        onPress={onBack}
-        style={styles.backButtonTop}
-        activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel="Back to games"
-      >
-        <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-        <Text style={styles.backButtonTopText}>Back</Text>
-      </TouchableOpacity>
-      <Text style={styles.phaseTitle}>Which items did you see?</Text>
-      <Text style={styles.subtitle}>Tap all the items you remember</Text>
+    <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <TouchableOpacity
+          onPress={onBack}
+          style={styles.backButtonTop}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel="Back to games"
+        >
+          <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+          <Text style={styles.backButtonTopText}>Exit Game</Text>
+        </TouchableOpacity>
+        <Text style={styles.phaseTitle}>Which items did you see?</Text>
+        <Text style={styles.subtitle}>Tap all the items you remember</Text>
 
-      <View style={styles.optionsGrid}>
-        {allOptions.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            onPress={() => toggleSelect(item.id)}
-            activeOpacity={0.7}
-            style={[
-              styles.optionItem,
-              selected.has(item.id) && styles.optionSelected,
-            ]}
-          >
-            <Text style={styles.itemEmoji}>{item.emoji}</Text>
-            <Text style={styles.itemLabel}>{item.label}</Text>
-            {selected.has(item.id) && (
-              <Text style={styles.checkmark}>✓</Text>
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.optionsGrid}>
+          {allOptions.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => toggleSelect(item.id)}
+              activeOpacity={0.7}
+              style={[
+                styles.optionItem,
+                selected.has(item.id) && styles.optionSelected,
+              ]}
+            >
+              <Text style={styles.itemEmoji}>{item.emoji}</Text>
+              <Text style={styles.itemLabel}>{item.label}</Text>
+              {selected.has(item.id) && (
+                <Text style={styles.checkmark}>✓</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <PrimaryButton
-        title={`Submit (${selected.size} selected)`}
-        onPress={handleSubmit}
-        disabled={selected.size === 0}
-        style={styles.submitBtn}
-      />
-    </ScrollView>
+        <PrimaryButton
+          title={`Submit (${selected.size} selected)`}
+          onPress={handleSubmit}
+          disabled={selected.size === 0}
+          style={styles.submitBtn}
+        />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingTop: 56 },
-  center: { alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  scrollContent: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'ios' ? 56 : 38,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  topBarMemorize: {
+    width: '100%',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: 100,
+  },
   backButtonTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.pill,
     alignSelf: 'flex-start',
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 44,
+    minHeight: 46,
+    ...shadows.subtle,
   },
   backButtonTopText: {
     fontFamily: fontFamily.display,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.textDark,
   },
   phaseTitle: {
     ...typography.elderly.h2,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.textDark,
     textAlign: 'center',
@@ -309,32 +358,103 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.elderly.caption,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.muted,
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
-  timer: { fontSize: 48, fontWeight: '700', color: colors.teal, marginBottom: spacing.xl },
-  itemGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.md },
+  timer: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: colors.teal,
+    marginBottom: spacing.xl,
+  },
+  itemGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
   memorizeItem: {
-    backgroundColor: colors.white, borderRadius: borderRadius.lg, padding: spacing.lg,
-    alignItems: 'center', minWidth: 90, ...shadows.card,
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: spacing.md,
+    alignItems: 'center',
+    minWidth: 100,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    ...shadows.card,
   },
-  optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, justifyContent: 'center' },
+  optionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    justifyContent: 'center',
+  },
   optionItem: {
-    backgroundColor: colors.white, borderRadius: borderRadius.lg, padding: spacing.lg,
-    alignItems: 'center', minWidth: 90, minHeight: 90, ...shadows.card, borderWidth: 2, borderColor: 'transparent',
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: spacing.md,
+    alignItems: 'center',
+    minWidth: 96,
+    minHeight: 96,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
     position: 'relative',
+    ...shadows.card,
   },
-  optionSelected: { borderColor: colors.teal, backgroundColor: colors.tealBg },
-  itemEmoji: { fontSize: 36, marginBottom: spacing.xs },
-  itemLabel: { ...typography.elderly.caption, color: colors.textDark },
-  checkmark: { position: 'absolute', top: 4, right: 8, color: colors.teal, fontSize: 20, fontWeight: '700' },
-  submitBtn: { marginTop: spacing.xl },
-  completeTitle: { ...typography.elderly.h1, color: colors.navy, marginBottom: spacing.xl },
-  encouragement: { ...typography.elderly.body, color: colors.teal, textAlign: 'center', marginVertical: spacing.lg },
-  statText: { ...typography.elderly.caption, color: colors.muted },
-  backBtn: { marginTop: spacing.xl, width: '80%' },
+  optionSelected: {
+    borderColor: colors.teal,
+    backgroundColor: 'rgba(0, 113, 227, 0.08)',
+  },
+  itemEmoji: {
+    fontSize: 40,
+    marginBottom: 4,
+  },
+  itemLabel: {
+    ...typography.elderly.caption,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textDark,
+    textAlign: 'center',
+  },
+  checkmark: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    color: colors.teal,
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  submitBtn: {
+    marginTop: spacing.xl,
+    minHeight: 56,
+  },
+  completeTitle: {
+    ...typography.elderly.h1,
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.navy,
+    marginBottom: spacing.lg,
+  },
+  encouragement: {
+    ...typography.elderly.body,
+    fontSize: 18,
+    color: colors.teal,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  statText: {
+    ...typography.elderly.caption,
+    fontSize: 16,
+    color: colors.textDark,
+  },
+  backBtn: {
+    marginTop: spacing.lg,
+    width: '100%',
+    minHeight: 56,
+  },
   recommendationCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,

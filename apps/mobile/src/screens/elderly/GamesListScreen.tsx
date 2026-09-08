@@ -123,7 +123,7 @@ export default function GamesListScreen({ navigation }: any) {
     }
 
     return (
-      <View style={{ flex: 1 }} {...panHandlers}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         {gameElement}
       </View>
     );

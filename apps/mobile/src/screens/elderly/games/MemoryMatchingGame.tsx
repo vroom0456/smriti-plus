@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   Animated,
   Alert,
+  Platform,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
@@ -22,6 +23,7 @@ import { useAuthStore } from '../../../state/authStore';
 import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
 import { ArrowLeft } from 'lucide-react-native';
+import { useBackNavigation } from '../../../navigation/useBackNavigation';
 
 // NER-themed card items (culturally relevant)
 const CARD_ITEMS = [
@@ -73,6 +75,10 @@ export default function MemoryMatchingGame({
 }: MemoryMatchingGameProps) {
   const user = useAuthStore((s: any) => s.user);
   const numPairs = DIFFICULTY_PAIRS[difficulty] || 4;
+
+  const { panHandlers } = useBackNavigation(null, {
+    onCustomBack: onBack,
+  });
 
   const [cards, setCards] = useState<Card[]>([]);
   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
@@ -230,11 +236,24 @@ export default function MemoryMatchingGame({
 
   if (isComplete && sessionResult) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.completeTitle}>Game Complete</Text>
+      <View style={[styles.container, styles.center]} {...panHandlers}>
+        <View style={styles.topBarResult}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={styles.backButtonTop}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="Back to games"
+          >
+            <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+            <Text style={styles.backButtonTopText}>Exit Game</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.completeTitle}>Game Complete!</Text>
         <ProgressRing
           progress={sessionResult.accuracy}
-          size={120}
+          size={124}
           color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent}
           label="Accuracy"
         />
@@ -263,7 +282,7 @@ export default function MemoryMatchingGame({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} {...panHandlers}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -274,11 +293,11 @@ export default function MemoryMatchingGame({
           accessibilityLabel="Back to games"
         >
           <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-          <Text style={styles.backButtonTopText}>Back</Text>
+          <Text style={styles.backButtonTopText}>Exit Game</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Memory Matching</Text>
         <Text style={styles.subtitle}>
-          {`Level ${difficulty} • ${matchedPairs}/${numPairs} pairs`}
+          {`Level ${difficulty} • ${matchedPairs}/${numPairs} pairs found`}
         </Text>
       </View>
 
@@ -318,11 +337,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     padding: spacing.lg,
-    paddingTop: 56,
+    paddingTop: Platform.OS === 'ios' ? 56 : 38,
   },
   center: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  topBarResult: {
+    width: '100%',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
   header: {
     marginBottom: spacing.lg,
@@ -330,33 +354,34 @@ const styles = StyleSheet.create({
   backButtonTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.pill,
     alignSelf: 'flex-start',
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 44,
+    minHeight: 46,
+    ...shadows.subtle,
   },
   backButtonTopText: {
     fontFamily: fontFamily.display,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.textDark,
   },
   title: {
     ...typography.elderly.h2,
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.textDark,
     letterSpacing: -0.5,
   },
   subtitle: {
     ...typography.elderly.caption,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.muted,
     marginTop: 4,
   },
@@ -369,86 +394,96 @@ const styles = StyleSheet.create({
   },
   card: {
     aspectRatio: 1,
-    borderRadius: borderRadius.lg,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     margin: spacing.xs,
-    minHeight: 70,
+    minHeight: 74,
     ...shadows.card,
   },
   cardFaceDown: {
-    backgroundColor: colors.navy,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
   },
   cardFlipped: {
     backgroundColor: colors.white,
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: colors.teal,
   },
   cardMatched: {
-    backgroundColor: colors.successBg,
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
+    borderWidth: 2.5,
     borderColor: colors.success,
-    opacity: 0.8,
   },
   cardContent: {
     alignItems: 'center',
   },
   cardEmoji: {
-    fontSize: 32,
+    fontSize: 34,
   },
   cardLabel: {
     ...typography.elderly.caption,
+    fontSize: 13,
+    fontWeight: '700',
     color: colors.textDark,
-    marginTop: 4,
+    marginTop: 3,
     textAlign: 'center',
   },
   cardBack: {
-    fontSize: 28,
-    color: colors.tealLight,
-    fontWeight: '700',
+    fontSize: 30,
+    color: colors.teal,
+    fontWeight: '800',
   },
   completeTitle: {
     ...typography.elderly.h1,
+    fontSize: 32,
+    fontWeight: '800',
     color: colors.navy,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   encouragement: {
     ...typography.elderly.body,
+    fontSize: 18,
     color: colors.teal,
     textAlign: 'center',
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
     marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
   },
   statText: {
     ...typography.elderly.caption,
-    color: colors.muted,
+    fontSize: 16,
+    color: colors.textDark,
     marginBottom: spacing.xs,
-  },
-  backButton: {
-    marginTop: spacing.xl,
-    width: '80%',
   },
   recommendationCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    borderRadius: 18,
     padding: spacing.md,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-    width: '90%',
-    borderWidth: 1.5,
-    borderColor: colors.borderLight,
-    ...shadows.card,
+    marginVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    width: '100%',
   },
   recommendationLabel: {
-    ...typography.elderly.caption,
-    color: colors.teal,
+    fontFamily: fontFamily.display,
+    fontSize: 13,
     fontWeight: '700',
-    marginBottom: 4,
+    color: colors.teal,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 4,
   },
   recommendationText: {
-    ...typography.elderly.body,
-    color: colors.navy,
-    lineHeight: 24,
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    color: colors.textDark,
+    lineHeight: 22,
+  },
+  backButton: {
+    marginTop: spacing.lg,
+    width: '100%',
+    minHeight: 56,
   },
 });

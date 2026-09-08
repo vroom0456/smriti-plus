@@ -45,15 +45,18 @@ export function useBackNavigation(navigation: any, options?: UseBackNavigationOp
     return true;
   }, [navigation, onCustomBack, fallbackScreen, fallbackTab]);
 
+  const goBackSafeRef = useRef(goBackSafe);
+  goBackSafeRef.current = goBackSafe;
+
   useEffect(() => {
     if (!enabled) return;
     const onHardwareBack = () => {
-      goBackSafe();
+      goBackSafeRef.current();
       return true;
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
     return () => sub.remove();
-  }, [goBackSafe, enabled]);
+  }, [enabled]);
 
   const isTwoFingerSwipe = useRef(false);
 
@@ -101,7 +104,7 @@ export function useBackNavigation(navigation: any, options?: UseBackNavigationOp
           Math.abs(gestureState.vx) > 0.3;
 
         if (wasTwoFingers && swipedLeftOrHorizontal) {
-          goBackSafe();
+          goBackSafeRef.current();
         }
       },
       onPanResponderTerminate: () => {
