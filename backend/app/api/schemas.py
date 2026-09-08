@@ -20,6 +20,7 @@ class LoginRequest(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = None  # PIN for elderly, password for demo
     otp: Optional[str] = None       # OTP for caregiver/health_worker
+    link_code: Optional[str] = None # Direct Flo-style access code for caregiver/health worker
 
 class SignupRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
@@ -28,6 +29,7 @@ class SignupRequest(BaseModel):
     phone: Optional[str] = None
     password: str = Field(..., min_length=4)
     language: str = Field(default="en")
+    patient_link_code: Optional[str] = None  # Optional patient code at sign-up
 
 class LoginResponse(BaseModel):
     access_token: str

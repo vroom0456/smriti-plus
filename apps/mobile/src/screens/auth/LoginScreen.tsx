@@ -35,6 +35,8 @@ import {
   ChevronDown,
   Check,
   X,
+  KeyRound,
+  ShieldCheck,
 } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme/tokens';
 import { PrimaryButton } from '../../components/UIComponents';
@@ -53,13 +55,14 @@ const ALLOWED_LANGUAGES = [
 
 export default function LoginScreen() {
   const [authAction, setAuthAction] = useState<'signin' | 'signup'>('signin');
-  const [loginMode, setLoginMode] = useState<'email' | 'phone'>('email');
+  const [loginMode, setLoginMode] = useState<'email' | 'phone' | 'code'>('email');
 
   // Sign In state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [accessCode, setAccessCode] = useState('');
 
   // Sign Up state
   const [signupName, setSignupName] = useState('');
@@ -67,13 +70,20 @@ export default function LoginScreen() {
   const [signupIdentifier, setSignupIdentifier] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupLanguage, setSignupLanguage] = useState<string>('en');
+  const [signupPatientCode, setSignupPatientCode] = useState('');
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
-  const { login, loginWithOtp, signup, isLoading, error, clearError } = useAuthStore();
+  const { login, loginWithOtp, loginWithCode, signup, isLoading, error, clearError } = useAuthStore();
 
   const handleSignIn = async () => {
     try {
-      if (loginMode === 'email') {
+      if (loginMode === 'code') {
+        if (!accessCode.trim()) {
+          Alert.alert('Missing Code', 'Please enter the patient’s pairing code (e.g. SMR-842).');
+          return;
+        }
+        await loginWithCode(accessCode.trim());
+      } else if (loginMode === 'email') {
         if (!email.trim() || !password.trim()) {
           Alert.alert('Missing Fields', 'Please enter your email and password / PIN.');
           return;
@@ -87,7 +97,7 @@ export default function LoginScreen() {
         await loginWithOtp(phone.trim(), otp.trim());
       }
     } catch (err: any) {
-      Alert.alert('Login Failed', err.message || 'Please check your credentials.');
+      Alert.alert('Login Failed', err.message || 'Please check your credentials or access code.');
     }
   };
 
@@ -106,6 +116,7 @@ export default function LoginScreen() {
         phone: !isEmail ? signupIdentifier.trim() : undefined,
         password: signupPassword.trim(),
         language: signupLanguage,
+        patient_link_code: signupPatientCode.trim() ? signupPatientCode.trim() : undefined,
       });
     } catch (err: any) {
       Alert.alert('Sign Up Failed', err.message || 'Could not register account.');
@@ -201,7 +212,7 @@ export default function LoginScreen() {
               Access your daily routine and cognitive exercises.
             </Text>
 
-            {/* iOS Sub-Segmented Control (Email / Phone) */}
+            {/* iOS Sub-Segmented Control (Email / Phone / Patient Code) */}
             <View style={styles.subSegmentedControl}>
               <TouchableOpacity
                 style={[
@@ -241,9 +252,51 @@ export default function LoginScreen() {
                   Mobile OTP
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.subSegmentTab,
+                  loginMode === 'code' && styles.subSegmentTabActive,
+                ]}
+                onPress={() => {
+                  setLoginMode('code');
+                  clearError();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.subSegmentText,
+                    loginMode === 'code' && styles.subSegmentTextActive,
+                  ]}
+                >
+                  Patient Code
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {loginMode === 'email' ? (
+            {loginMode === 'code' ? (
+              <View style={styles.codeLoginBox}>
+                <View style={styles.codeLoginHeaderRow}>
+                  <KeyRound size={18} color={colors.teal} />
+                  <Text style={styles.codeLoginTitle}>Flo-Style Patient Access</Text>
+                </View>
+                <Text style={styles.codeLoginSub}>
+                  Caregivers & Health Experts: Enter the patient’s special code (e.g. SMR-842) to connect and sign in immediately.
+                </Text>
+                <Text style={styles.label}>Patient Pairing Code</Text>
+                <TextInput
+                  style={[styles.input, styles.codeInput]}
+                  value={accessCode}
+                  onChangeText={(t) => {
+                    setAccessCode(t.toUpperCase());
+                    clearError();
+                  }}
+                  placeholder="e.g. SMR-842"
+                  placeholderTextColor={colors.mutedLight}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                />
+              </View>
+            ) : loginMode === 'email' ? (
               <>
                 <Text style={styles.label}>Email Address</Text>
                 <TextInput
@@ -295,7 +348,7 @@ export default function LoginScreen() {
             {error && <Text style={styles.errorText}>{error}</Text>}
 
             <PrimaryButton
-              title="Sign In"
+              title={loginMode === 'code' ? 'Connect via Patient Code' : 'Sign In'}
               onPress={handleSignIn}
               loading={isLoading}
               style={styles.actionButton}
@@ -485,6 +538,28 @@ export default function LoginScreen() {
               secureTextEntry
               keyboardType={signupRole === 'elderly' ? 'number-pad' : 'default'}
             />
+
+            {/* Optional Patient Pairing Code for Caregiver / Health Worker */}
+            {signupRole !== 'elderly' && (
+              <View style={styles.signupCodeCard}>
+                <View style={styles.signupCodeHeaderRow}>
+                  <ShieldCheck size={16} color={colors.teal} />
+                  <Text style={styles.signupCodeTitle}>Connect Patient (Optional)</Text>
+                </View>
+                <Text style={styles.signupCodeSub}>
+                  Have the patient's pairing code (e.g. SMR-842)? Enter it here to link automatically upon registration.
+                </Text>
+                <TextInput
+                  style={[styles.input, styles.codeInput, { marginTop: 4 }]}
+                  value={signupPatientCode}
+                  onChangeText={(t) => setSignupPatientCode(t.toUpperCase())}
+                  placeholder="e.g. SMR-842"
+                  placeholderTextColor={colors.mutedLight}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
 
             {/* Preferred Language Trigger (Apple HIG dropdown card) */}
             <Text style={styles.label}>Preferred Language</Text>
@@ -1041,5 +1116,67 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     maxWidth: 360,
     alignSelf: 'center',
+  },
+
+  /* Code-based login & signup styles */
+  codeLoginBox: {
+    backgroundColor: '#F0FDFA',
+    borderRadius: 16,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+    marginBottom: spacing.xs,
+  },
+  codeLoginHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  codeLoginTitle: {
+    fontFamily: typography.standard.bodyBold.fontFamily,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.teal,
+  },
+  codeLoginSub: {
+    fontSize: 13,
+    color: colors.muted,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  codeInput: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 3,
+    textAlign: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#99F6E4',
+    borderWidth: 1.5,
+  },
+  signupCodeCard: {
+    backgroundColor: '#F0FDFA',
+    borderRadius: 14,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+    marginTop: spacing.md,
+  },
+  signupCodeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  signupCodeTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.teal,
+  },
+  signupCodeSub: {
+    fontSize: 12,
+    color: colors.muted,
+    lineHeight: 17,
+    marginBottom: 6,
   },
 });

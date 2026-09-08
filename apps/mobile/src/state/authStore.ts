@@ -27,6 +27,7 @@ interface AuthState {
 
   login: (email: string, password: string) => Promise<void>;
   loginWithOtp: (phone: string, otp: string) => Promise<void>;
+  loginWithCode: (link_code: string) => Promise<void>;
   signup: (data: {
     name: string;
     role: UserRole;
@@ -34,6 +35,7 @@ interface AuthState {
     phone?: string;
     password: string;
     language?: string;
+    patient_link_code?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User) => void;
@@ -74,6 +76,22 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: response.user, isAuthenticated: true, isLoading: false });
     } catch (err: any) {
       set({ error: err.message || 'Login failed', isLoading: false });
+      throw err;
+    }
+  },
+
+  loginWithCode: async (link_code: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post<{
+        access_token: string;
+        user: User;
+      }>('/auth/login', { link_code: link_code.trim().toUpperCase() });
+
+      await api.setToken(response.access_token);
+      set({ user: response.user, isAuthenticated: true, isLoading: false });
+    } catch (err: any) {
+      set({ error: err.message || 'Connecting via code failed', isLoading: false });
       throw err;
     }
   },

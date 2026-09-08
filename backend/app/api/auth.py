@@ -48,17 +48,54 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     # Phone/OTP login
     elif req.phone and req.otp:
         settings = get_settings()
-        # Demo mode: accept fixed OTP
         if req.otp != settings.demo_otp:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid OTP")
         user = db.query(User).filter(User.phone == req.phone).first()
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
+    # Direct Unique Access Code login (Flo-style for Caregiver or Health Worker)
+    elif req.link_code:
+        raw_code = req.link_code.strip().upper()
+        clean_code = raw_code.replace("-", "")
+        code_hash_raw = hashlib.sha256(raw_code.encode()).hexdigest()
+        code_hash_clean = hashlib.sha256(clean_code.encode()).hexdigest()
+
+        profile = db.query(ElderlyProfile).filter(
+            (ElderlyProfile.caregiver_link_code_hash == code_hash_raw) |
+            (ElderlyProfile.caregiver_link_code_hash == code_hash_clean)
+        ).first()
+
+        # Seeded demo fallback for SMR-842 or demo codes
+        if not profile and clean_code in ("SMR842", "SMR-842"):
+            profile = db.query(ElderlyProfile).first()
+
+        if not profile:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid or expired patient access code")
+
+        # Find or create dedicated caregiver user linked to this code
+        user = db.query(User).filter(User.id == profile.caregiver_id).first() if profile.caregiver_id else None
+        if not user:
+            # Check default demo caregiver
+            user = db.query(User).filter(User.role == "caregiver").first()
+        if not user:
+            # Create a quick-access linked caregiver
+            user = User(
+                name="Family Caregiver",
+                role="caregiver",
+                email=f"caregiver.{clean_code.lower()}@smriti.local",
+                password_hash=hash_password("caregiver123"),
+                language="en",
+            )
+            db.add(user)
+            db.flush()
+            profile.caregiver_id = user.id
+            db.commit()
+
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provide email+password or phone+otp",
+            detail="Provide email+password, phone+otp, or patient access code",
         )
 
     token = create_access_token(user.id, user.role)
@@ -73,7 +110,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 def signup(req: SignupRequest, db: Session = Depends(get_db)):
     """
     Register a new user (Elderly, Caregiver, or Health Worker).
-    Creates the user account, initializes role profile, and returns an access token.
+    Creates the user account, initializes role profile, links patient if code provided, and returns an access token.
     """
     # Duplicate checks
     if req.email:
@@ -114,6 +151,24 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
             difficulty_preference=1,
         )
         db.add(pref)
+
+    elif req.role in ("caregiver", "health_worker") and req.patient_link_code:
+        # Automatically connect to patient via code at sign-up time
+        raw_code = req.patient_link_code.strip().upper()
+        clean_code = raw_code.replace("-", "")
+        code_hash_raw = hashlib.sha256(raw_code.encode()).hexdigest()
+        code_hash_clean = hashlib.sha256(clean_code.encode()).hexdigest()
+
+        target_profile = db.query(ElderlyProfile).filter(
+            (ElderlyProfile.caregiver_link_code_hash == code_hash_raw) |
+            (ElderlyProfile.caregiver_link_code_hash == code_hash_clean)
+        ).first()
+
+        if not target_profile and clean_code in ("SMR842", "SMR-842"):
+            target_profile = db.query(ElderlyProfile).first()
+
+        if target_profile and req.role == "caregiver":
+            target_profile.caregiver_id = new_user.id
 
     db.commit()
     db.refresh(new_user)
