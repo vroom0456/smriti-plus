@@ -1,4 +1,4 @@
-# SMRITI+ Backend Dockerfile — FastAPI Production Deployment
+# SMRITI+ Root Dockerfile (Fallback for Railway/Render when Root Directory is /)
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -7,25 +7,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies for psycopg2 and build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python requirements
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend application
-COPY . .
+COPY backend/ .
 
-# Make entrypoint executable
 RUN chmod +x entrypoint.sh
 
-# Expose dynamic port
 EXPOSE 8000
 
-# Start via entrypoint script
 CMD ["./entrypoint.sh"]

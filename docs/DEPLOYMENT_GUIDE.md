@@ -88,7 +88,7 @@ The backend provides all cognitive evaluation APIs, CSV reporting, and sync proc
    - **Build Command**: Dockerfile builds automatically using `backend/Dockerfile`
 4. Add Environment Variables:
    ```env
-   DATABASE_URL=postgresql://postgres.tffkslztyrejetxewlbi:Smiriti-plus@2026@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
+   DATABASE_URL=postgresql://postgres.tffkslztyrejetxewlbi:Smiriti-plus%402026@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres
    SECRET_KEY=smriti-plus-jwt-secret-key-2026-secure-production-random-token
    ALGORITHM=HS256
    ACCESS_TOKEN_EXPIRE_MINUTES=1440
