@@ -1,0 +1,9 @@
+{
+  "name": "smriti-plus",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd apps/mobile && npm install && npm run build",
+    "start": "cd apps/mobile && npm start"
+  }
+}
