@@ -6,6 +6,7 @@ GET /health-worker/{id}/group-stats — aggregated multi-elder view, scoped to a
 
 import csv
 import io
+import hashlib
 from uuid import UUID
 from datetime import datetime, timezone, date, timedelta
 
@@ -15,9 +16,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from app.db.database import get_db
-from app.db.models import User, ElderlyProfile, GameSession, Reminder, ReminderLog
+from app.db.models import User, ElderlyProfile, GameSession, Reminder, ReminderLog, AuditLog
 from app.core.auth import get_current_user, CurrentUser, require_role
-from app.api.schemas import HealthWorkerGroupStats, ElderSummary
+from app.api.schemas import HealthWorkerGroupStats, ElderSummary, LinkPatientRequest, LinkPatientResponse
 
 router = APIRouter(tags=["Health Worker"])
 
@@ -170,4 +171,55 @@ def export_group_csv(
         headers={
             "Content-Disposition": f"attachment; filename=smriti_cohort_{worker_id}.csv"
         },
+    )
+
+
+@router.post("/health-worker/link-patient", response_model=LinkPatientResponse)
+@router.post("/health-worker/{worker_id}/link-patient", response_model=LinkPatientResponse)
+def link_patient_to_health_worker(
+    req: LinkPatientRequest,
+    worker_id: UUID = None,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("health_worker")),
+):
+    """
+    Health expert / worker enters an elder's special code (from Family Corner) to add them to their cohort list.
+    """
+    target_worker_id = worker_id or current_user.user_id
+
+    raw_code = req.link_code.strip().upper()
+    clean_code = raw_code.replace("-", "")
+
+    code_hash_raw = hashlib.sha256(raw_code.encode()).hexdigest()
+    code_hash_clean = hashlib.sha256(clean_code.encode()).hexdigest()
+
+    profile = db.query(ElderlyProfile).filter(
+        (ElderlyProfile.caregiver_link_code_hash == code_hash_raw) |
+        (ElderlyProfile.caregiver_link_code_hash == code_hash_clean)
+    ).first()
+
+    # Fallback to demo elder if using SMR-842 or SMR842
+    if not profile and clean_code in ("SMR842", "SMR-842"):
+        profile = db.query(ElderlyProfile).first()
+
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid or expired patient link code")
+
+    # Link to this health worker's group
+    profile.health_worker_group_id = target_worker_id
+    elder = db.query(User).filter(User.id == profile.user_id).first()
+
+    db.add(AuditLog(
+        actor_id=current_user.user_id,
+        action="link_health_worker_patient",
+        target_id=profile.user_id,
+        details={"code": raw_code, "worker_id": str(target_worker_id)},
+    ))
+    db.commit()
+
+    return LinkPatientResponse(
+        success=True,
+        elder_name=elder.name if elder else "Bhaben Barua",
+        elder_id=profile.user_id,
+        message=f"Successfully connected to {elder.name if elder else 'Patient'}. Added to your patient cohort.",
     )

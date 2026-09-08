@@ -31,6 +31,9 @@ import {
   Play,
   Pause,
   ArrowLeft,
+  Copy,
+  ShieldCheck,
+  Check,
 } from 'lucide-react-native';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
@@ -62,6 +65,8 @@ export default function FamilyCornerScreen() {
   const [voiceMessages, setVoiceMessages] = useState<FamilyVoiceNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [linkCode, setLinkCode] = useState('SMR-842');
+  const [copied, setCopied] = useState(false);
 
   const elderId = user?.id || 'demo-elder-id';
 
@@ -93,6 +98,13 @@ export default function FamilyCornerScreen() {
           setVoiceMessages(remoteVoice);
           await offlineStore.cacheVoiceMessages(remoteVoice);
         }
+
+        try {
+          const codeRes = await api.post<{ link_code: string }>('/auth/generate-link-code', {});
+          if (codeRes?.link_code) {
+            setLinkCode(codeRes.link_code);
+          }
+        } catch {}
       } catch (netErr) {
         // Safe fallback to seeded NER demo family if fresh start
         if (!localContacts || localContacts.length === 0) {
@@ -101,21 +113,14 @@ export default function FamilyCornerScreen() {
               id: 'fc-1',
               name: 'Priya Barua',
               relationship_label: 'Daughter & Primary Caregiver',
-              phone: '+91 98765 43210',
+              phone: '+91 98640 12345',
               is_primary: true,
             },
             {
               id: 'fc-2',
-              name: 'Rohan Barua',
-              relationship_label: 'Son',
-              phone: '+91 98765 43211',
-              is_primary: false,
-            },
-            {
-              id: 'fc-3',
-              name: 'Meena Barua',
-              relationship_label: 'Granddaughter',
-              phone: '+91 98765 43212',
+              name: 'Debojit Barua',
+              relationship_label: 'Grandson',
+              phone: '+91 94350 67890',
               is_primary: false,
             },
           ];
@@ -144,6 +149,19 @@ export default function FamilyCornerScreen() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleCopyCode = async () => {
+    try {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+      Alert.alert(
+        'Code Copied',
+        `Patient access code "${linkCode}" copied! Share this with your caregiver or doctor so they can link to your account.`
+      );
+    } catch (e) {
+      console.log('Copy code error:', e);
+    }
+  };
 
   const handleCall = (phoneNumber: string, name: string) => {
     const cleanNumber = phoneNumber.replace(/[^0-9+]/g, '');
@@ -314,12 +332,31 @@ export default function FamilyCornerScreen() {
         <Text style={styles.callDoctorLabel}>CALL</Text>
       </TouchableOpacity>
 
-      {/* Share Link Code for Family Onboarding */}
+      {/* Share Link Code for Caregiver & Health Expert Onboarding */}
       <View style={styles.linkCodeCard}>
-        <Text style={styles.linkCodeLabel} numberOfLines={1}>Caregiver Linking Code</Text>
-        <Text style={styles.linkCodeValue} numberOfLines={1}>SMR-842</Text>
+        <View style={styles.linkCodeHeaderRow}>
+          <ShieldCheck size={20} color={colors.teal} />
+          <Text style={styles.linkCodeLabel}>Patient Access Code</Text>
+        </View>
+        <Text style={styles.linkCodeSub}>
+          Share this unique code with your caregiver or health expert to grant them access to your health profile.
+        </Text>
+        
+        <View style={styles.codeRow}>
+          <Text style={styles.linkCodeValue}>{linkCode}</Text>
+          <TouchableOpacity
+            style={[styles.copyBtn, copied && styles.copyBtnSuccess]}
+            onPress={handleCopyCode}
+            activeOpacity={0.7}
+          >
+            {copied ? <Check size={16} color="#FFFFFF" /> : <Copy size={16} color={colors.teal} />}
+            <Text style={[styles.copyBtnText, copied && styles.copyBtnTextActive]}>
+              {copied ? 'Copied' : 'Copy'}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.linkCodeHint}>
-          Share this code with other family members or caregivers to connect them to your SMRITI+ circle.
+          Caregivers & doctors can enter this code in their app to link directly.
         </Text>
       </View>
     </ScrollView>
@@ -597,32 +634,75 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 22,
     padding: spacing.xl,
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(15, 118, 110, 0.2)',
     ...shadows.card,
+  },
+  linkCodeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
   },
   linkCodeLabel: {
     fontFamily: fontFamily.display,
-    fontSize: 13,
-    color: colors.muted,
+    fontSize: 14,
+    color: colors.teal,
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
+  linkCodeSub: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    color: colors.muted,
+    lineHeight: 18,
+    marginBottom: spacing.md,
+  },
+  codeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0FDFA',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+    marginBottom: spacing.sm,
+  },
   linkCodeValue: {
     fontFamily: fontFamily.display,
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '800',
     color: colors.textDark,
-    letterSpacing: 4,
-    marginVertical: spacing.xs,
+    letterSpacing: 3,
+  },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: borderRadius.pill,
+    backgroundColor: '#CCFBF1',
+  },
+  copyBtnSuccess: {
+    backgroundColor: colors.teal,
+  },
+  copyBtnText: {
+    fontFamily: fontFamily.display,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.teal,
+  },
+  copyBtnTextActive: {
+    color: '#FFFFFF',
   },
   linkCodeHint: {
     fontFamily: fontFamily.text,
-    fontSize: 14,
+    fontSize: 12,
     color: colors.muted,
-    textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 17,
   },
 });

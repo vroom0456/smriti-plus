@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Platform,
+  TouchableOpacity, TextInput, Modal, Alert,
 } from 'react-native';
-import { Gamepad2, CheckCircle2, AlertCircle, Flame } from 'lucide-react-native';
+import { Gamepad2, CheckCircle2, AlertCircle, Flame, UserPlus, ShieldCheck, X, ArrowRight } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { StatCard, AlertBanner, RoleBadge, ReminderCard } from '../../components/UIComponents';
 import { useAuthStore } from '../../state/authStore';
@@ -28,6 +29,12 @@ export default function CaregiverDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Flo-style patient pairing state
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [linkCodeInput, setLinkCodeInput] = useState('');
+  const [isLinking, setIsLinking] = useState(false);
+  const [connectError, setConnectError] = useState('');
+
   const fetchDashboard = useCallback(async () => {
     if (!user) return;
     try {
@@ -43,6 +50,96 @@ export default function CaregiverDashboardScreen() {
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
+  const handleConnectPatient = async () => {
+    const trimmed = linkCodeInput.trim();
+    if (!trimmed) {
+      setConnectError('Please enter the patient code');
+      return;
+    }
+    setConnectError('');
+    setIsLinking(true);
+    try {
+      await api.post('/auth/link-caregiver', {
+        link_code: trimmed,
+        relationship: 'Caregiver',
+      });
+      setShowConnectModal(false);
+      setLinkCodeInput('');
+      setLoading(true);
+      await fetchDashboard();
+      Alert.alert('Connected!', 'You now have full access to the patient’s health overview.');
+    } catch (err: any) {
+      setConnectError(err?.message || 'Invalid or expired code. Try SMR-842.');
+    } finally {
+      setIsLinking(false);
+    }
+  };
+
+  const renderConnectModal = () => (
+    <Modal
+      visible={showConnectModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowConnectModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalTitleRow}>
+              <ShieldCheck size={24} color={colors.teal} />
+              <Text style={styles.modalTitle}>Connect to Patient</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowConnectModal(false)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <X size={20} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.modalSub}>
+            Ask the patient or family for their unique pairing code (e.g. from Family Corner: SMR-842) to connect directly.
+          </Text>
+
+          <View style={styles.codeInputWrapper}>
+            <TextInput
+              style={styles.codeInput}
+              placeholder="e.g. SMR-842"
+              placeholderTextColor={colors.muted}
+              value={linkCodeInput}
+              onChangeText={(t) => {
+                setLinkCodeInput(t.toUpperCase());
+                if (connectError) setConnectError('');
+              }}
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+          </View>
+
+          {!!connectError && (
+            <Text style={styles.errorTextModal}>{connectError}</Text>
+          )}
+
+          <TouchableOpacity
+            style={[styles.connectSubmitBtn, isLinking && styles.btnDisabled]}
+            onPress={handleConnectPatient}
+            disabled={isLinking}
+            activeOpacity={0.8}
+          >
+            {isLinking ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.connectSubmitBtnText}>Connect to Patient</Text>
+                <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.5} />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
@@ -54,7 +151,50 @@ export default function CaregiverDashboardScreen() {
   if (!data) {
     return (
       <View style={[styles.container, styles.center]}>
-        <Text style={styles.errorText}>No linked elders found. Link an elder to view the dashboard.</Text>
+        <View style={styles.emptyCard}>
+          <View style={styles.emptyIconCircle}>
+            <UserPlus size={36} color={colors.teal} strokeWidth={2.2} />
+          </View>
+          <Text style={styles.emptyTitle}>Connect to a Patient</Text>
+          <Text style={styles.emptySub}>
+            Just like Flo app, enter the patient’s special pairing code to instantly access their health adherence, reminders, and activities.
+          </Text>
+
+          <View style={styles.codeInputWrapper}>
+            <TextInput
+              style={styles.codeInput}
+              placeholder="Enter code (e.g. SMR-842)"
+              placeholderTextColor={colors.muted}
+              value={linkCodeInput}
+              onChangeText={(t) => {
+                setLinkCodeInput(t.toUpperCase());
+                if (connectError) setConnectError('');
+              }}
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+          </View>
+
+          {!!connectError && (
+            <Text style={styles.errorTextModal}>{connectError}</Text>
+          )}
+
+          <TouchableOpacity
+            style={[styles.connectSubmitBtn, isLinking && styles.btnDisabled]}
+            onPress={handleConnectPatient}
+            disabled={isLinking}
+            activeOpacity={0.8}
+          >
+            {isLinking ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.connectSubmitBtnText}>Link Patient Account</Text>
+                <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.5} />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -71,13 +211,25 @@ export default function CaregiverDashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchDashboard(); }} />}
       showsVerticalScrollIndicator={false}
     >
+      {renderConnectModal()}
+
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Caregiver Overview</Text>
-          <Text style={styles.elderName}>Monitoring: {elder.name}</Text>
+        <View style={{ flex: 1, paddingRight: 8 }}>
+          <Text style={styles.headerTitle} numberOfLines={1}>Caregiver Overview</Text>
+          <Text style={styles.elderName} numberOfLines={1}>Monitoring: {elder.name}</Text>
         </View>
-        <RoleBadge role="caregiver" />
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerAddBtn}
+            onPress={() => setShowConnectModal(true)}
+            activeOpacity={0.8}
+          >
+            <UserPlus size={15} color={colors.teal} strokeWidth={2.2} />
+            <Text style={styles.headerAddText}>Switch / Add</Text>
+          </TouchableOpacity>
+          <RoleBadge role="caregiver" />
+        </View>
       </View>
 
       {/* Stats Row */}
@@ -249,4 +401,149 @@ const styles = StyleSheet.create({
   sessionTitle: { ...typography.standard.bodyBold, color: colors.textDark },
   sessionDetail: { ...typography.standard.caption, color: colors.muted, marginTop: 2 },
   sessionTime: { ...typography.standard.caption, color: colors.muted },
+
+  /* Flo-style connect modal & card styles */
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F0FDFA',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.pill,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  headerAddText: {
+    fontFamily: fontFamily.display,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.teal,
+  },
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: spacing.xl,
+    alignItems: 'center',
+    width: '90%',
+    maxWidth: 420,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  emptyIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#F0FDFA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.textDark,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySub: {
+    fontFamily: fontFamily.text,
+    fontSize: 14,
+    color: colors.muted,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.xl,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    ...shadows.card,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  modalSub: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    color: colors.muted,
+    lineHeight: 18,
+    marginBottom: spacing.lg,
+  },
+  codeInputWrapper: {
+    width: '100%',
+    marginBottom: spacing.md,
+  },
+  codeInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    fontSize: 22,
+    fontFamily: fontFamily.display,
+    fontWeight: '800',
+    color: colors.textDark,
+    textAlign: 'center',
+    letterSpacing: 3,
+  },
+  errorTextModal: {
+    fontFamily: fontFamily.text,
+    fontSize: 12,
+    color: colors.coral,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  connectSubmitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.teal,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    width: '100%',
+  },
+  btnDisabled: {
+    opacity: 0.7,
+  },
+  connectSubmitBtnText: {
+    fontFamily: fontFamily.display,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

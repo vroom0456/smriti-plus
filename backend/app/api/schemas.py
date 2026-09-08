@@ -35,12 +35,22 @@ class LoginResponse(BaseModel):
     user: "UserResponse"
 
 class LinkCaregiverRequest(BaseModel):
-    link_code: str = Field(..., min_length=6, max_length=8)
+    link_code: str = Field(..., min_length=4, max_length=12)
 
 class LinkCaregiverResponse(BaseModel):
     success: bool
     elder_name: str
     elder_id: UUID
+    message: Optional[str] = "Caregiver successfully linked"
+
+class LinkPatientRequest(BaseModel):
+    link_code: str = Field(..., min_length=4, max_length=12)
+
+class LinkPatientResponse(BaseModel):
+    success: bool
+    elder_name: str
+    elder_id: UUID
+    message: Optional[str] = "Patient successfully linked to cohort"
 
 
 # ──────────────────────────────────────────────

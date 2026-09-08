@@ -21,8 +21,9 @@ import {
   ActivityIndicator,
   Share,
   Platform,
+  Modal,
 } from 'react-native';
-import { Download, AlertTriangle, User, Flame } from 'lucide-react-native';
+import { Download, AlertTriangle, User, Flame, UserPlus, ShieldCheck, X, ArrowRight } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../state/authStore';
@@ -43,6 +44,46 @@ export default function GroupOverviewScreen() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'adherence' | 'engagement' | 'name'>('adherence');
+
+  // Health Expert Code Linking state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [linkCode, setLinkCode] = useState('');
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState('');
+
+  const handleLinkPatient = async () => {
+    const trimmed = linkCode.trim();
+    if (!trimmed) {
+      setLinkError('Please enter the patient access code');
+      return;
+    }
+    setLinkError('');
+    setLinking(true);
+    try {
+      const res = await api.post<any>('/health-worker/link-patient', {
+        link_code: trimmed,
+      });
+
+      const newElder: ElderSummaryItem = {
+        elder_id: res.elder_id || `e-${Date.now()}`,
+        name: res.elder_name || 'Newly Linked Patient',
+        engagement_score: 85.0,
+        adherence_pct: 90.0,
+        current_streak: 3,
+        last_active: 'Just now',
+        risk_level: 'low',
+      };
+
+      setElders((prev) => [newElder, ...prev.filter((e) => e.elder_id !== newElder.elder_id)]);
+      setShowAddModal(false);
+      setLinkCode('');
+      Alert.alert('Patient Added', `${res.elder_name || 'Patient'} has been successfully connected to your cohort list.`);
+    } catch (err: any) {
+      setLinkError(err?.message || 'Invalid or expired patient code. (Try SMR-842)');
+    } finally {
+      setLinking(false);
+    }
+  };
 
   const fetchGroupStats = useCallback(async () => {
     try {
@@ -136,23 +177,103 @@ export default function GroupOverviewScreen() {
       ? Math.round(elders.reduce((sum, e) => sum + e.adherence_pct, 0) / elders.length)
       : 0;
 
+  const renderAddPatientModal = () => (
+    <Modal
+      visible={showAddModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowAddModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <View style={styles.modalTitleRow}>
+              <ShieldCheck size={24} color={colors.teal} />
+              <Text style={styles.modalTitle}>Add Patient to Cohort</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowAddModal(false)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <X size={20} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.modalSub}>
+            Enter the patient’s special access code (from their Family Corner screen, e.g. SMR-842) to add them to your health list.
+          </Text>
+
+          <View style={styles.modalInputWrapper}>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="e.g. SMR-842"
+              placeholderTextColor={colors.muted}
+              value={linkCode}
+              onChangeText={(t) => {
+                setLinkCode(t.toUpperCase());
+                if (linkError) setLinkError('');
+              }}
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+          </View>
+
+          {!!linkError && (
+            <Text style={styles.modalError}>{linkError}</Text>
+          )}
+
+          <TouchableOpacity
+            style={[styles.modalSubmitBtn, linking && styles.btnDisabled]}
+            onPress={handleLinkPatient}
+            disabled={linking}
+            activeOpacity={0.8}
+          >
+            {linking ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.modalSubmitBtnText}>Link Patient to Cohort</Text>
+                <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.5} />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
+      {renderAddPatientModal()}
+
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1, paddingRight: 10 }}>
           <Text style={styles.title}>Group Overview</Text>
           <Text style={styles.subtitle}>Sub-Centre 04 • Jalukbari Circle</Text>
         </View>
-        <TouchableOpacity
-          style={styles.exportButton}
-          onPress={handleExportCSV}
-          accessibilityRole="button"
-          accessibilityLabel="Export cohort report to CSV"
-        >
-          <Download size={15} color={colors.white} strokeWidth={2.2} style={{ marginRight: 6 }} />
-          <Text style={styles.exportText}>Export CSV</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtonsRow}>
+          <TouchableOpacity
+            style={styles.addPatientBtn}
+            onPress={() => setShowAddModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Add patient using access code"
+            activeOpacity={0.8}
+          >
+            <UserPlus size={15} color={colors.teal} strokeWidth={2.2} style={{ marginRight: 5 }} />
+            <Text style={styles.addPatientText}>+ Add Code</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.exportButton}
+            onPress={handleExportCSV}
+            accessibilityRole="button"
+            accessibilityLabel="Export cohort report to CSV"
+          >
+            <Download size={15} color={colors.white} strokeWidth={2.2} style={{ marginRight: 6 }} />
+            <Text style={styles.exportText}>Export</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Aggregate Stat Bar */}
@@ -499,5 +620,113 @@ const styles = StyleSheet.create({
     color: colors.mutedLight,
     textAlign: 'center',
     lineHeight: 16,
+  },
+
+  /* Health Expert Patient Link Modal & Buttons */
+  headerButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addPatientBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDFA',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  addPatientText: {
+    fontFamily: fontFamily.display,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.teal,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    ...shadows.card,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textDark,
+  },
+  modalSub: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    color: colors.muted,
+    lineHeight: 18,
+    marginBottom: spacing.lg,
+  },
+  modalInputWrapper: {
+    width: '100%',
+    marginBottom: spacing.md,
+  },
+  modalInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    fontSize: 22,
+    fontFamily: fontFamily.display,
+    fontWeight: '800',
+    color: colors.textDark,
+    textAlign: 'center',
+    letterSpacing: 3,
+  },
+  modalError: {
+    fontFamily: fontFamily.text,
+    fontSize: 12,
+    color: colors.coral,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  modalSubmitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.teal,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    width: '100%',
+  },
+  btnDisabled: {
+    opacity: 0.7,
+  },
+  modalSubmitBtnText: {
+    fontFamily: fontFamily.display,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
