@@ -19,6 +19,7 @@ import { colors, typography, spacing, fontFamily, borderRadius, shadows } from '
 import { PrimaryButton } from '../../components/UIComponents';
 import { setLanguage, SupportedLanguage } from '../../i18n';
 import { voiceIntelligence } from '../../services/voiceIntelligence';
+import { Brain } from 'lucide-react-native';
 
 interface WelcomeScreenProps {
   onProceed: (lang: string, role: string) => void;
@@ -71,7 +72,9 @@ export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Brand Header */}
       <View style={styles.brandHeader}>
-        <Text style={styles.logoEmoji}>🧠</Text>
+        <View style={styles.logoBadge}>
+          <Brain size={36} color={colors.primary} strokeWidth={2.2} />
+        </View>
         <Text style={styles.brandTitle}>SMRITI+</Text>
         <Text style={styles.brandTagline}>Remember. Engage. Connect.</Text>
       </View>
@@ -129,7 +132,7 @@ export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
       {/* Continue Button */}
       <View style={styles.actionContainer}>
         <PrimaryButton
-          title="Continue →"
+          title="Get Started"
           onPress={() => onProceed(selectedLang, selectedRole)}
         />
       </View>
@@ -160,6 +163,17 @@ const styles = StyleSheet.create({
   brandHeader: {
     alignItems: 'center',
     marginBottom: spacing.xl,
+  },
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 113, 227, 0.15)',
   },
   logoEmoji: {
     fontSize: 56,

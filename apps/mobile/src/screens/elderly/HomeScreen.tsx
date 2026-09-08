@@ -1,13 +1,15 @@
 /**
  * SMRITI+ — Elder Home Screen
  *
- * Minimalist Apple HIG aesthetic:
- * - Authentic vector icons (no cartoon emojis)
- * - Clear visual hierarchy & generous touch targets (56dp+)
- * - Single, unified, non-overwhelming UI for all elders
- * - Spacious 2x2 action grid
- * - Integrated voice assistant floating card
- * - Dynamic data via API with local SQLite offline cache
+ * Production-grade mobile healthcare experience designed for elderly users
+ * living with cognitive conditions, inspired by Apple iOS Health.
+ *
+ * Core Principle: ONE SCREEN = ONE PRIMARY PURPOSE
+ * Structure:
+ * 1. Warm Greeting ("Good morning, Varun — How are you feeling today?")
+ * 2. TODAY'S ROUTINE: Single clear progress card ("2 of 3 completed")
+ * 3. YOUR NEXT ACTIVITY: ONE primary recommended activity with a large full-width action button
+ * 4. QUICK HELP: Accessible 52px actions for Caregiver & Voice Assistance
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -22,18 +24,36 @@ import {
   Platform,
 } from 'react-native';
 import {
-  Gamepad2,
-  Bell,
-  Users,
-  Image as ImageIcon,
+  Phone,
   Mic,
-  Flame,
+  Brain,
+  CheckCircle2,
+  Calendar,
+  Volume2,
+  ChevronRight,
+  Clock,
+  HeartHandshake,
 } from 'lucide-react-native';
-import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
-import { IconTile, AlertBanner } from '../../components/UIComponents';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+  touchTargets,
+  fontFamily,
+} from '../../theme/tokens';
+import {
+  PrimaryButton,
+  SecondaryButton,
+  HealthCard,
+  ProgressBar,
+  AlertBanner,
+} from '../../components/UIComponents';
 import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
+import { useTranslation } from '../../i18n';
 
 interface HomeSummary {
   greeting: string;
@@ -48,17 +68,17 @@ interface HomeSummary {
   reminders_pending_count: number;
   current_streak: number;
   care_stage?: number;
-  assistance_level?: number;
-  effective_level?: number;
   stage_label?: string;
 }
 
 export default function ElderHomeScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const fetchSummary = useCallback(async () => {
     if (!user) return;
@@ -67,12 +87,12 @@ export default function ElderHomeScreen({ navigation }: any) {
       const data = await api.get<HomeSummary>(`/elders/${user.id}/home-summary`);
       setSummary(data);
     } catch (err: any) {
-      console.log('HomeScreen online fetch failed, loading offline local state:', err);
+      console.log('HomeScreen online fetch failed, using local offline store:', err);
       try {
         const offlineData = await offlineStore.getOfflineHomeSummary(user.id);
         setSummary(offlineData);
       } catch (localErr) {
-        setError(err.message || 'Could not load home screen');
+        setError('Could not load today’s schedule. Please pull down to refresh.');
       }
     } finally {
       setLoading(false);
@@ -89,109 +109,201 @@ export default function ElderHomeScreen({ navigation }: any) {
     fetchSummary();
   };
 
+  // Voice readout simulation / accessibility feature (Section 37)
+  const handleReadAloud = () => {
+    setIsSpeaking(true);
+    setTimeout(() => setIsSpeaking(false), 3000);
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={colors.teal} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Preparing today’s companion…</Text>
       </View>
     );
   }
 
   const now = new Date();
   const dayStr = now.toLocaleDateString([], { weekday: 'long' });
-  const dateFormatted = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const dateFormatted = now.toLocaleDateString([], { month: 'long', day: 'numeric' });
+
+  // Today progress metrics
+  const totalReminders = summary?.reminders_today_count || 3;
+  const pendingReminders = summary?.reminders_pending_count ?? 1;
+  const completedReminders = Math.max(0, totalReminders - pendingReminders);
+
+  const nextActivityTitle = summary?.next_action?.game_name || 'Memory Check';
+  const nextActivitySubtitle = summary?.next_action?.message || 'A gentle 5-minute exercise for focus';
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.teal]} />
-      }
-    >
-      {/* ── Top Header Section (Date & Streak meta row, Full-width Greeting) ────── */}
-      <View style={styles.greetingHeader}>
-        <View style={styles.topMetaRow}>
-          <Text style={styles.dateLabel} numberOfLines={1}>{dayStr}, {dateFormatted}</Text>
-          {(summary?.current_streak ?? 0) > 0 && (
-            <View style={styles.streakBadge}>
-              <Flame size={15} color="#D97706" strokeWidth={2.5} />
-              <Text style={styles.streakCount}>{summary?.current_streak}d streak</Text>
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        {/* ── 1. HEADER / GREETING (Calm, Human, Accessible) ────── */}
+        <View style={styles.header}>
+          <View style={styles.dateRow}>
+            <View style={styles.dateWrap}>
+              <Calendar size={15} color={colors.textSecondary} strokeWidth={2.2} style={{ marginRight: 6 }} />
+              <Text style={styles.dateLabel}>
+                {dayStr}, {dateFormatted}
+              </Text>
             </View>
-          )}
-        </View>
-        <Text style={styles.greeting} numberOfLines={2}>
-          {summary?.greeting || `Hello, ${user?.name || 'Friend'}`}
-        </Text>
-      </View>
 
-      {error && <AlertBanner type="warning" message={error} />}
-
-      {/* ── 4 Large Primary Tiles — Apple Health 2x2 Grid ────── */}
-      <View style={styles.tilesGrid}>
-        <View style={styles.tilesRow}>
-          <IconTile
-            renderIcon={() => <Gamepad2 size={34} color={colors.teal} strokeWidth={2.2} />}
-            label="Play a Game"
-            subtitle="Daily exercises"
-            onPress={() => navigation.navigate('Games')}
-            color={colors.teal}
-          />
-          <IconTile
-            renderIcon={() => <Bell size={34} color="#F59E0B" strokeWidth={2.2} />}
-            label="Reminders"
-            subtitle="Medicines & tasks"
-            onPress={() => navigation.navigate('Reminders')}
-            badge={summary?.reminders_pending_count}
-            color="#F59E0B"
-          />
-        </View>
-
-        <View style={styles.tilesRow}>
-          <IconTile
-            renderIcon={() => <Users size={34} color="#10B981" strokeWidth={2.2} />}
-            label="Family Corner"
-            subtitle="Calls & messages"
-            onPress={() => navigation.navigate('FamilyCorner')}
-            color="#10B981"
-          />
-          <IconTile
-            renderIcon={() => <ImageIcon size={34} color="#8B5CF6" strokeWidth={2.2} />}
-            label="Memory Vault"
-            subtitle="Photos & stories"
-            onPress={() => navigation.navigate('MemoryBox')}
-            color="#8B5CF6"
-          />
-        </View>
-      </View>
-
-      {/* ── Voice Assistant Card ────────────────────────────── */}
-      <View style={[styles.voiceCard, shadows.card]}>
-        <View style={styles.voiceCardLeft}>
-          <View style={styles.voiceIconWrap}>
-            <Mic size={26} color={colors.teal} strokeWidth={2.2} />
+            {/* Read Aloud Accessible Trigger (Section 37) */}
+            <TouchableOpacity
+              onPress={handleReadAloud}
+              style={styles.readAloudButton}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Listen to screen instructions"
+            >
+              <Volume2
+                size={16}
+                color={isSpeaking ? colors.primary : colors.textSecondary}
+                strokeWidth={2.2}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={[styles.readAloudText, isSpeaking && styles.readAloudActive]}>
+                {isSpeaking ? 'Reading…' : 'Listen'}
+              </Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.voiceTextGroup}>
-            <Text style={styles.voiceCardTitle} numberOfLines={1} ellipsizeMode="tail">Talk to SMRITI+</Text>
-            <Text style={styles.voiceCardSubtitle} numberOfLines={1} ellipsizeMode="tail">
-              "Remind me medicine" or "Play game"
-            </Text>
+
+          <Text style={styles.greetingTitle}>
+            {summary?.greeting || `Good morning, ${user?.name || 'Friend'}`}
+          </Text>
+          <Text style={styles.greetingSubtitle}>How are you feeling today?</Text>
+        </View>
+
+        {error ? <AlertBanner type="warning" message={error} /> : null}
+
+        {/* ── 2. TODAY'S ROUTINE (Large Card, Single Purpose) ────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeading}>TODAY</Text>
+          <HealthCard style={styles.routineCard}>
+            <View style={styles.routineHeaderRow}>
+              <View style={styles.routineIconWrap}>
+                <CheckCircle2 size={24} color={colors.success} strokeWidth={2.2} />
+              </View>
+              <View style={styles.routineTextGroup}>
+                <Text style={styles.routineTitle}>Daily Routine</Text>
+                <Text style={styles.routineSubtitle}>
+                  {completedReminders} of {totalReminders} activities completed
+                </Text>
+              </View>
+            </View>
+
+            <ProgressBar
+              current={completedReminders}
+              total={totalReminders}
+              style={{ marginTop: spacing.md, marginBottom: spacing.md }}
+            />
+
+            <SecondaryButton
+              title="View Today’s Schedule"
+              onPress={() => navigation.navigate('Reminders')}
+              accessibilityLabel="View today's reminders schedule"
+            />
+          </HealthCard>
+        </View>
+
+        {/* ── 3. YOUR NEXT ACTIVITY (Primary Focus, Full-Width Action) ────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeading}>RECOMMENDED FOR YOU</Text>
+          <HealthCard style={styles.activityCard}>
+            <View style={styles.activityBadgeRow}>
+              <View style={styles.activityPill}>
+                <Brain size={14} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 5 }} />
+                <Text style={styles.activityPillText}>5 minutes</Text>
+              </View>
+            </View>
+
+            <Text style={styles.activityTitle}>{nextActivityTitle}</Text>
+            <Text style={styles.activityDesc}>{nextActivitySubtitle}</Text>
+
+            {/* ONE PRIMARY ACTION BUTTON (Section 10: Full Width, 56px height) */}
+            <PrimaryButton
+              title="Start Today’s Activity"
+              size="large"
+              onPress={() => navigation.navigate('Games')}
+              accessibilityLabel={`Start today's activity: ${nextActivityTitle}`}
+              style={{ marginTop: spacing.lg }}
+            />
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Games')}
+              style={styles.moreActivitiesLink}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="View more activities"
+            >
+              <Text style={styles.moreActivitiesText}>Explore other activities</Text>
+              <ChevronRight size={16} color={colors.primary} strokeWidth={2.2} />
+            </TouchableOpacity>
+          </HealthCard>
+        </View>
+
+        {/* ── 4. QUICK HELP (Caregiver & Voice Assistance) ────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeading}>QUICK HELP</Text>
+          <View style={styles.helpRow}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('FamilyCorner')}
+              style={styles.quickHelpButton}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Call caregiver"
+            >
+              <View style={[styles.quickHelpIconWrap, { backgroundColor: 'rgba(52, 199, 89, 0.12)' }]}>
+                <Phone size={22} color={colors.successDark} strokeWidth={2.2} />
+              </View>
+              <View style={styles.quickHelpTextGroup}>
+                <Text style={styles.quickHelpTitle}>Call Caregiver</Text>
+                <Text style={styles.quickHelpSubtitle}>Tap to connect with family</Text>
+              </View>
+              <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('VoiceAssistant')}
+              style={styles.quickHelpButton}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Voice assistant help"
+            >
+              <View style={[styles.quickHelpIconWrap, { backgroundColor: colors.primaryMuted }]}>
+                <Mic size={22} color={colors.primary} strokeWidth={2.2} />
+              </View>
+              <View style={styles.quickHelpTextGroup}>
+                <Text style={styles.quickHelpTitle}>Talk to SMRITI+</Text>
+                <Text style={styles.quickHelpSubtitle}>Ask questions with your voice</Text>
+              </View>
+              <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
+            </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.voiceCardButton}
-          onPress={() => navigation.navigate('VoiceAssistant')}
-          accessibilityRole="button"
-          accessibilityLabel="Open voice assistant"
-          activeOpacity={0.75}
-        >
-          <Mic size={16} color={colors.white} strokeWidth={2.5} style={{ marginRight: 6 }} />
-          <Text style={styles.voiceCardButtonText} numberOfLines={1}>Speak</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        {/* ── 5. SUBTLE PRIVACY NOTE (Section 53) ────── */}
+        <View style={styles.privacyNote}>
+          <HeartHandshake size={15} color={colors.muted} strokeWidth={2} style={{ marginRight: 6 }} />
+          <Text style={styles.privacyNoteText}>
+            Your health details are private and shared only with your chosen caregiver.
+          </Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -208,131 +320,210 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenMargin,
     paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 110,
+    paddingBottom: 100,
   },
   loadingText: {
     ...typography.elderly.body,
-    color: colors.muted,
+    color: colors.textSecondary,
     marginTop: spacing.md,
   },
 
-  // ── Header (Date, Greeting, Streak) ──
-  greetingHeader: {
+  // ── Header Section ──
+  header: {
     marginBottom: spacing.xl,
   },
-  topMetaRow: {
+  dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: spacing.xs,
+  },
+  dateWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   dateLabel: {
     fontFamily: fontFamily.text,
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    flex: 1,
-    marginRight: 8,
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
-  greeting: {
-    ...typography.elderly.h1,
-    fontSize: 30,
-    fontWeight: '800',
-    color: colors.textDark,
-    letterSpacing: -0.6,
-    lineHeight: 36,
-  },
-  streakBadge: {
+  readAloudButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 149, 0, 0.12)',
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: borderRadius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.25)',
-    gap: 5,
-    flexShrink: 0,
-  },
-  streakCount: {
-    fontFamily: fontFamily.display,
-    color: '#D97706',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  // ── 4 Primary Tiles Grid (2x2 Balanced) ──
-  tilesGrid: {
-    gap: 16,
-    marginBottom: spacing.xl,
-  },
-  tilesRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-
-  // ── Voice Assistant Card ──
-  voiceCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 24,
-    padding: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  voiceCardLeft: {
+  readAloudText: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  readAloudActive: {
+    color: colors.primary,
+  },
+  greetingTitle: {
+    ...typography.elderly.screenTitle,
+    marginTop: 4,
+  },
+  greetingSubtitle: {
+    ...typography.elderly.body,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+
+  // ── Sections ──
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionHeading: {
+    fontFamily: fontFamily.display,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.muted,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs + 2,
+    paddingHorizontal: 4,
+  },
+
+  // ── Routine Card ──
+  routineCard: {
+    padding: spacing.lg,
+  },
+  routineHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    marginRight: spacing.sm,
   },
-  voiceIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: colors.tealBg,
+  routineIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.successBg,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
-  voiceTextGroup: {
+  routineTextGroup: {
     flex: 1,
   },
-  voiceCardTitle: {
-    fontFamily: fontFamily.display,
-    fontSize: 19,
-    fontWeight: '700',
-    color: colors.textDark,
-    letterSpacing: -0.3,
+  routineTitle: {
+    ...typography.elderly.cardHeading,
   },
-  voiceCardSubtitle: {
-    fontFamily: fontFamily.text,
-    fontSize: 14,
-    color: colors.muted,
+  routineSubtitle: {
+    ...typography.elderly.secondary,
     marginTop: 2,
   },
-  voiceCardButton: {
-    backgroundColor: colors.teal,
-    flexDirection: 'row',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm + 5,
-    borderRadius: borderRadius.pill,
-    minHeight: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...shadows.glowTeal,
+
+  // ── Activity Card ──
+  activityCard: {
+    padding: spacing.lg,
   },
-  voiceCardButtonText: {
+  activityBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  activityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryMuted,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.pill,
+  },
+  activityPillText: {
     fontFamily: fontFamily.display,
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  activityTitle: {
+    ...typography.elderly.cardHeading,
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  activityDesc: {
+    ...typography.elderly.body,
+    color: colors.textSecondary,
+    marginTop: 4,
+    lineHeight: 24,
+  },
+  moreActivitiesLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    paddingVertical: 8,
+  },
+  moreActivitiesText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primary,
+    marginRight: 4,
+  },
+
+  // ── Quick Help Buttons ──
+  helpRow: {
+    gap: 12,
+  },
+  quickHelpButton: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.card,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 64,
+    ...shadows.subtle,
+  },
+  quickHelpIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  quickHelpTextGroup: {
+    flex: 1,
+  },
+  quickHelpTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.textDark,
+  },
+  quickHelpSubtitle: {
+    fontFamily: fontFamily.text,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
+  // ── Privacy Note ──
+  privacyNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  privacyNoteText: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    color: colors.muted,
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 320,
   },
 });

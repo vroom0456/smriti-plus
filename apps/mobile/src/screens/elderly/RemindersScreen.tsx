@@ -1,9 +1,36 @@
+/**
+ * SMRITI+ — Daily Routine & Reminders Screen
+ *
+ * Production-grade mobile healthcare schedule screen designed for elderly users:
+ * - Clear human language ("Daily Routine", "Upcoming Today", "Completed")
+ * - 56px+ tap targets with explicit status badges
+ * - Visual progress indicator ("2 of 4 done today")
+ * - Seamless offline caching with SQLite
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  ActivityIndicator,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
+import { ArrowLeft, Clock, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { v4 as uuidv4 } from 'uuid';
-import { colors, typography, spacing, borderRadius, fontFamily } from '../../theme/tokens';
-import { ReminderCard, AlertBanner } from '../../components/UIComponents';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+  touchTargets,
+  fontFamily,
+} from '../../theme/tokens';
+import { ReminderCard, AlertBanner, ProgressBar } from '../../components/UIComponents';
 import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
@@ -33,7 +60,6 @@ export default function RemindersScreen({ navigation }: any) {
     try {
       const data = await api.get<ReminderData[]>(`/elders/${user.id}/reminders/today`);
       setReminders(data);
-      // Cache in SQLite for offline access
       if (Array.isArray(data)) {
         await offlineStore.cacheReminders(
           data.map((d) => ({
@@ -70,10 +96,11 @@ export default function RemindersScreen({ navigation }: any) {
     }
   }, [user]);
 
-  useEffect(() => { fetchReminders(); }, [fetchReminders]);
+  useEffect(() => {
+    fetchReminders();
+  }, [fetchReminders]);
 
   const handleDone = async (reminderId: string) => {
-    // 1. Offline-first: save action to SQLite & sync_queue
     try {
       await offlineStore.recordReminderAction({
         reminder_id: reminderId,
@@ -86,12 +113,10 @@ export default function RemindersScreen({ navigation }: any) {
       console.warn('Failed to record local reminder action:', localErr);
     }
 
-    // 2. Optimistically update local screen state
     setReminders((prev) =>
       prev.map((r) => (r.id === reminderId ? { ...r, today_status: 'done' } : r))
     );
 
-    // 3. Attempt immediate online sync
     try {
       const logId = uuidv4();
       await api.post(`/reminders/${reminderId}/log`, {
@@ -106,11 +131,14 @@ export default function RemindersScreen({ navigation }: any) {
 
   const pending = reminders.filter((r) => r.today_status === 'pending');
   const completed = reminders.filter((r) => r.today_status !== 'pending');
+  const total = reminders.length;
+  const completedCount = completed.length;
 
   if (loading) {
     return (
       <View style={[styles.container, styles.center]} {...panHandlers}>
-        <ActivityIndicator size="large" color={colors.teal} />
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading today’s schedule…</Text>
       </View>
     );
   }
@@ -120,8 +148,20 @@ export default function RemindersScreen({ navigation }: any) {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchReminders(); }} />}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchReminders();
+            }}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
+        {/* Back Button */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={goBackSafe}
@@ -129,19 +169,35 @@ export default function RemindersScreen({ navigation }: any) {
           accessibilityLabel="Back to Home"
           activeOpacity={0.75}
         >
-          <ArrowLeft size={16} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
-          <Text style={styles.backText}>Back</Text>
+          <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
+          <Text style={styles.backText}>Home</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>{t('reminders.title') || "Reminders"}</Text>
+        <Text style={styles.title}>{t('reminders.title') || 'Daily Routine'}</Text>
+        <Text style={styles.subtitle}>Your medicine and activity schedule for today</Text>
 
-        {reminders.length === 0 && (
-          <AlertBanner type="info" message={t('reminders.noReminders') || "No active reminders. Enjoy your day!"} />
+        {/* Progress summary banner */}
+        {total > 0 && (
+          <View style={[styles.progressCard, shadows.card]}>
+            <ProgressBar
+              current={completedCount}
+              total={total}
+              label={`${completedCount} of ${total} items completed`}
+            />
+          </View>
         )}
 
+        {total === 0 && (
+          <AlertBanner
+            type="info"
+            message={t('reminders.noReminders') || 'No scheduled activities for today. Enjoy your day!'}
+          />
+        )}
+
+        {/* Pending Items */}
         {pending.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>{t('reminders.upcoming') || "Upcoming"}</Text>
+          <View style={styles.sectionWrap}>
+            <Text style={styles.sectionHeading}>UPCOMING TODAY</Text>
             {pending.map((r) => (
               <ReminderCard
                 key={r.id}
@@ -152,12 +208,13 @@ export default function RemindersScreen({ navigation }: any) {
                 onDone={() => handleDone(r.id)}
               />
             ))}
-          </>
+          </View>
         )}
 
+        {/* Completed Items */}
         {completed.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>{t('reminders.completedMissed') || "Completed / Missed"}</Text>
+          <View style={styles.sectionWrap}>
+            <Text style={styles.sectionHeading}>COMPLETED</Text>
             {completed.map((r) => (
               <ReminderCard
                 key={r.id}
@@ -167,7 +224,7 @@ export default function RemindersScreen({ navigation }: any) {
                 status={r.today_status as any}
               />
             ))}
-          </>
+          </View>
         )}
       </ScrollView>
     </View>
@@ -175,35 +232,75 @@ export default function RemindersScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { alignItems: 'center', justifyContent: 'center' },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: {
     width: '100%',
-    maxWidth: 540,
+    maxWidth: 520,
     alignSelf: 'center',
-    padding: spacing.lg,
-    paddingTop: 56,
+    paddingHorizontal: spacing.screenMargin,
+    paddingTop: Platform.OS === 'ios' ? 56 : 36,
     paddingBottom: 110,
+  },
+  loadingText: {
+    ...typography.elderly.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: borderRadius.pill,
     marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 44,
+    minHeight: touchTargets.buttonHeightSecondary,
+    ...shadows.subtle,
   },
   backText: {
     fontFamily: fontFamily.display,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textDark,
   },
-  title: { ...typography.elderly.h1, fontSize: 30, fontWeight: '800', color: colors.textDark, marginBottom: spacing.lg, letterSpacing: -0.6 },
-  sectionTitle: { ...typography.elderly.h3, fontSize: 20, fontWeight: '700', color: colors.textDark, marginBottom: spacing.md, marginTop: spacing.md, letterSpacing: -0.3 },
+  title: {
+    ...typography.elderly.screenTitle,
+    marginBottom: 4,
+  },
+  subtitle: {
+    ...typography.elderly.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+  progressCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.card,
+    padding: spacing.md + 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.xl,
+  },
+  sectionWrap: {
+    marginBottom: spacing.xl,
+  },
+  sectionHeading: {
+    fontFamily: fontFamily.display,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.muted,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
+    paddingHorizontal: 4,
+  },
 });
