@@ -16,6 +16,8 @@ import { Platform } from 'react-native';
 import * as Speech from 'expo-speech';
 import { languageRegistry } from './languageRegistry';
 import { adaptivePersonaEngine } from './adaptivePersonaEngine';
+import { VoiceTools, ToolResult } from './voiceTools';
+import { LanguageProfileManager } from './languageProfiles';
 
 export type VoiceState =
   | 'IDLE'
@@ -37,6 +39,8 @@ export type IntentType =
   | 'help'
   | 'change_difficulty'
   | 'stop'
+  | 'greeting'
+  | 'general_chat'
   | 'unknown';
 
 export interface CanonicalIntent {
@@ -260,6 +264,520 @@ export class VoiceIntelligenceEngine {
     const response = this.context.lastSpokenResponse;
     await this.speak(response);
     return response;
+  }
+
+  /**
+   * Execute voice command using VoiceTools, LanguageProfileManager, and Medical Safety Boundaries (Section 6, 21, 44)
+   */
+  async executeVoiceCommand(
+    phrase: string,
+    elderId: string = 'demo-elder-id'
+  ): Promise<{
+    responseText: string;
+    toolResult?: ToolResult;
+    isSafetyRefusal?: boolean;
+    canonicalIntent?: CanonicalIntent;
+    confirmationRequired?: boolean;
+  }> {
+    const lang = this.context.primaryLanguage;
+    const lower = phrase.toLowerCase().trim();
+
+    // 1. Non-diagnostic Medical Safety Boundary (Section 6, 44)
+    if (
+      lower.includes('dose') ||
+      lower.includes('dosage') ||
+      lower.includes('two pills') ||
+      lower.includes('double dose') ||
+      lower.includes('stop medicine') ||
+      lower.includes('cure') ||
+      lower.includes('chest pain') ||
+      lower.includes('diagnos') ||
+      lower.includes('రెండు మాత్రలు') ||
+      lower.includes('మందు ఆపాలా') ||
+      lower.includes('మందు మార్చాలా') ||
+      lower.includes('दो गोली') ||
+      lower.includes('दवा बंद') ||
+      lower.includes('দৰবৰ মাত্ৰা') ||
+      lower.includes('বুকুৰ বিষ')
+    ) {
+      const refusal = LanguageProfileManager.getPhrase(lang, 'safetyRefusal');
+      return { responseText: refusal, isSafetyRefusal: true };
+    }
+
+    // 2. Emotional / Disorientation Safety Check (Section 13)
+    if (
+      lower.includes('who are you') ||
+      lower.includes('confused') ||
+      lower.includes('scared') ||
+      lower.includes('భయం') ||
+      lower.includes('ఎక్కడ ఉన్నాను') ||
+      lower.includes('डर लग रहा') ||
+      lower.includes('ক\'ত আছোঁ')
+    ) {
+      const comfort = LanguageProfileManager.getPhrase(lang, 'confusion');
+      return { responseText: comfort };
+    }
+
+    // 2.5. Comprehensive Conversational AI & Elderly Chitchat
+    const greetingResponse = this.handleConversationalInput(lower, lang);
+    if (greetingResponse) {
+      return { responseText: greetingResponse };
+    }
+
+    // 3. Schedule / Routine Query (Section 21)
+    if (
+      lower.includes('schedule') ||
+      lower.includes('routine') ||
+      lower.includes('షెడ్యూల్') ||
+      lower.includes('కార్యక్రమ') ||
+      lower.includes('कार्यक्रम') ||
+      lower.includes('কাৰ্যসূচী')
+    ) {
+      const res = await VoiceTools.getTodaySchedule(elderId);
+      return { responseText: res.summary, toolResult: res };
+    }
+
+    // 4. Medication Reminders Query
+    if (
+      lower.includes('when is my medicine') ||
+      lower.includes('next medicine') ||
+      lower.includes('what medicines') ||
+      lower.includes('tablet') ||
+      lower.includes('తర్వాతి మందు') ||
+      lower.includes('మందులు ఎప్పుడు') ||
+      lower.includes('మాత్ర') ||
+      lower.includes('अगली दवा') ||
+      lower.includes('दवाई कब') ||
+      lower.includes('দৰব কেতিয়া')
+    ) {
+      const res = await VoiceTools.getMedicationReminders(elderId);
+      return { responseText: res.summary, toolResult: res };
+    }
+
+    // 5. Hydration Status Query
+    if (
+      lower.includes('drink water') ||
+      lower.includes('water status') ||
+      lower.includes('did i drink') ||
+      lower.includes('need water') ||
+      lower.includes('నీళ్ళు తాగానా') ||
+      lower.includes('మంచినీళ్ళు') ||
+      lower.includes('पानी पिया') ||
+      lower.includes('प्यास') ||
+      lower.includes('পানী খালোঁ')
+    ) {
+      const res = await VoiceTools.getHydrationStatus(elderId);
+      return { responseText: res.summary, toolResult: res };
+    }
+
+    // 6. Family Memories Query (Section 32)
+    if (
+      lower.includes('family memory') ||
+      lower.includes('family photo') ||
+      lower.includes('show memories') ||
+      lower.includes('photos') ||
+      lower.includes('ఫ్యామిలీ జ్ఞాపకాలు') ||
+      lower.includes('ఫొటోలు') ||
+      lower.includes('परिवार की यादें') ||
+      lower.includes('तस्वीरें') ||
+      lower.includes('পৰিয়ালৰ স্মৃতি')
+    ) {
+      const res = await VoiceTools.getFamilyMemories();
+      return { responseText: res.summary, toolResult: res };
+    }
+
+    // 7. Brain Game Recommendation Query (Section 33)
+    if (
+      lower.includes('recommend a game') ||
+      lower.includes('brain game') ||
+      lower.includes('game should i play') ||
+      lower.includes('play a game') ||
+      lower.includes('ఆట చెప్పు') ||
+      lower.includes('ఆట ఆడదాం') ||
+      lower.includes('दिमागी खेल') ||
+      lower.includes('खेल खेलें') ||
+      lower.includes('খেল খেলিব')
+    ) {
+      const res = await VoiceTools.getGameRecommendation(elderId);
+      return { responseText: res.summary, toolResult: res };
+    }
+
+    // 8. Canonical Intent Pipeline
+    const canonical = this.parseTranscript(phrase);
+    const fluent = adaptivePersonaEngine.generateFluentResponse(canonical, lang, phrase);
+    return {
+      responseText: fluent.spokenText,
+      canonicalIntent: canonical,
+      confirmationRequired: canonical.confirmationRequired,
+    };
+  }
+
+  /**
+   * Handle conversational greetings, chitchat, identity, calendar, stories, jokes — voice-first, never "click buttons"
+   */
+  private handleConversationalInput(lower: string, lang: string): string | null {
+    const hour = new Date().getHours();
+    const timeGreeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+    // 1. Greeting detection across all supported languages
+    const isGreeting =
+      /^(hi|hello|hey|good\s*(morning|afternoon|evening|night)|namaste|namaskar|namaskaram)$/i.test(lower) ||
+      /^(హలో|నమస్కారం|నమస్తే|శుభోదయం|శుభసాయంత్రం|నమస్కారమండి)$/i.test(lower) ||
+      /^(नमस्ते|नमस्कार|हेलो|सुप्रभात|शुभ\s*संध्या)$/i.test(lower) ||
+      /^(নমস্কাৰ|নমস্কার|হেলো|শুভ\s*সকাল|শুভ\s*সন্ধিয়া)$/i.test(lower) ||
+      /^(வணக்கம்|ஹலோ)$/i.test(lower) ||
+      /^(ನಮಸ್ಕಾರ|ಹಲೋ)$/i.test(lower) ||
+      /^(നമസ്കാരം|ഹലോ)$/i.test(lower);
+
+    if (isGreeting) {
+      const greetings: Record<string, Record<string, string>> = {
+        te: {
+          morning: 'శుభోదయం! ఈ రోజు మీకు ఎలా సహాయపడమంటారు? మీ షెడ్యూల్, మందుల గురించి అడగవచ్చు, లేదా కలిసి ఒక మెదడు ఆట ఆడదాం.',
+          afternoon: 'నమస్కారం! మధ్యాహ్నం వేళ అంతా బాగుందా? ఏదైనా గుర్తుచేయమంటారా?',
+          evening: 'శుభసాయంత్రం! ప్రశాంతంగా విశ్రాంతి తీసుకోండి. నేను మీకు సహాయంగా ఇక్కడే ఉంటాను.',
+        },
+        hi: {
+          morning: 'सुप्रभात! आज मैं आपकी क्या सहायता करूँ? आपकी दवाई, दैनिक कार्यक्रम, या एक मनोरंजक खेल खेलें?',
+          afternoon: 'नमस्ते! दोपहर कैसी बीत रही है? मैं आपकी मदद के लिए उपस्थित हूँ।',
+          evening: 'शुभ संध्या! आराम से बैठिए। मैं हर समय आपके साथ हूँ।',
+        },
+        as: {
+          morning: 'শুভ সকাল! আজি আপোনাক কেনেকৈ সহায় কৰোঁ? ঔষধ, কাৰ্যসূচী, বা এটা খেল খেলোঁ?',
+          afternoon: 'নমস্কাৰ! দুপৰীয়া কেনে লাগিছে? কিবা সহায় লাগেনে?',
+          evening: 'শুভ সন্ধিয়া! জিৰণি লৈ আছে নে? মই ইয়াতে আছোঁ।',
+        },
+        bn: {
+          morning: 'শুভ সকাল! আজ কীভাবে সাহায্য করি? ওষুধ, রুটিন, বা একটি খেলা খেলবেন?',
+          afternoon: 'নমস্কার! দুপুর কেমন কাটছে? কিছু দরকার?',
+          evening: 'শুভ সন্ধ্যা! বিশ্রাম নিচ্ছেন তো? আমি এখানে আছি।',
+        },
+        en: {
+          morning: 'Good morning! How can I help you today? I can check your schedule, your medicines, or we can play a relaxing memory game.',
+          afternoon: 'Good afternoon! How is your day going? I am right here whenever you need me.',
+          evening: 'Good evening! I hope you are resting peacefully. I am always here for you.',
+        },
+      };
+      const langGreetings = greetings[lang] || greetings['en'];
+      return langGreetings[timeGreeting] || langGreetings['morning'];
+    }
+
+    // 2. Identity / "Who am I" / "What is my name"
+    const isIdentity =
+      lower.includes('who am i') ||
+      lower.includes('what is my name') ||
+      lower.includes('what\'s my name') ||
+      lower.includes('నా పేరు') ||
+      lower.includes('నేను ఎవరిని') ||
+      lower.includes('मेरा नाम') ||
+      lower.includes('मैं कौन हूँ') ||
+      lower.includes('মোৰ নাম') ||
+      lower.includes('মই কোন');
+
+    if (isIdentity) {
+      const responses: Record<string, string> = {
+        te: 'మీరు మాకు ఎంతో ప్రియమైన వారు, మీ కుటుంబం మిమ్మల్ని ఎంతో గౌరవిస్తుంది. మీరు మీ స్వంత ఇంట్లోనే ప్రశాంతంగా ఉన్నారు, నేను మీకు ఎల్లప్పుడూ తోడుగా ఉన్నాను.',
+        hi: 'आप हमारे आदरणीय और प्रिय सदस्य हैं। आप अपने सुरक्षित घर पर हैं और आपका परिवार आपसे बहुत स्नेह करता है। मैं आपकी सहायता के लिए सदैव यहाँ हूँ।',
+        as: 'আপুনি আমাৰ অতি সন্মানীয় আৰু মৰমৰ ব্যক্তি। আপুনি আপোনাৰ নিজৰ ঘৰতে সুৰক্ষিতভাৱে আছে, আৰু মই সদায় আপোনাৰ লগত আছোঁ।',
+        bn: 'আপনি আমাদের অত্যন্ত প্রিয় এবং শ্রদ্ধেয় মানুষ। আপনি আপনার নিরাপদ ঘরেই আছেন এবং আমরা সবাই আপনাকে ভালোবাসি।',
+        en: 'You are a deeply cherished elder living safely and comfortably in your own home. Your family loves you, and I am right here by your side.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 3. Caregiver / Doctor / "Who takes care of me"
+    const isCaregiverQuery =
+      lower.includes('who takes care') ||
+      lower.includes('who is caring') ||
+      lower.includes('who is looking after') ||
+      lower.includes('who is priya') ||
+      lower.includes('who is my doctor') ||
+      lower.includes('నా సంరక్షకుడు') ||
+      lower.includes('ప్రియా ఎవరు') ||
+      lower.includes('నా డాక్టర్') ||
+      lower.includes('मेरी देखभाल') ||
+      lower.includes('प्रिया कौन') ||
+      lower.includes('डॉक्टर कौन') ||
+      lower.includes('মোৰ যত্ন') ||
+      lower.includes('প্ৰিয়া কোন');
+
+    if (isCaregiverQuery) {
+      const responses: Record<string, string> = {
+        te: 'ప్రియా బోరా మీ కుటుంబ సంరక్షకురాలు, ఆమె మీ క్షేమాన్ని ఎంతో ప్రేమతో చూసుకుంటున్నారు. డాక్టర్ శర్మ మీ వైద్యులు. అన్నీ సురక్షితంగా ఉన్నాయి.',
+        hi: 'प्रिया बोरा आपकी समर्पित पारिवारिक देखभालकर्ता हैं जो आपका पूरा ध्यान रखती हैं। डॉक्टर शर्मा आपके चिकित्सक हैं। सब कुछ पूरी तरह सुरक्षित है।',
+        as: 'প্ৰিয়া বৰা আপোনাৰ পৰিয়ালৰ যত্ন লোৱা ব্যক্তি, আৰু ডাক্তৰ শৰ্মা আপোনাৰ চিকিৎসক। সকলো কাম ঠিকে চলি আছে।',
+        bn: 'প্রিয়া বোরা আপনার যত্নশীল পরিবারের সদস্য যিনি সবসময় আপনার খেয়াল রাখেন। সবকিছু নিরাপদ এবং নিয়ন্ত্রণে আছে।',
+        en: 'Priya Borah is your dedicated family caregiver who looks after you with great love and care. Dr. Sharma is your physician. Everything is safe and well taken care of.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 4. Location / "Where am I" / "Where is my house"
+    const isLocationQuery =
+      lower.includes('where am i') ||
+      lower.includes('where is my house') ||
+      lower.includes('where is my home') ||
+      lower.includes('where do i live') ||
+      lower.includes('which place is this') ||
+      lower.includes('ఎక్కడ ఉన్నాను') ||
+      lower.includes('నా ఇల్లు ఎక్కడ') ||
+      lower.includes('ఇది ఎక్కడ') ||
+      lower.includes('कहाँ हूँ') ||
+      lower.includes('मेरा घर कहाँ') ||
+      lower.includes('ক\'ত আছোঁ') ||
+      lower.includes('মোৰ ঘৰ');
+
+    if (isLocationQuery) {
+      const responses: Record<string, string> = {
+        te: 'మీరు మీ స్వంత ఇంట్లోనే సురక్షితంగా ఉన్నారు. మీ చుట్టూ మీకు తెలిసిన వస్తువులే ఉన్నాయి. నిదానంగా ఊపిరి పీల్చుకోండి, కంగారు పడాల్సిన అవసరం ఏమీ లేదు.',
+        hi: 'आप अपने ही प्यारे और सुरक्षित घर पर हैं। सब कुछ पूरी तरह सामान्य और शांत है। आप बिल्कुल चिंता न करें, मैं आपके साथ हूँ।',
+        as: 'আপুনি আপোনাৰ নিজৰ ঘৰতে সুৰক্ষিতভাৱে আছে। কোনো ভয় নকৰিব, সকলো শান্তিপূৰ্ণ আৰু ঠিক আছে।',
+        bn: 'আপনি আপনার নিজের শান্ত ও নিরাপদ ঘরে আছেন। কোনো ভয় নেই, আমি আপনার সাথেই আছি।',
+        en: 'You are right in the comfort of your own safe home. Everything is completely peaceful and well. Take a slow, gentle breath—I am right here with you.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 5. Calendar / Date / Day of week
+    const isDateQuery =
+      lower.includes('what day is today') ||
+      lower.includes('what date is today') ||
+      lower.includes('what is today\'s date') ||
+      lower.includes('which day is it') ||
+      lower.includes('which year is it') ||
+      lower.includes('ఏమి వారం') ||
+      lower.includes('తేదీ ఎంత') ||
+      lower.includes('ఏ రోజు') ||
+      lower.includes('कौन सा दिन') ||
+      lower.includes('क्या तारीख') ||
+      lower.includes('কি বাৰ') ||
+      lower.includes('কি তাৰিখ');
+
+    if (isDateQuery) {
+      const now = new Date();
+      const dayNames = ['ఆదివారం', 'సోమవారం', 'మంగళవారం', 'బుధవారం', 'గురువారం', 'శుక్రవారం', 'శనివారం'];
+      const hindiDays = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
+      const englishDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dIndex = now.getDay();
+      const dateNum = now.getDate();
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = monthNames[now.getMonth()];
+      const year = now.getFullYear();
+
+      const responses: Record<string, string> = {
+        te: `ఈ రోజు ${dayNames[dIndex]}, ${month} ${dateNum}, ${year}. ప్రశాంతమైన రోజండి!`,
+        hi: `आज ${hindiDays[dIndex]} है, ${dateNum} ${month} ${year}। आपका दिन शुभ और सुखद रहे।`,
+        as: `আজি ${englishDays[dIndex]}, ${dateNum} ${month} ${year}। আপোনাৰ দিনটো শান্তিময় হওক।`,
+        bn: `আজ ${englishDays[dIndex]}, ${dateNum} ${month} ${year}। আশা করি আপনার দিনটি সুন্দর কাটবে।`,
+        en: `Today is ${englishDays[dIndex]}, ${month} ${dateNum}, ${year}. A pleasant and peaceful day!`,
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 6. Dementia Anxiety / Loneliness / Fear Grounding
+    const isAnxiety =
+      lower.includes('lonely') ||
+      lower.includes('scared') ||
+      lower.includes('afraid') ||
+      lower.includes('forgot') ||
+      lower.includes('lost') ||
+      lower.includes('భయంగా') ||
+      lower.includes('ఒంటరిగా') ||
+      lower.includes('మర్చిపోయా') ||
+      lower.includes('डर लग') ||
+      lower.includes('अकेला') ||
+      lower.includes('ভয়') ||
+      lower.includes('পাহৰি');
+
+    if (isAnxiety) {
+      const responses: Record<string, string> = {
+        te: 'ఏమీ పర్వాలేదండి, ఒక్క నిమిషం నిదానంగా కూర్చోండి. ఏదైనా మర్చిపోవడం చాలా సహజం. మీరు సురక్షితంగా ఉన్నారు, మీ కుటుంబం మీతోనే ఉంది, నేను మీకు ఎప్పుడూ తోడుగా ఉంటాను.',
+        hi: 'बिल्कुल चिंता न करें। कभी-कभी बातें भूल जाना बहुत सामान्य है। आप अपने सुरक्षित घर पर हैं और सब कुछ ठीक है। मैं हमेशा आपके साथ बात करने के लिए यहाँ हूँ।',
+        as: 'একো কথা নাই, লাহেকৈ বহক। পাহৰি যোৱাটো স্বাভাৱিক। আপুনি সম্পূৰ্ণ সুৰক্ষিত, আৰু মই সদায় আপোনাৰ কাষতে আছোঁ।',
+        bn: 'কোনো ভয় নেই, শান্ত হয়ে বসুন। ভুলে যাওয়া খুবই স্বাভাবিক বিষয়। আপনি নিরাপদে আছেন এবং আমি আপনার পাশে আছি।',
+        en: 'Please don’t worry at all. It is completely normal to forget things from time to time. You are safe in your home, your family cares for you, and I am always right here with you.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 7. Stories / Fables
+    const isStory =
+      lower.includes('story') ||
+      lower.includes('fable') ||
+      lower.includes('కథ చెప్పు') ||
+      lower.includes('ఒక కథ') ||
+      lower.includes('कहानी सुनाओ') ||
+      lower.includes('एक कहानी') ||
+      lower.includes('সাধু কোৱা');
+
+    if (isStory) {
+      const responses: Record<string, string> = {
+        te: 'ఒక అందమైన చిన్న కథ: ఒక ఊరిలో ఒక పెద్ద మర్రిచెట్టు ఉండేది. ఆ చెట్టు ప్రతి రోజూ ఎండలో అలసిపోయిన బాటసారులకు చల్లని నీడను, ప్రశాంతతను ఇచ్చేది. ఆ చెట్టు చెప్పే నీతి ఏమిటంటే: జీవితంలో నిదానంగా ఉండటం, ఇతరులకు మంచి మనసుతో తోడుగా ఉండటమే నిజమైన ఆనందం.',
+        hi: 'एक छोटी और प्रेरणादायक कहानी: एक पुराने गाँव में एक विशाल बरगद का पेड़ था। वह हर राहगीर को ठंडी छाया और सुकून देता था। वह पेड़ हमें सिखाता है कि जीवन में धैर्य रखना और शांत भाव से दूसरों का भला करना ही सबसे बड़ा सुख है।',
+        as: 'এটা মিঠা সাধু: এখন গাঁৱত এডাল ডাঙৰ আঁহত গছ আছিল। বাটৰুৱা সকলোৱে তাৰ ছাঁত জিৰণি লৈ শান্তি পাইছিল। গছডালে আমাক সোঁৱৰাই দিয়ে যে ধৈৰ্য্য আৰু মৰমেই পৃথিৱীৰ আটাইতকৈ ডাঙৰ শক্তি।',
+        bn: 'একটি সুন্দর শিক্ষণীয় গল্প: এক শান্ত নদীর তীরে একটি পুরনো বটগাছ ছিল। ক্লান্তি ভুলে পথিকেরা তার ছায়ায় বিশ্রাম পেত। গল্পটির শিক্ষা—ধৈর্য এবং ভালোবাসাই জীবনের সবচেয়ে সুন্দর উপহার।',
+        en: 'Here is a gentle story: In a quiet village stood an ancient banyan tree. Travellers would sit in its cool shade to rest their minds. The wise tree taught that peace is not found in rushing, but in taking slow, grateful breaths and being kind to oneself.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 8. Wholesome Humor / Jokes
+    const isJoke =
+      lower.includes('joke') ||
+      lower.includes('make me laugh') ||
+      lower.includes('జోక్') ||
+      lower.includes('चुटकुला') ||
+      lower.includes('धেমালি');
+
+    if (isJoke) {
+      const responses: Record<string, string> = {
+        te: 'ఒక సరదా జోక్: తాతగారు కళ్ళద్దాలు వెతుకుతూ మనవడిని అడిగారు—"ఒరేయ్, నా అద్దాలు ఎక్కడైనా చూశావా?" మనవడు నవ్వి చెప్పాడు—"తాతగారూ, మీరు ఆ అద్దాలు పెట్టుకునే నన్ను అడుగుతున్నారు!"',
+        hi: 'एक प्यारा सा चुटकुला: दादाजी चश्मा ढूंढ रहे थे और पोते से बोले—"बेटा, मेरा चश्मा कहीं देखा क्या?" पोता हँसकर बोला—"दादाजी, चश्मा तो आपकी नाक पर ही बैठा है!"',
+        as: 'এটা হাঁহি উঠা কথা: ককাদেউতাই চশমাযোৰ বিচাৰি নাপায় নাতিয়েকক সুধিলে—"মোৰ চশমা ক\'ত গ\'ল?" নাতিয়ে হাঁহি ক\'লে—"ককা, আপুনি চশমাযোৰ পিন্ধিয়েই মোক সুধিছে!"',
+        bn: 'একটি হাসির কথা: দাদু সারা ঘরে চশমা খুঁজছেন। নাতি এসে বলল—"দাদু, চশমাটা তো তোমার চোখের ওপরই রয়েছে!"',
+        en: 'Here is a gentle smile: An elder grandfather was searching all over the room for his reading glasses and asked his grandson, "Have you seen my glasses anywhere?" The grandson chuckled and said, "Grandpa, you are looking at me through them right now!"',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 9. Calming Music / Melody
+    const isMusic =
+      lower.includes('sing') ||
+      lower.includes('music') ||
+      lower.includes('song') ||
+      lower.includes('పాట') ||
+      lower.includes('గానా') ||
+      lower.includes('গান');
+
+    if (isMusic) {
+      const responses: Record<string, string> = {
+        te: 'సంగీతం మనస్సుకు ఎంతో ప్రశాంతతను ఇస్తుంది. మీకు నచ్చిన శాస్త్రీయ లేదా భక్తి సంగీతాన్ని ప్రశాంతంగా వినవచ్చు. కళ్ళు మూసుకుని నెమ్మదిగా శ్వాస తీసుకోండి.',
+        hi: 'मधुर संगीत मन को शांति और सुकून देता है। आप आराम से आँखें बंद करके गहरी साँस लें। संगीत का हर सुर मन को हल्का कर देता है।',
+        as: 'মৃদু সংগীতে মনলৈ অপাৰ শান্তি আনে। আপুনি চকুজুৰি মুদি অলপ জিৰণি লওক, মনটো বৰ শান্ত হৈ পৰিব।',
+        bn: 'মধুর সুর মনকে স্নিগ্ধ করে তোলে। চোখ বন্ধ করে একটু বিশ্রাম নিন, মন শান্ত হবে।',
+        en: 'Gentle music brings wonderful calm to the heart. Close your eyes, take three slow breaths, and let peaceful thoughts fill your mind.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 10. Weather
+    const isWeather =
+      lower.includes('weather') ||
+      lower.includes('rain') ||
+      lower.includes('hot') ||
+      lower.includes('cold') ||
+      lower.includes('వాతావరణం') ||
+      lower.includes('వర్షం') ||
+      lower.includes('मौसम') ||
+      lower.includes('बारिश') ||
+      lower.includes('বতৰ');
+
+    if (isWeather) {
+      const responses: Record<string, string> = {
+        te: 'వాతావరణం ప్రశాంతంగా ఉంది. చల్లటి గాలి వీస్తోంది. మీరు ఇంట్లో సౌకర్యంగా ఉండండి, సమయానికి ఒక గ్లాసు మంచి నీళ్ళు తాగండి.',
+        hi: 'मौसम आज शांत और सुहावना है। घर में आराम से रहें, और थोड़ा गुनगुना पानी पीते रहें।',
+        as: 'আজিৰ বতৰ বৰ শান্ত আৰু আৰামদায়ক। আপুনি ঘৰতে জিৰণি লওক আৰু পানী খাবলৈ নাপাহৰিব।',
+        bn: 'আজকের আবহাওয়া বেশ মনোরম ও শান্ত। ঘরে আরামে থাকুন এবং পর্যাপ্ত জল পান করুন।',
+        en: 'The weather today is calm and pleasant. Stay comfortable indoors, and remember to have a refreshing sip of water.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 11. "How are you" / wellbeing check
+    const isHowAreYou =
+      lower.includes('how are you') ||
+      lower.includes('how do you do') ||
+      lower.includes('how\'s it going') ||
+      lower.includes('ఎలా ఉన్నావ్') ||
+      lower.includes('ఎలా ఉన్నారు') ||
+      lower.includes('బాగున్నారా') ||
+      lower.includes('कैसे हो') ||
+      lower.includes('कैसा है') ||
+      lower.includes('कেনে আছা') ||
+      lower.includes('কেনে আছে');
+
+    if (isHowAreYou) {
+      const responses: Record<string, string> = {
+        te: 'నేను బాగున్నాను, అడిగినందుకు ధన్యవాదాలు! మీరు ఎలా ఉన్నారు? నేను మీ షెడ్యూల్ చెప్పగలను, మందుల గురించి గుర్తుచేయగలను, లేదా కలిసి ఆట ఆడగలను.',
+        hi: 'मैं अच्छा हूँ, पूछने के लिए धन्यवाद! आप कैसे हैं? मैं आपका कार्यक्रम बता सकता हूँ, दवाई याद दिला सकता हूँ, या साथ में खेल खेल सकते हैं।',
+        as: 'মই ভালে আছোঁ, সুধি লোৱাৰ বাবে ধন্যবাদ! আপুনি কেনে আছে? মই আপোনাৰ কাৰ্যসূচী কওঁ, দৰবৰ কথা মনত পেলাওঁ, বা খেল খেলোঁ।',
+        bn: 'আমি ভালো আছি, জিজ্ঞেস করার জন্য ধন্যবাদ! আপনি কেমন আছেন? আমি আপনার রুটিন বলতে পারি বা একটি খেলা খেলতে পারি।',
+        en: 'I am doing well, thank you for asking! How are you feeling today? I can help with your schedule, remind you about medicines, or we can play a fun game together.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 12. Thank you
+    const isThanks =
+      lower.includes('thank you') ||
+      lower.includes('thanks') ||
+      lower.includes('thankyou') ||
+      lower.includes('ధన్యవాదాలు') ||
+      lower.includes('థాంక్యూ') ||
+      lower.includes('धन्यवाद') ||
+      lower.includes('शुक्रिया') ||
+      lower.includes('ধন্যবাদ');
+
+    if (isThanks) {
+      const responses: Record<string, string> = {
+        te: 'మీకు సహాయం చేయడం నాకు ఎంతో సంతోషం! ఏదైనా కావాలంటే నన్ను అడగండి, నేను ఎప్పుడూ ఇక్కడే ఉంటాను.',
+        hi: 'आपकी सेवा में ख़ुशी है! जब भी ज़रूरत हो, मैं यहाँ हूँ।',
+        as: 'আপোনাক সহায় কৰি মই সুখী! যেতিয়া লাগে মাতিব, মই ইয়াতে আছোঁ।',
+        bn: 'আপনাকে সাহায্য করতে পেরে আমি খুশি! যখনই দরকার, আমি এখানে আছি।',
+        en: 'You are most welcome! I am always here for you. Just call me whenever you need anything.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 13. "What time is it" / time query
+    const isTimeQuery =
+      lower.includes('what time') ||
+      lower.includes('what\'s the time') ||
+      lower.includes('time now') ||
+      lower.includes('ఎంత టైం') ||
+      lower.includes('సమయం ఎంత') ||
+      lower.includes('कितने बजे') ||
+      lower.includes('সময় কিমান');
+
+    if (isTimeQuery) {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const period = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      const timeStr = m > 0 ? `${h12}:${m.toString().padStart(2, '0')} ${period}` : `${h12} ${period}`;
+
+      const responses: Record<string, string> = {
+        te: `ఇప్పుడు ${timeStr} అవుతోంది. ఏదైనా సహాయం కావాలా?`,
+        hi: `अभी ${timeStr} बज रहे हैं। कुछ और मदद चाहिए?`,
+        as: `এতিয়া ${timeStr} বাজিছে। আৰু কিবা সহায় লাগেনে?`,
+        bn: `এখন ${timeStr} বাজে। আর কিছু দরকার?`,
+        en: `It is ${timeStr} right now. Is there anything else I can help you with?`,
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // "What can you do" / capabilities
+    const isCapabilities =
+      lower.includes('what can you do') ||
+      lower.includes('what do you do') ||
+      lower.includes('what are you') ||
+      lower.includes('నువ్వు ఏమి చేయగలవు') ||
+      lower.includes('నీవు ఏమి') ||
+      lower.includes('तुम क्या कर सकते') ||
+      lower.includes('আপুনি কি কৰিব পাৰে');
+
+    if (isCapabilities) {
+      const responses: Record<string, string> = {
+        te: 'నేను మీకు చాలా సహాయం చేయగలను! మీ రోజు షెడ్యూల్ చెప్పగలను, మందుల సమయాలు గుర్తుచేయగలను, మీ కుటుంబానికి కాల్ చేయగలను, మెదడు ఆటలు ఆడగలను, మరియు మీ జ్ఞాపకాలు చూపించగలను.',
+        hi: 'मैं आपकी बहुत मदद कर सकता हूँ! दिनचर्या बता सकता हूँ, दवाई याद दिला सकता हूँ, परिवार को फ़ोन करवा सकता हूँ, दिमागी खेल खेल सकते हैं, और यादें दिखा सकता हूँ।',
+        as: 'মই আপোনাক বহু ধৰণে সহায় কৰিব পাৰোঁ! দৈনিক কাৰ্যসূচী কওঁ, ঔষধ মনত পেলাওঁ, পৰিয়াললৈ ফোন কৰোঁ, মগজুৰ খেল খেলোঁ, আৰু স্মৃতি দেখুওৱাওঁ।',
+        bn: 'আমি আপনাকে অনেকভাবে সাহায্য করতে পারি! রুটিন বলতে পারি, ওষুধ মনে করাতে পারি, পরিবারকে ফোন করাতে পারি, মস্তিষ্কের খেলা খেলতে পারি, এবং স্মৃতি দেখাতে পারি।',
+        en: 'I can help you in many ways! I can tell you your daily schedule, remind you about medicines, connect you with family, play brain games together, and show your family memories.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    return null;
   }
 
   /**
@@ -540,19 +1058,19 @@ export class VoiceIntelligenceEngine {
         intent: 'help',
         confidence: 0.96,
         confirmationRequired: false,
-        confirmationPrompt: 'I can help you with today reminders, mind games, and calling your family.',
+        confirmationPrompt: 'I can help you with your daily schedule, medicine reminders, brain games, and connecting with your family.',
         rawTranscript: transcript,
         detectedLanguage: this.detectSpokenLanguage(text),
         missingSlots: [],
       };
     }
 
-    // 10. UNKNOWN / LOW CONFIDENCE FALLBACK (Section 11, 13)
+    // 10. UNKNOWN / LOW CONFIDENCE FALLBACK — warm voice-first guidance, never "click buttons"
     return {
       intent: 'unknown',
       confidence: 0.50,
       confirmationRequired: false,
-      confirmationPrompt: `I heard: "${transcript}". Let us take our time. You can also tap one of the buttons below.`,
+      confirmationPrompt: `I heard: "${transcript}". I am here for you. You can ask me about your schedule, medicines, or we can play a game together.`,
       rawTranscript: transcript,
       detectedLanguage: this.detectSpokenLanguage(text),
       missingSlots: [],

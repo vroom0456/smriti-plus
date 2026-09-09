@@ -38,7 +38,7 @@ import {
   KeyRound,
   ShieldCheck,
 } from 'lucide-react-native';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme/tokens';
+import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { PrimaryButton } from '../../components/UIComponents';
 import { useAuthStore, UserRole } from '../../state/authStore';
 

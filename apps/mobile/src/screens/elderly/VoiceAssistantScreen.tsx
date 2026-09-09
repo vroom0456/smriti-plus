@@ -33,6 +33,8 @@ import {
 import { PersonaType, HonorificType } from '../../services/adaptivePersonaEngine';
 import { languageRegistry } from '../../services/languageRegistry';
 import { offlineStore } from '../../services/offlineStore';
+import { VoiceTools, ToolResult } from '../../services/voiceTools';
+import { LanguageProfileManager } from '../../services/languageProfiles';
 import { useAuthStore } from '../../state/authStore';
 import { useTranslation, getLanguage } from '../../i18n';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
@@ -51,11 +53,11 @@ interface ChatTurn {
 // ─── Language-specific content maps ──────────────────────────────────────────
 
 const LANG_GREETINGS: Record<string, string> = {
-  te: 'నమస్కారమండి అమ్మగారూ! 🙏\nమీకు ఎలా సహాయపడమంటారు?',
-  hi: 'नमस्ते जी! 🙏\nमैं आपकी क्या सहायता कर सकता हूँ?',
+  te: 'నమస్కారం! 🙏\nమీకు ఎలా సహాయపడమంటారు?',
+  hi: 'नमस्ते! 🙏\nमैं आपकी क्या सहायता कर सकता हूँ?',
   as: 'নমস্কাৰ! 🙏\nআপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?',
   bn: 'নমস্কার! 🙏\nআমি কীভাবে সাহায্য করতে পারি?',
-  ta: 'வணக்கம் அம்மா! 🙏\nநான் எப்படி உதவட்டும்?',
+  ta: 'வணக்கம்! 🙏\nநான் எப்படி உதவட்டும்?',
   kn: 'ನಮಸ್ಕಾರ! 🙏\nನಾನು ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?',
   ml: 'നമസ്കാരം! 🙏\nഞാൻ എങ്ങനെ സഹായിക്കട്ടേ?',
   mr: 'नमस्कार! 🙏\nमी कशी मदत करू?',
@@ -63,7 +65,7 @@ const LANG_GREETINGS: Record<string, string> = {
 };
 
 const LANG_LISTEN_PROMPT: Record<string, string> = {
-  te: 'చెప్పండి అమ్మగారూ, వింటున్నాను. 👂',
+  te: 'చెప్పండి, వింటున్నాను. 👂',
   hi: 'जी, मैं ध्यान से सुन रहा हूँ। 👂',
   as: 'মই শুনি আছোঁ। 👂',
   bn: 'আমি শুনছি। 👂',
@@ -116,36 +118,48 @@ const LANG_STATE_LABELS: Record<string, Record<VoiceState, string>> = {
 // Quick phrase chips shown per language
 const QUICK_PHRASE_CHIPS: Record<string, Array<{ tag: string; phrase: string; spoken: string }>> = {
   te: [
-    { tag: '💊 మందు', phrase: 'రేపు ఉదయం 8కి మందు గుర్తు చేయి', spoken: 'రేపు ఉదయం 8 గంటలకు మందు గుర్తు చేయి' },
-    { tag: '💧 నీళ్ళు', phrase: 'ప్రతి 2 గంటలకు నీళ్ళు తాగు గుర్తు చేయి', spoken: 'ప్రతి 2 గంటలకు నీళ్ళు తాగుతాను గుర్తు చేయి' },
-    { tag: '🎮 ఆట', phrase: 'ఒక ఆట ఆడాలనుంది', spoken: 'ఒక ఆట ఆడాలనుంది' },
+    { tag: '📋 షెడ్యూల్', phrase: 'ఈ రోజు షెడ్యూల్ ఏమిటి?', spoken: 'నా ఈ రోజు షెడ్యూల్ ఏమిటి?' },
+    { tag: '💊 తర్వాతి మందు', phrase: 'నా తర్వాతి మందు ఎప్పుడు?', spoken: 'నా తర్వాతి మందు ఎప్పుడు?' },
+    { tag: '💧 నీళ్ళు', phrase: 'ఈ రోజు నీళ్ళు తాగానా?', spoken: 'ఈ రోజు నేను నీళ్ళు తాగానా?' },
+    { tag: '🖼️ జ్ఞాపకాలు', phrase: 'ఫ్యామిలీ జ్ఞాపకాలు చూపించు', spoken: 'ఫ్యామిలీ జ్ఞాపకాలు చూపించు' },
+    { tag: '🎮 ఆట', phrase: 'ఒక మెదడు ఆట చెప్పు', spoken: 'ఒక మెదడు ఆట చెప్పు' },
+    { tag: '🛡️ రక్షణ', phrase: 'రెండు మాత్రలు వేసుకోవచ్చా?', spoken: 'రెండు మాత్రలు ఒకేసారి వేసుకోవచ్చా?' },
     { tag: '📞 ఫ్యామిలీ', phrase: 'Amma ki call cheyyi', spoken: 'Amma ki call cheyyi' },
     { tag: '🔄 మళ్ళీ', phrase: 'మళ్ళీ చెప్పు', spoken: 'మళ్ళీ చెప్పు' },
     { tag: '🛑 ఆపు', phrase: 'ఆపు', spoken: 'ఆపు' },
   ],
   hi: [
-    { tag: '💊 दवाई', phrase: 'कल सुबह 8 बजे दवाई याद दिलाना', spoken: 'कल सुबह 8 बजे दवा याद दिलाना' },
-    { tag: '💧 पानी', phrase: 'हर 2 घंटे पानी पीना याद दिलाना', spoken: 'हर दो घंटे पानी पिलाना याद दिलाना' },
-    { tag: '🎮 खेल', phrase: 'कोई खेल खेलना है', spoken: 'कोई खेल खेलना है' },
+    { tag: '📋 कार्यक्रम', phrase: 'आज का कार्यक्रम क्या है?', spoken: 'मेरा आज का कार्यक्रम क्या है?' },
+    { tag: '💊 अगली दवा', phrase: 'मेरी अगली दवाई कब है?', spoken: 'मेरी अगली दवाई कब है?' },
+    { tag: '💧 पानी', phrase: 'क्या मैंने पानी पिया?', spoken: 'क्या मैंने आज पानी पिया?' },
+    { tag: '🖼️ यादें', phrase: 'परिवार की यादें दिखाओ', spoken: 'परिवार की यादें दिखाओ' },
+    { tag: '🎮 खेल', phrase: 'दिमागी खेल बताओ', spoken: 'दिमागी खेल बताओ' },
+    { tag: '🛡️ सुरक्षा', phrase: 'क्या दो गोली ले सकता हूँ?', spoken: 'क्या मैं दो गोली ले सकता हूँ?' },
     { tag: '📞 परिवार', phrase: 'बेटे को call karwao', spoken: 'बेटे को फ़ोन करवाओ' },
     { tag: '🔄 दोहरा', phrase: 'फिर से बोलो', spoken: 'फिर से बोलो' },
     { tag: '🛑 रुको', phrase: 'रुको', spoken: 'रुको' },
   ],
   as: [
-    { tag: '💊 দৰব', phrase: 'কালি পুৱা ৮ বাজিলে দৰব মনত পেলাই', spoken: 'কালি পুৱা ৮ বাজিলে দৰব মনত পেলাই দিবা' },
-    { tag: '💧 পানী', phrase: 'প্রতি ২ ঘণ্টাত পানী খোৱা মনত পেলাই', spoken: 'প্রতি দুই ঘণ্টাত পানী খোৱা মনত পেলাই দিবা' },
-    { tag: '🎮 খেল', phrase: 'এটা খেল খেলিব বিচাৰোঁ', spoken: 'এটা খেল খেলিব বিচাৰোঁ' },
+    { tag: '📋 কাৰ্যসূচী', phrase: 'আজি মোৰ কি কি কাম আছে?', spoken: 'আজি মোৰ কি কি কাম আছে?' },
+    { tag: '💊 পিছৰ দৰব', phrase: 'মোৰ পিছৰ দৰব কেতিয়া?', spoken: 'মোৰ পিছৰ দৰব কেতিয়া খাব লাগে?' },
+    { tag: '💧 পানী', phrase: 'মই আজি পানী খালোঁনে?', spoken: 'মই আজি পানী খালোঁনে?' },
+    { tag: '🖼️ স্মৃতি', phrase: 'পৰিয়ালৰ স্মৃতি দেখুওৱা', spoken: 'পৰিয়ালৰ স্মৃতি দেখুওৱা' },
+    { tag: '🎮 খেল', phrase: 'এটা মগজুৰ খেল কোৱা', spoken: 'এটা মগজুৰ খেল কোৱা' },
+    { tag: '🛡️ নিৰাপত্তা', phrase: 'দৰবৰ মাত্ৰা বঢ়াব পাৰোঁনে?', spoken: 'দৰবৰ মাত্ৰা বঢ়াব পাৰোঁনে?' },
     { tag: '📞 পৰিয়াল', phrase: 'ছোৱালীক ফোন কৰোৱা', spoken: 'ছোৱালীক ফোন কৰোৱা' },
     { tag: '🔄 পুনৰ', phrase: 'পুনৰ কোৱা', spoken: 'পুনৰ কোৱা' },
     { tag: '🛑 ৰখোৱা', phrase: 'ৰখোৱা', spoken: 'ৰখোৱা' },
   ],
   en: [
-    { tag: '💊 Meds', phrase: 'Remind me medicine tomorrow 8 AM', spoken: 'Please put one reminder for medicine tomorrow morning 8 AM' },
-    { tag: '💧 Water', phrase: 'Remind me water every 2 hours', spoken: 'Remind me to drink water every two hours' },
-    { tag: '🎮 Game', phrase: 'I want to play a game', spoken: 'I want to play a game' },
+    { tag: '📋 Schedule', phrase: 'What is my schedule today?', spoken: 'What is my schedule today?' },
+    { tag: '💊 Next Med', phrase: 'When is my next medicine?', spoken: 'When is my next medicine?' },
+    { tag: '💧 Water', phrase: 'Did I drink water today?', spoken: 'Did I drink water today?' },
+    { tag: '🖼️ Memories', phrase: 'Show my family memories', spoken: 'Show my family memories' },
+    { tag: '🎮 Game', phrase: 'Recommend a brain game', spoken: 'Recommend a brain game for me' },
+    { tag: '🛡️ Safety', phrase: 'Can I take two pills instead of one?', spoken: 'Can I take two pills instead of one?' },
     { tag: '📞 Family', phrase: 'Call daughter please', spoken: 'Please call my daughter' },
-    { tag: '🔄 Repeat', phrase: 'Say that again', spoken: 'say that again' },
-    { tag: '🛑 Stop', phrase: 'Stop', spoken: 'stop' },
+    { tag: '🔄 Repeat', phrase: 'Say that again', spoken: 'Say that again' },
+    { tag: '🛑 Stop', phrase: 'Stop', spoken: 'Stop' },
   ],
 };
 
@@ -181,7 +195,7 @@ export default function VoiceAssistantScreen() {
   const [currentIntent, setCurrentIntent] = useState<CanonicalIntent | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatTurn[]>([]);
   const [activePersona, setActivePersona] = useState<PersonaType>('warm_companion');
-  const [activeHonorific, setActiveHonorific] = useState<HonorificType>('Amma');
+  const [activeHonorific, setActiveHonorific] = useState<HonorificType>('none');
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Wave animation values
@@ -336,42 +350,102 @@ export default function VoiceAssistantScreen() {
     }
     syncPersona();
 
-    const canonical = voiceIntelligence.parseTranscript(phrase, 'voice');
-    setCurrentIntent(canonical);
-
-    const fluent = adaptivePersonaEngine.generateFluentResponse(canonical, currentLang, phrase);
-
-    const assistantTurn: ChatTurn = {
-      id: (Date.now() + 1).toString(),
-      sender: 'assistant',
-      text: fluent.displayText,
-      spokenAudioText: fluent.spokenText,
-      timestamp: 'Just now',
-      intentLabel: canonical.intent !== 'unknown' ? canonical.intent : undefined,
-    };
-    setChatHistory((prev) => [...prev, assistantTurn]);
-
-    if (canonical.intent === 'stop') {
+    // 1. Direct barge-in stop (Section 14)
+    if (/^(stop|ఆపు|रुको|ৰখোৱা|pause|cancel)$/i.test(phrase.trim())) {
       await voiceIntelligence.stopSpeech();
       setVoiceState('IDLE');
       return;
     }
 
-    if (canonical.intent === 'repeat') {
+    // 2. Direct repeat (Section 15)
+    if (/^(repeat|again|say that again|మళ్ళీ చెప్పు|फिर से बोलो|পুনৰ কোৱা)$/i.test(phrase.trim())) {
       setVoiceState('SPEAKING');
       await voiceIntelligence.repeatLastResponse();
-      setVoiceState('IDLE');
+      setTimeout(() => setVoiceState('IDLE'), 2800);
       return;
     }
 
-    if (canonical.confirmationRequired) {
+    // 3. Master Voice Intelligence Router (Tools & Medical Safety Boundaries)
+    const execResult = await voiceIntelligence.executeVoiceCommand(phrase, user?.id || 'demo-elder-id');
+
+    if (execResult.isSafetyRefusal) {
+      const assistantTurn: ChatTurn = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: `🛡️ Medical Safety Boundary:\n${execResult.responseText}`,
+        spokenAudioText: execResult.responseText,
+        timestamp: 'Just now',
+        intentLabel: 'Medical Safety',
+      };
+      setChatHistory((prev) => [...prev, assistantTurn]);
+      setVoiceState('SPEAKING');
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
+      setTimeout(() => setVoiceState('IDLE'), 3500);
+      return;
+    }
+
+    if (execResult.toolResult) {
+      const assistantTurn: ChatTurn = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: `⚡ ${execResult.toolResult.tool.replace(/_/g, ' ').toUpperCase()}:\n${execResult.responseText}`,
+        spokenAudioText: execResult.responseText,
+        timestamp: 'Just now',
+        intentLabel: execResult.toolResult.tool.replace(/_/g, ' '),
+      };
+      setChatHistory((prev) => [...prev, assistantTurn]);
+      setVoiceState('SPEAKING');
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
+      setTimeout(() => setVoiceState('IDLE'), 3500);
+      return;
+    }
+
+    // 4. Conversational / Transactional Response from Voice Intelligence
+    if (execResult.canonicalIntent) {
+      setCurrentIntent(execResult.canonicalIntent);
+    }
+
+    const assistantTurn: ChatTurn = {
+      id: (Date.now() + 1).toString(),
+      sender: 'assistant',
+      text: execResult.responseText,
+      spokenAudioText: execResult.responseText,
+      timestamp: 'Just now',
+      intentLabel: execResult.canonicalIntent && execResult.canonicalIntent.intent !== 'unknown' 
+        ? execResult.canonicalIntent.intent 
+        : 'Companion',
+    };
+    setChatHistory((prev) => [...prev, assistantTurn]);
+
+    if (execResult.confirmationRequired) {
       setVoiceState('CONFIRMING');
-      await voiceIntelligence.speak(fluent.spokenText, currentLang);
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
     } else {
       setVoiceState('SPEAKING');
-      await voiceIntelligence.speak(fluent.spokenText, currentLang);
-      setTimeout(() => setVoiceState('IDLE'), 2800);
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
+      setTimeout(() => setVoiceState('IDLE'), 3000);
     }
+  };
+
+  const handleStopSpeech = async () => {
+    await voiceIntelligence.stopSpeech();
+    setVoiceState('IDLE');
+  };
+
+  const handleRepeatSpeech = async () => {
+    setVoiceState('SPEAKING');
+    await voiceIntelligence.repeatLastResponse();
+    setTimeout(() => setVoiceState('IDLE'), 2800);
+  };
+
+  const handleSlowerSpeech = async () => {
+    const currentProfile = adaptivePersonaEngine.getProfile();
+    const newSpeed = Math.max(0.65, currentProfile.speechSpeed - 0.1);
+    adaptivePersonaEngine.setSpeechSpeed(newSpeed);
+    syncPersona();
+    setVoiceState('SPEAKING');
+    await voiceIntelligence.repeatLastResponse();
+    setTimeout(() => setVoiceState('IDLE'), 3200);
   };
 
   const handleConfirmAction = async () => {
@@ -407,8 +481,8 @@ export default function VoiceAssistantScreen() {
     }
 
     const confirmMsg: Record<string, string> = {
-      te: '✅ అద్భుతం! విజయవంతంగా నమోదు చేశాను అమ్మగారూ!',
-      hi: '✅ बहुत अच्छा जी! सुरक्षित कर लिया गया।',
+      te: '✅ అద్భుతం! విజయవంతంగా నమోదు చేశాను!',
+      hi: '✅ बहुत अच्छा! सुरक्षित कर लिया गया।',
       as: '✅ বহুত ভাল! সংৰক্ষিত হ\'ল।',
       en: '✅ Done! Saved safely for you.',
     };
@@ -562,6 +636,41 @@ export default function VoiceAssistantScreen() {
         </Animated.View>
 
         <Text style={styles.stateLabel}>{getStateLabel(currentLang, voiceState)}</Text>
+
+        {/* ── Active Speech Floating Controls (Stop / Repeat / Slower) ── */}
+        {voiceState === 'SPEAKING' && (
+          <View style={styles.speakingControlBar}>
+            <TouchableOpacity
+              style={styles.speakingBtnStop}
+              onPress={handleStopSpeech}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Stop speech"
+            >
+              <Text style={styles.speakingBtnStopText}>🛑 Stop</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.speakingBtn}
+              onPress={handleRepeatSpeech}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Repeat speech"
+            >
+              <Text style={styles.speakingBtnText}>🔁 Repeat</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.speakingBtn}
+              onPress={handleSlowerSpeech}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Speak slower"
+            >
+              <Text style={styles.speakingBtnText}>🐢 Slower</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {transcript.length > 0 && voiceState !== 'IDLE' && (
           <View style={styles.transcriptBubble}>
@@ -879,6 +988,52 @@ const styles = StyleSheet.create({
     color: colors.navy,
     marginTop: spacing.md,
     letterSpacing: 0.1,
+  },
+  speakingControlBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  speakingBtnStop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEE2E2',
+    borderWidth: 2,
+    borderColor: '#EF4444',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: borderRadius.pill,
+    minHeight: 46,
+    ...shadows.subtle,
+  },
+  speakingBtnStopText: {
+    fontFamily: fontFamily.display,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#DC2626',
+  },
+  speakingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: borderRadius.pill,
+    minHeight: 46,
+    ...shadows.subtle,
+  },
+  speakingBtnText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.navy,
   },
   transcriptBubble: {
     marginTop: spacing.sm,

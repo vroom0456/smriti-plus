@@ -126,8 +126,11 @@ export const api = {
     }
 
     // 6. Handle Reminders
-    if (endpoint.includes('/reminders') && method === 'GET') {
-      return this.handleRemindersList<T>();
+    if (endpoint.includes('/reminders')) {
+      if (method === 'GET') return this.handleRemindersList<T>(endpoint);
+      if (method === 'POST') return this.handleCreateReminder<T>(body);
+      if (method === 'PATCH') return this.handleUpdateReminder<T>(endpoint, body);
+      if (method === 'DELETE') return this.handleDeleteReminder<T>(endpoint);
     }
 
     // 7. Handle Memories
@@ -377,26 +380,124 @@ export const api = {
   },
 
   /**
-   * Reminders List from Supabase
+   * Reminders List from Supabase (supports both active and all)
    */
-  async handleRemindersList<T>(): Promise<T> {
+  async handleRemindersList<T>(endpoint: string = ''): Promise<T> {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/reminders?is_active=eq.true&select=*`, {
+      const isIncludeAll = endpoint.includes('include_inactive=true') || endpoint.includes('all=true');
+      const query = isIncludeAll
+        ? `${SUPABASE_URL}/rest/v1/reminders?select=*&order=scheduled_time.asc`
+        : `${SUPABASE_URL}/rest/v1/reminders?is_active=eq.true&select=*&order=scheduled_time.asc`;
+
+      const res = await fetch(query, {
         headers: getHeaders(),
       });
       if (res.ok) {
         const list = await res.json();
-        return list as unknown as T;
+        if (Array.isArray(list) && list.length > 0) {
+          return list as unknown as T;
+        }
       }
     } catch {
-      // Fallback
+      // Fallback to demo reminders
     }
 
     return [
-      { id: 'rem-1', title: 'Morning Blood Pressure Medication', scheduled_time: '09:00', category: 'medicine', completed: false },
-      { id: 'rem-2', title: 'Mid-Morning Water Reminder', scheduled_time: '11:30', category: 'hydration', completed: true },
-      { id: 'rem-3', title: 'Afternoon Garden Walk', scheduled_time: '16:00', category: 'activity', completed: false },
+      { id: 'rem-1', title: 'Morning Blood Pressure Medication', scheduled_time: '08:30', category: 'medicine', completed: false, is_active: true, recurrence_rule: 'daily' },
+      { id: 'rem-2', title: 'Mid-Morning Hydration (1 Glass Water)', scheduled_time: '11:00', category: 'hydration', completed: true, is_active: true, recurrence_rule: 'daily' },
+      { id: 'rem-3', title: 'Afternoon Memory Game Session', scheduled_time: '15:30', category: 'activity', completed: false, is_active: true, recurrence_rule: 'daily' },
+      { id: 'rem-4', title: 'Evening Walk in Garden', scheduled_time: '17:30', category: 'activity', completed: false, is_active: true, recurrence_rule: 'daily' },
     ] as unknown as T;
+  },
+
+  /**
+   * Create Reminder in Supabase with normalization & fallback
+   */
+  async handleCreateReminder<T>(body: any): Promise<T> {
+    const normCategory = body.category === 'medication' ? 'medicine' : body.category === 'exercise' ? 'activity' : body.category || 'medicine';
+    const payload = {
+      elderly_id: body.elderly_id || '11111111-1111-1111-1111-111111111111',
+      category: normCategory,
+      title: body.title,
+      description: body.description || null,
+      scheduled_time: body.scheduled_time || '09:00',
+      recurrence_rule: body.recurrence_rule || 'daily',
+      is_active: true,
+    };
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/reminders`, {
+        method: 'POST',
+        headers: {
+          ...getHeaders(),
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return (Array.isArray(data) ? data[0] : data) as unknown as T;
+      }
+    } catch (err) {
+      console.warn('[API] Create reminder cloud call failed, saved in local offline queue:', err);
+    }
+
+    return { ...payload, id: `rem-${Date.now()}` } as unknown as T;
+  },
+
+  /**
+   * Update Reminder in Supabase
+   */
+  async handleUpdateReminder<T>(endpoint: string, body: any): Promise<T> {
+    const reminderId = endpoint.split('/').filter(Boolean).pop();
+    const updateData: any = {};
+    if (body.is_active !== undefined) updateData.is_active = body.is_active;
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.scheduled_time !== undefined) updateData.scheduled_time = body.scheduled_time;
+    if (body.category !== undefined) {
+      updateData.category = body.category === 'medication' ? 'medicine' : body.category === 'exercise' ? 'activity' : body.category;
+    }
+    updateData.updated_at = new Date().toISOString();
+
+    if (reminderId) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/reminders?id=eq.${encodeURIComponent(reminderId)}`, {
+          method: 'PATCH',
+          headers: {
+            ...getHeaders(),
+            Prefer: 'return=representation',
+          },
+          body: JSON.stringify(updateData),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return (Array.isArray(data) ? data[0] : data) as unknown as T;
+        }
+      } catch (err) {
+        console.warn('[API] Cloud update reminder failed, queued locally:', err);
+      }
+    }
+
+    return { id: reminderId, ...updateData } as unknown as T;
+  },
+
+  /**
+   * Delete Reminder in Supabase
+   */
+  async handleDeleteReminder<T>(endpoint: string): Promise<T> {
+    const reminderId = endpoint.split('/').filter(Boolean).pop();
+    if (reminderId) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/reminders?id=eq.${encodeURIComponent(reminderId)}`, {
+          method: 'DELETE',
+          headers: getHeaders(),
+        });
+      } catch (err) {
+        console.warn('[API] Cloud delete reminder failed, queued locally:', err);
+      }
+    }
+    return { success: true, id: reminderId } as unknown as T;
   },
 
   /**

@@ -122,6 +122,22 @@ function ElderlyTabs() {
           ),
         }}
       />
+      <Tab.Screen
+        name="VoiceAssistant"
+        component={VoiceAssistantScreen}
+        options={{
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+      <Tab.Screen
+        name="FamilyCorner"
+        component={FamilyCornerScreen}
+        options={{
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
     </Tab.Navigator>
   );
 }

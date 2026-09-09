@@ -168,6 +168,21 @@ export const offlineStore = {
   },
 
   /**
+   * Set explicit difficulty level for elder + game
+   */
+  async setDifficulty(elder_id: string, game_id: string, difficulty: number): Promise<number> {
+    const db = await getDatabase();
+    const now = new Date().toISOString();
+    const clamped = Math.max(1, Math.min(5, difficulty));
+    await db.runAsync(
+      `INSERT OR REPLACE INTO difficulty_state (elder_id, game_id, current_difficulty, consecutive_successes, consecutive_failures, updated_at)
+       VALUES (?, ?, ?, 0, 0, ?)`,
+      [elder_id, game_id, clamped, now]
+    );
+    return clamped;
+  },
+
+  /**
    * Record reminder confirmation/dismissal locally and enqueue sync
    */
   async recordReminderAction(action: Omit<LocalReminderLog, 'id' | 'logged_at'>): Promise<string> {
@@ -232,15 +247,86 @@ export const offlineStore = {
   },
 
   /**
-   * Read cached reminders for an elder
+   * Read cached reminders for an elder (optionally including inactive/paused ones)
    */
-  async getCachedReminders(elder_id: string): Promise<LocalReminder[]> {
+  async getCachedReminders(elder_id: string, includeInactive: boolean = false): Promise<LocalReminder[]> {
     const db = await getDatabase();
-    const rows = await db.getAllAsync<LocalReminder>(
-      `SELECT * FROM reminders WHERE elder_id = ? AND active = 1 ORDER BY scheduled_time ASC`,
-      [elder_id]
-    );
+    const query = includeInactive
+      ? `SELECT * FROM reminders WHERE elder_id = ? ORDER BY scheduled_time ASC`
+      : `SELECT * FROM reminders WHERE elder_id = ? AND active = 1 ORDER BY scheduled_time ASC`;
+    const rows = await db.getAllAsync<LocalReminder>(query, [elder_id]);
     return rows;
+  },
+
+  /**
+   * Toggle active status of a local reminder and enqueue update event
+   */
+  async toggleReminderActive(id: string, active: boolean): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync(
+      `UPDATE reminders SET active = ? WHERE id = ?`,
+      [active ? 1 : 0, id]
+    );
+
+    const syncEventId = uuidv4();
+    const now = new Date().toISOString();
+    const payload = JSON.stringify({
+      id,
+      is_active: active,
+      updated_at: now,
+    });
+
+    await db.runAsync(
+      `INSERT INTO sync_queue (id, event_type, payload, status, retry_count, created_at)
+       VALUES (?, 'update_reminder', ?, 'pending', 0, ?)`,
+      [syncEventId, payload, now]
+    );
+  },
+
+  /**
+   * Delete a local reminder and enqueue delete event
+   */
+  async deleteReminder(id: string): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync(`DELETE FROM reminders WHERE id = ?`, [id]);
+
+    const syncEventId = uuidv4();
+    const now = new Date().toISOString();
+    const payload = JSON.stringify({
+      id,
+      deleted_at: now,
+    });
+
+    await db.runAsync(
+      `INSERT INTO sync_queue (id, event_type, payload, status, retry_count, created_at)
+       VALUES (?, 'delete_reminder', ?, 'pending', 0, ?)`,
+      [syncEventId, payload, now]
+    );
+  },
+
+  /**
+   * Calculate local reminder adherence metrics for the day
+   */
+  async getReminderAdherence(elder_id: string): Promise<{
+    totalToday: number;
+    completedToday: number;
+    adherencePct: number;
+  }> {
+    const db = await getDatabase();
+    const today = new Date().toISOString().split('T')[0];
+    const reminders = await this.getCachedReminders(elder_id, true);
+    const logs = await db.getAllAsync<{ action: string }>(
+      `SELECT action FROM reminder_logs WHERE elder_id = ? AND scheduled_for LIKE ?`,
+      [elder_id, `${today}%`]
+    );
+    const completed = logs.filter((l) => l.action === 'completed').length;
+    const total = Math.max(reminders.length, logs.length, 1);
+    const adherencePct = Math.min(100, Math.round((completed / total) * 100));
+    return {
+      totalToday: reminders.length,
+      completedToday: completed,
+      adherencePct: reminders.length > 0 ? adherencePct : 100,
+    };
   },
 
   /**

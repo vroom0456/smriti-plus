@@ -31,7 +31,7 @@ class AdaptivePersonaEngine {
     fatigueSignals: 0,
     successStreak: 0,
     currentPersona: 'warm_companion',
-    preferredHonorific: 'Amma',
+    preferredHonorific: 'none',
     speechSpeed: 0.85,
     toneDescription: 'Respectful & Patient Companion',
   };
@@ -47,6 +47,10 @@ class AdaptivePersonaEngine {
   setManualPersona(persona: PersonaType) {
     this.profile.currentPersona = persona;
     this.updateSpeedAndDescription();
+  }
+
+  setSpeechSpeed(speed: number) {
+    this.profile.speechSpeed = Math.max(0.6, Math.min(1.1, Number(speed.toFixed(2))));
   }
 
   /**
@@ -130,7 +134,7 @@ class AdaptivePersonaEngine {
     // 1. TELUGU (తెలుగు) — Authentic, warm, respectful elder phrasing
     // ──────────────────────────────────────────────
     if (lang === 'te') {
-      const hPrefix = honorific ? `${honorific}గారూ, ` : 'అండీ, ';
+      const hPrefix = (honorific && honorific !== 'Friend') ? `${honorific}గారూ, ` : '';
 
       if (intent.intent === 'create_reminder') {
         const cat = intent.category === 'hydration' ? 'మంచినీళ్లు తాగాలని' : 'మందులు వేసుకోవాలని';
@@ -204,9 +208,10 @@ class AdaptivePersonaEngine {
         }
       }
 
+      const fallback = `నేను విన్నానండీ: "${rawTranscript}". మీ షెడ్యూల్, మందులు, లేదా ఆటల గురించి అడగవచ్చు. నేను మీకు సహాయంగా ఉన్నాను.`;
       return {
-        spokenText: `నేను విన్నానండి: "${rawTranscript}". మీరు స్క్రీన్‌పై ఉన్న బటన్లను కూడా తాకవచ్చు.`,
-        displayText: `నేను విన్నానండి: "${rawTranscript}". మీరు స్క్రీన్‌పై ఉన్న బటన్లను కూడా తాకవచ్చు.`,
+        spokenText: fallback,
+        displayText: fallback,
       };
     }
 
@@ -214,7 +219,7 @@ class AdaptivePersonaEngine {
     // 2. HINDI (हिन्दी) — Respectful, warm, colloquial North Indian tone
     // ──────────────────────────────────────────────
     if (lang === 'hi') {
-      const hPrefix = honorific ? `${honorific} जी, ` : 'जी, ';
+      const hPrefix = (honorific && honorific !== 'Friend') ? `${honorific} जी, ` : '';
 
       if (intent.intent === 'create_reminder') {
         const cat = intent.category === 'hydration' ? 'पानी पीने की' : 'दवाई लेने की';
@@ -266,9 +271,10 @@ class AdaptivePersonaEngine {
         return { spokenText: spoken, displayText: spoken };
       }
 
+      const fallback = `मैंने सुना: "${rawTranscript}"। आप दवाई, कार्यक्रम, या खेल के बारे में पूछ सकते हैं। मैं आपके लिए यहाँ हूँ।`;
       return {
-        spokenText: `मैंने सुना: "${rawTranscript}"। आप नीचे दिए गए बटनों को भी छू सकते हैं।`,
-        displayText: `मैंने सुना: "${rawTranscript}"। आप नीचे दिए गए बटनों को भी छू सकते हैं।`,
+        spokenText: fallback,
+        displayText: fallback,
       };
     }
 
@@ -298,9 +304,10 @@ class AdaptivePersonaEngine {
         const spoken = `আপোনাৰ পৰিয়াললৈ ফোন সংযোগ কৰোঁ নেকি?`;
         return { spokenText: spoken, displayText: spoken };
       }
+      const fallback = `মই শুনিলোঁ: "${rawTranscript}"। আপুনি ঔষধ, কাৰ্যসূচী, বা খেলৰ বিষয়ে সুধিব পাৰে। মই আপোনাৰ কাৰণে ইয়াতে আছোঁ।`;
       return {
-        spokenText: `মই শুনিলোঁ: "${rawTranscript}"। আপুনি তলৰ বুটামতো চুব পাৰে।`,
-        displayText: `মই শুনিলোঁ: "${rawTranscript}"। আপুনি তলৰ বুটামতো চুব পাৰে।`,
+        spokenText: fallback,
+        displayText: fallback,
       };
     }
 
@@ -322,9 +329,10 @@ class AdaptivePersonaEngine {
         const spoken = `நிச்சயமாக, மனதை சுறுசுறுப்பாக்க ஒரு எளிய விளையாட்டு தொடங்கலாமா?`;
         return { spokenText: spoken, displayText: spoken };
       }
+      const fallback = `நான் கேட்டது: "${rawTranscript}"। மருந்து, நேரம், அல்லது விளையாட்டு பற்றி கேளுங்கள். நான் உங்களுக்கு உதவி இங்கே இருக்கிறேன்.`;
       return {
-        spokenText: `நான் கேட்டது: "${rawTranscript}"। கீழே உள்ள பொத்தான்களையும் தொடலாம்.`,
-        displayText: `நான் கேட்டது: "${rawTranscript}"। கீழே உள்ள பொத்தான்களையும் தொடலாம்.`,
+        spokenText: fallback,
+        displayText: fallback,
       };
     }
 
@@ -346,16 +354,17 @@ class AdaptivePersonaEngine {
         const spoken = `চলুন, মন ভালো করার জন্য একটি সুন্দর খেলা শুরু করা যাক।`;
         return { spokenText: spoken, displayText: spoken };
       }
+      const fallback = `আমি শুনেছি: "${rawTranscript}"। ওষুধ, রুটিন, বা খেলার বিষয়ে জিজ্ঞেস করুন। আমি আপনার জন্য এখানে আছি।`;
       return {
-        spokenText: `আমি শুনেছি: "${rawTranscript}"। আপনি নিচের বোতামগুলোতেও স্পর্শ করতে পারেন।`,
-        displayText: `আমি শুনেছি: "${rawTranscript}"। আপনি নিচের বোতামগুলোতেও স্পর্শ করতে পারেন।`,
+        spokenText: fallback,
+        displayText: fallback,
       };
     }
 
     // ──────────────────────────────────────────────
     // 6. INDIAN ENGLISH — Warm, elder-comforting
     // ──────────────────────────────────────────────
-    const prefix = honorific ? `${honorific}, ` : '';
+    const prefix = (honorific && honorific !== 'Friend') ? `${honorific}, ` : '';
     if (intent.intent === 'create_reminder') {
       const when = intent.date === 'tomorrow' ? 'tomorrow' : 'today';
       const cat = intent.category === 'hydration' ? 'drink water' : 'take your medicine';
@@ -398,8 +407,8 @@ class AdaptivePersonaEngine {
     }
 
     return {
-      spokenText: `I heard: "${rawTranscript}". Let's take our time, or tap one of the options below.`,
-      displayText: `I heard: "${rawTranscript}". Let's take our time, or tap one of the options below.`,
+      spokenText: `I heard: "${rawTranscript}". I am here for you. You can ask me about your schedule, medicines, or we can play a game together.`,
+      displayText: `I heard: "${rawTranscript}". I am here for you. You can ask me about your schedule, medicines, or we can play a game together.`,
     };
   }
 

@@ -226,7 +226,7 @@ export const INDIAN_LANGUAGES_REGISTRY: LanguageCapability[] = [
     code: 'bodo',
     bcp47: 'brx-IN',
     englishName: 'Bodo',
-    nativeName: 'बर’',
+    nativeName: "बर\u2019",
     nativeScript: 'Devanagari',
     region: 'Bodoland (Assam)',
     textSupported: true,

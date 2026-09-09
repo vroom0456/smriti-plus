@@ -95,6 +95,26 @@ export const colors = {
   cardBackground: '#FFFFFF',
   cardBg: '#FFFFFF',
   surfaceAlt: '#F2F2F7',
+
+  // Calm Companion Tokens (Elderly First)
+  cream: '#FAF9F6',
+  creamWarm: '#F5F3EF',
+  tealCalm: '#0E7490',
+  tealCalmBg: 'rgba(14, 116, 144, 0.08)',
+  greenCalm: '#15803D',
+  greenCalmBg: 'rgba(21, 128, 61, 0.10)',
+  amberWarm: '#D97706',
+  amberWarmBg: 'rgba(217, 119, 6, 0.10)',
+
+  // Extended compatibility aliases
+  coral: '#FF6B6B',
+  systemBlue: '#0071E3',
+  mintBg: 'rgba(52, 199, 89, 0.10)',
+  glassCard: '#FFFFFF',
+  glassBorder: '#E5E5EA',
+  glassTealBorder: 'rgba(0, 113, 227, 0.25)',
+  systemPurple: '#AF52DE',
+  coralBg: 'rgba(255, 107, 107, 0.12)',
 };
 
 /**

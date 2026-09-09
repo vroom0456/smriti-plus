@@ -129,6 +129,30 @@ def update_reminder(
     return ReminderResponse.model_validate(reminder)
 
 
+@router.delete("/reminders/{reminder_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_reminder(
+    reminder_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("caregiver")),
+):
+    """Delete a reminder. Only the linked caregiver can delete."""
+    reminder = db.query(Reminder).filter(Reminder.id == reminder_id).first()
+    if not reminder:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reminder not found")
+
+    verify_caregiver_owns_elder(reminder.elderly_id, current_user, db)
+
+    db.delete(reminder)
+    db.add(AuditLog(
+        actor_id=current_user.user_id,
+        action="reminder_deleted",
+        target_id=reminder_id,
+        details={"title": reminder.title},
+    ))
+    db.commit()
+    return None
+
+
 @router.post("/reminders/{reminder_id}/log", response_model=ReminderLogResponse, status_code=status.HTTP_201_CREATED)
 def log_reminder(
     reminder_id: UUID,
