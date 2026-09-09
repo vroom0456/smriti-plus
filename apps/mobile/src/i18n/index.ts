@@ -13,7 +13,7 @@
  */
 
 import en from './en.json';
-import as from './as.json';
+import assamese from './as.json';
 import bodo from './bodo.json';
 import te from './te.json';
 import hi from './hi.json';
@@ -39,9 +39,9 @@ export type SupportedLanguage =
 export const translations: Record<SupportedLanguage, typeof en> = {
   en,
   te: te as unknown as typeof en,
-  as: as as unknown as typeof en,
+  as: assamese as unknown as typeof en,
   bodo: bodo as unknown as typeof en,
-  mni: as as unknown as typeof en,
+  mni: assamese as unknown as typeof en,
   kha: en as unknown as typeof en,
   grt: en as unknown as typeof en,
   lus: en as unknown as typeof en,
