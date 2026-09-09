@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Platform,
+  Image,
 } from 'react-native';
 import {
   Phone,
@@ -208,6 +209,34 @@ export default function ElderHomeScreen({ navigation }: any) {
         }
       >
         <View style={styles.header}>
+          {/* SMRITI+ Brand Header & Profile from Serene Heritage Design */}
+          <View style={styles.brandRow}>
+            <View style={styles.brandLeft}>
+              <Image
+                source={require('../../../assets/emblem.png')}
+                style={styles.brandEmblem}
+                resizeMode="contain"
+              />
+              <View>
+                <Text style={styles.brandTitle}>SMRITI+</Text>
+                <Text style={styles.culturalPackTag}>Heritage Companion</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Settings')}
+              style={styles.avatarWrap}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="View settings and profile"
+            >
+              <Image
+                source={require('../../../assets/elderly_avatar.png')}
+                style={styles.avatarImg}
+              />
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.dateRow}>
             <View style={styles.dateWrap}>
               <Calendar size={15} color={colors.textSecondary} strokeWidth={2.2} style={{ marginRight: 6 }} />
@@ -420,6 +449,15 @@ export default function ElderHomeScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* Serene Heritage Daily Whisper Footer Banner */}
+        <View style={styles.serenityFooter}>
+          <Text style={styles.serenityQuoteMark}>“</Text>
+          <Text style={styles.serenityQuoteText}>
+            A calm mind is a healthy mind. Take your time, there is no hurry.
+          </Text>
+          <Text style={styles.serenityAuthorText}>— SMRITI+ Daily Companion</Text>
+        </View>
+
         <View style={styles.privacyNote}>
           <ShieldCheck size={16} color={colors.muted} strokeWidth={2} style={{ marginRight: 6 }} />
           <Text style={[styles.privacyNoteText, { fontSize: scale(13), color: colors.muted }]}>
@@ -446,7 +484,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: spacing.screenMargin,
     paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 135,
   },
   loadingText: {
     ...typography.elderly.body,
@@ -697,5 +735,94 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     maxWidth: 320,
+  },
+
+  // ── Serene Heritage Design Additions ──
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  brandLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  brandEmblem: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+  },
+  brandTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 0,
+    lineHeight: 20,
+  },
+  culturalPackTag: {
+    fontFamily: fontFamily.display,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.teal,
+    letterSpacing: 0,
+  },
+  avatarWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.teal,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  serenityFooter: {
+    backgroundColor: colors.surface,
+    borderRadius: 22,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    marginTop: spacing.xl,
+    marginBottom: spacing.xs,
+    ...shadows.card,
+  },
+  serenityQuoteMark: {
+    fontFamily: fontFamily.display,
+    fontSize: 28,
+    lineHeight: 28,
+    color: colors.teal,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  serenityQuoteText: {
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: colors.textDark,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 4,
+    letterSpacing: 0,
+  },
+  serenityAuthorText: {
+    fontFamily: fontFamily.display,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.teal,
+    letterSpacing: 0,
   },
 });

@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: spacing.screenMargin,
     paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 110,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 135,
   },
   loadingText: {
     ...typography.elderly.body,

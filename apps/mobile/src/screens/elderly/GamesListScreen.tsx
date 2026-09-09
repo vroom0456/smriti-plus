@@ -18,7 +18,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { ArrowLeft, Sparkles, Brain, Eye, Puzzle, Gamepad2, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Sparkles, Brain, Eye, Puzzle, Gamepad2, ChevronRight, Waves, Flower2 } from 'lucide-react-native';
 import {
   colors,
   typography,
@@ -38,6 +38,8 @@ import MemoryMatchingGame from './games/MemoryMatchingGame';
 import MemoryRecallGame from './games/MemoryRecallGame';
 import PatternGame from './games/PatternGame';
 import AttentionGame from './games/AttentionGame';
+import BrahmaputraSerenityGame from './games/BrahmaputraSerenityGame';
+import CulturalTriviaGame from './games/CulturalTriviaGame';
 
 interface GameInfo {
   id: string;
@@ -74,7 +76,13 @@ export default function GamesListScreen({ navigation }: any) {
     try {
       const data = await api.get<GameInfo[]>('/games');
       if (data && data.length > 0) {
-        setGames(data);
+        const merged = [...data];
+        for (const dg of DEFAULT_GAMES) {
+          if (!merged.some((m) => m.id === dg.id || m.category === dg.category)) {
+            merged.push(dg);
+          }
+        }
+        setGames(merged);
       } else {
         setGames(DEFAULT_GAMES);
       }
@@ -145,6 +153,28 @@ export default function GamesListScreen({ navigation }: any) {
     };
   }, [games, activeGame, user]);
 
+  // Auto-hide bottom tab bar during active gameplay
+  useEffect(() => {
+    if (navigation && navigation.setOptions) {
+      if (activeGame) {
+        navigation.setOptions({
+          tabBarStyle: { display: 'none' },
+        });
+      } else {
+        navigation.setOptions({
+          tabBarStyle: {
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            height: Platform.OS === 'ios' ? 88 : Platform.OS === 'android' ? 76 : 70,
+            paddingBottom: Platform.OS === 'ios' ? 28 : Platform.OS === 'android' ? 14 : 10,
+            paddingTop: 8,
+          },
+        });
+      }
+    }
+  }, [activeGame, navigation]);
+
   // Render active game
   if (activeGame) {
     const { game, difficulty } = activeGame;
@@ -172,6 +202,12 @@ export default function GamesListScreen({ navigation }: any) {
         break;
       case 'attention':
         gameElement = <AttentionGame {...props} />;
+        break;
+      case 'relaxation':
+        gameElement = <BrahmaputraSerenityGame {...props} />;
+        break;
+      case 'heritage_trivia':
+        gameElement = <CulturalTriviaGame {...props} />;
         break;
       default:
         gameElement = <MemoryMatchingGame {...props} />;
@@ -204,6 +240,10 @@ export default function GamesListScreen({ navigation }: any) {
         return <Eye size={24} color={colors.primary} strokeWidth={2.2} />;
       case 'pattern_recognition':
         return <Puzzle size={24} color={colors.primary} strokeWidth={2.2} />;
+      case 'relaxation':
+        return <Waves size={24} color={colors.primary} strokeWidth={2.2} />;
+      case 'heritage_trivia':
+        return <Flower2 size={24} color={colors.primary} strokeWidth={2.2} />;
       default:
         return <Gamepad2 size={24} color={colors.primary} strokeWidth={2.2} />;
     }
@@ -232,6 +272,19 @@ export default function GamesListScreen({ navigation }: any) {
         <Text style={styles.subtitle}>
           {t('games.subtitle') || 'Gentle daily exercises to exercise memory and focus'}
         </Text>
+
+        {/* Daily Mind Gym Streak Banner from Serene Heritage Stitch Design */}
+        <View style={styles.streakBanner}>
+          <View style={styles.streakIconWrap}>
+            <Sparkles size={22} color="#FFFFFF" strokeWidth={2.2} />
+          </View>
+          <View style={styles.streakInfo}>
+            <Text style={styles.streakTitle}>Keep Your Mind Glowing</Text>
+            <Text style={styles.streakSub}>
+              Complete at least 1 activity daily to maintain your streak!
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.gamesList}>
           {games.map((game) => (
@@ -262,6 +315,13 @@ export default function GamesListScreen({ navigation }: any) {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Calming Senior Reassurance Footer from Stitch */}
+        <View style={styles.seniorReassuranceFooter}>
+          <Text style={styles.seniorReassuranceText}>
+            🌸 Take all the time you need. There are no timers, errors, or stress at SMRITI+.
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -282,7 +342,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: spacing.screenMargin,
     paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 110,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 135,
   },
   loadingText: {
     ...typography.elderly.body,
@@ -316,7 +376,43 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.elderly.body,
     color: colors.textSecondary,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  streakBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.tealBg,
+    borderRadius: 20,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 113, 227, 0.2)',
+  },
+  streakIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  streakInfo: {
+    flex: 1,
+  },
+  streakTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.teal,
+    letterSpacing: 0,
+  },
+  streakSub: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 18,
   },
   gamesList: {
     gap: 12,
@@ -354,5 +450,23 @@ const styles = StyleSheet.create({
   },
   activityArrowWrap: {
     paddingLeft: 4,
+  },
+  seniorReassuranceFooter: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: spacing.md,
+    marginTop: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seniorReassuranceText: {
+    fontFamily: fontFamily.text,
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    letterSpacing: 0,
   },
 });

@@ -217,61 +217,67 @@ export default function AttentionGame({ gameId, difficulty: initialDifficulty, t
       : 'Good effort! Concentration improves with each daily round.';
 
     return (
-      <View style={[styles.container, styles.center]} {...panHandlers}>
-        <View style={styles.topBarResult}>
-          <TouchableOpacity
-            onPress={onBack}
-            style={styles.backButtonTop}
-            activeOpacity={0.75}
-            accessibilityRole="button"
-            accessibilityLabel="Back to games"
-          >
-            <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-            <Text style={styles.backButtonTopText}>Exit Game</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.completeTitle}>Game Complete!</Text>
-        <ProgressRing progress={sessionResult.accuracy} size={110}
-          color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent} label="Accuracy" />
-
-        {/* Dynamic Difficulty Progression Badge */}
-        <View style={[
-          styles.difficultyBadge,
-          updatedDifficulty && updatedDifficulty > difficulty ? styles.difficultyBadgeUp : null,
-        ]}>
-          <Text style={styles.difficultyBadgeText}>
-            {updatedDifficulty && updatedDifficulty > difficulty
-              ? `Level Up! Level ${difficulty} ➔ Level ${updatedDifficulty} 🎉`
-              : updatedDifficulty && updatedDifficulty < difficulty
-              ? `Comfort Pace: Level ${difficulty} ➔ Level ${updatedDifficulty}`
-              : `Level ${difficulty} Mastered ⭐`}
-          </Text>
-        </View>
-
-        <Text style={styles.enc}>{enc}</Text>
-        <Text style={styles.stat}>{`Found: ${sessionResult.correct}/${sessionResult.total}`}</Text>
-
-        {recommendation && (
-          <View style={styles.recommendationCard}>
-            <Text style={styles.recommendationLabel}>Personalized Recommendation</Text>
-            <Text style={styles.recommendationText}>{recommendation.reason}</Text>
+      <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.resultScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.topBarResult}>
+            <TouchableOpacity
+              onPress={onBack}
+              style={styles.backButtonTop}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Back to games"
+            >
+              <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+              <Text style={styles.backButtonTopText}>Exit Game</Text>
+            </TouchableOpacity>
           </View>
-        )}
 
-        <View style={styles.resultActions}>
-          <PrimaryButton
-            title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
-            onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
-            style={styles.actionBtnPlayNext}
-          />
-          <PrimaryButton
-            title="Back to Activities"
-            onPress={onBack}
-            variant="secondary"
-            style={styles.actionBtnBack}
-          />
-        </View>
+          <Text style={styles.completeTitle}>Game Complete!</Text>
+          <ProgressRing progress={sessionResult.accuracy} size={110}
+            color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent} label="Accuracy" />
+
+          {/* Dynamic Difficulty Progression Badge */}
+          <View style={[
+            styles.difficultyBadge,
+            updatedDifficulty && updatedDifficulty > difficulty ? styles.difficultyBadgeUp : null,
+          ]}>
+            <Text style={styles.difficultyBadgeText}>
+              {updatedDifficulty && updatedDifficulty > difficulty
+                ? `Level Up! Level ${difficulty} ➔ Level ${updatedDifficulty} 🎉`
+                : updatedDifficulty && updatedDifficulty < difficulty
+                ? `Comfort Pace: Level ${difficulty} ➔ Level ${updatedDifficulty}`
+                : `Level ${difficulty} Mastered ⭐`}
+            </Text>
+          </View>
+
+          <Text style={styles.enc}>{enc}</Text>
+          <Text style={styles.stat}>{`Found: ${sessionResult.correct}/${sessionResult.total}`}</Text>
+
+          {recommendation && (
+            <View style={styles.recommendationCard}>
+              <Text style={styles.recommendationLabel}>Personalized Recommendation</Text>
+              <Text style={styles.recommendationText}>{recommendation.reason}</Text>
+            </View>
+          )}
+
+          <View style={styles.resultActions}>
+            <PrimaryButton
+              title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
+              onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+              style={styles.actionBtnPlayNext}
+            />
+            <PrimaryButton
+              title="Back to Activities"
+              onPress={onBack}
+              variant="secondary"
+              style={styles.actionBtnBack}
+            />
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -339,7 +345,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 130,
+  },
+  resultScrollContent: {
+    paddingHorizontal: spacing.screenMargin,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 130,
+    alignItems: 'center',
   },
   backButtonTop: {
     flexDirection: 'row',

@@ -414,6 +414,8 @@ export const api = {
       { id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', name: 'Card Flip Matching', category: 'memory_matching', base_difficulty: 1, description: 'Flip cards to find matching pairs.', icon: 'grid' },
       { id: 'cccccccc-cccc-cccc-cccc-cccccccccccc', name: 'Spot the Difference', category: 'attention', base_difficulty: 1, description: 'Find subtle differences between images.', icon: 'eye' },
       { id: 'dddddddd-dddd-dddd-dddd-dddddddddddd', name: 'Sound Sequence', category: 'pattern_recognition', base_difficulty: 1, description: 'Listen to tones and repeat the pattern.', icon: 'music' },
+      { id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', name: 'Brahmaputra Serenity', category: 'relaxation', base_difficulty: 1, description: 'Calming mindful breathing and rhythm taps inspired by the river.', icon: 'waves' },
+      { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff', name: 'Cultural Heritage Recall', category: 'heritage_trivia', base_difficulty: 1, description: 'Gentle recall of regional traditions, festivals, and folk symbols.', icon: 'sparkles' },
     ] as unknown as T;
   },
 

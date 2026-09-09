@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: spacing.lg,
     paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 110,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 135,
   },
   errorText: { ...typography.standard.body, color: colors.muted, textAlign: 'center', padding: spacing.xl },
   header: {

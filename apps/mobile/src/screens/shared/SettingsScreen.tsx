@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: spacing.screenMargin,
     paddingTop: Platform.OS === 'ios' ? 52 : 32,
-    paddingBottom: 110,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 135,
   },
   backButton: {
     flexDirection: 'row',

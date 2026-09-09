@@ -12,6 +12,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
   Animated,
   Alert,
   Platform,
@@ -23,7 +24,7 @@ import { useAuthStore } from '../../../state/authStore';
 import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
 import { defaultVoiceOrchestrator } from '../../../services/voice/VoiceOrchestrator';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Eye } from 'lucide-react-native';
 import { useBackNavigation } from '../../../navigation/useBackNavigation';
 
 // NER-themed card items (culturally relevant)
@@ -89,9 +90,21 @@ export default function MemoryMatchingGame({
   const [startTime, setStartTime] = useState(Date.now());
   const [isComplete, setIsComplete] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [isPeeking, setIsPeeking] = useState(false);
   const [sessionResult, setSessionResult] = useState<any>(null);
   const [recommendation, setRecommendation] = useState<any>(null);
   const [updatedDifficulty, setUpdatedDifficulty] = useState<number | null>(null);
+
+  // Gentle peek handler from Stitch design
+  const handleGentlePeek = () => {
+    if (isPeeking || isComplete) return;
+    setIsPeeking(true);
+    setCards((prev) => prev.map((c) => ({ ...c, isFlipped: true })));
+    setTimeout(() => {
+      setCards((prev) => prev.map((c) => ({ ...c, isFlipped: c.isMatched })));
+      setIsPeeking(false);
+    }, 2000);
+  };
 
   // Load current saved difficulty from offline store on mount
   useEffect(() => {
@@ -297,8 +310,89 @@ export default function MemoryMatchingGame({
 
   if (isComplete && sessionResult) {
     return (
-      <View style={[styles.container, styles.center]} {...panHandlers}>
-        <View style={styles.topBarResult}>
+      <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.resultScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.topBarResult}>
+            <TouchableOpacity
+              onPress={onBack}
+              style={styles.backButtonTop}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Back to games"
+            >
+              <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
+              <Text style={styles.backButtonTopText}>Exit Game</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.completeTitle}>Game Complete!</Text>
+          <ProgressRing
+            progress={sessionResult.accuracy}
+            size={110}
+            color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent}
+            label="Accuracy"
+          />
+
+          {/* Dynamic Difficulty Progression Badge */}
+          <View style={[
+            styles.difficultyBadge,
+            updatedDifficulty && updatedDifficulty > difficulty ? styles.difficultyBadgeUp : null,
+          ]}>
+            <Text style={styles.difficultyBadgeText}>
+              {updatedDifficulty && updatedDifficulty > difficulty
+                ? `Level Up! Level ${difficulty} ➔ Level ${updatedDifficulty} 🎉`
+                : updatedDifficulty && updatedDifficulty < difficulty
+                ? `Comfort Pace: Level ${difficulty} ➔ Level ${updatedDifficulty}`
+                : `Level ${difficulty} Mastered ⭐`}
+            </Text>
+          </View>
+
+          <Text style={styles.encouragement}>{getEncouragement()}</Text>
+          <Text style={styles.statText}>
+            {`Pairs found: ${numPairs} • Attempts: ${sessionResult.attempts}`}
+          </Text>
+          <Text style={styles.statText}>
+            {`Time: ${Math.round(sessionResult.response_time_ms / 1000)}s`}
+          </Text>
+
+          {recommendation && (
+            <View style={styles.recommendationCard}>
+              <Text style={styles.recommendationLabel}>Personalized Recommendation</Text>
+              <Text style={styles.recommendationText}>{recommendation.reason}</Text>
+            </View>
+          )}
+
+          <View style={styles.resultActions}>
+            <PrimaryButton
+              title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
+              onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+              style={styles.actionBtnPlayNext}
+            />
+            <PrimaryButton
+              title="Back to Activities"
+              onPress={onBack}
+              variant="secondary"
+              style={styles.actionBtnBack}
+            />
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={onBack}
             style={styles.backButtonTop}
@@ -309,109 +403,53 @@ export default function MemoryMatchingGame({
             <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
             <Text style={styles.backButtonTopText}>Exit Game</Text>
           </TouchableOpacity>
-        </View>
-
-        <Text style={styles.completeTitle}>Game Complete!</Text>
-        <ProgressRing
-          progress={sessionResult.accuracy}
-          size={110}
-          color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent}
-          label="Accuracy"
-        />
-
-        {/* Dynamic Difficulty Progression Badge */}
-        <View style={[
-          styles.difficultyBadge,
-          updatedDifficulty && updatedDifficulty > difficulty ? styles.difficultyBadgeUp : null,
-        ]}>
-          <Text style={styles.difficultyBadgeText}>
-            {updatedDifficulty && updatedDifficulty > difficulty
-              ? `Level Up! Level ${difficulty} ➔ Level ${updatedDifficulty} 🎉`
-              : updatedDifficulty && updatedDifficulty < difficulty
-              ? `Comfort Pace: Level ${difficulty} ➔ Level ${updatedDifficulty}`
-              : `Level ${difficulty} Mastered ⭐`}
+          <Text style={styles.title}>Memory Matching</Text>
+          <Text style={styles.subtitle}>
+            {`Level ${difficulty} • ${matchedPairs}/${numPairs} pairs found`}
           </Text>
         </View>
 
-        <Text style={styles.encouragement}>{getEncouragement()}</Text>
-        <Text style={styles.statText}>
-          {`Pairs found: ${numPairs} • Attempts: ${sessionResult.attempts}`}
-        </Text>
-        <Text style={styles.statText}>
-          {`Time: ${Math.round(sessionResult.response_time_ms / 1000)}s`}
-        </Text>
-
-        {recommendation && (
-          <View style={styles.recommendationCard}>
-            <Text style={styles.recommendationLabel}>Personalized Recommendation</Text>
-            <Text style={styles.recommendationText}>{recommendation.reason}</Text>
-          </View>
-        )}
-
-        <View style={styles.resultActions}>
-          <PrimaryButton
-            title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
-            onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
-            style={styles.actionBtnPlayNext}
-          />
-          <PrimaryButton
-            title="Back to Activities"
-            onPress={onBack}
-            variant="secondary"
-            style={styles.actionBtnBack}
-          />
+        {/* Card Grid */}
+        <View style={styles.grid}>
+          {cards.map((card, index) => (
+            <TouchableOpacity
+              key={card.id}
+              onPress={() => handleCardPress(index)}
+              activeOpacity={0.7}
+              style={[
+                styles.card,
+                { width: `${Math.floor(92 / cols)}%` },
+                card.isFlipped || card.isMatched
+                  ? styles.cardFlipped
+                  : styles.cardFaceDown,
+                card.isMatched && styles.cardMatched,
+              ]}
+            >
+              {card.isFlipped || card.isMatched ? (
+                <View style={styles.cardContent}>
+                  <Text style={styles.cardEmoji}>{card.emoji}</Text>
+                  <Text style={styles.cardLabel}>{card.label}</Text>
+                </View>
+              ) : (
+                <Text style={styles.cardBack}>?</Text>
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
-      </View>
-    );
-  }
 
-  return (
-    <View style={styles.container} {...panHandlers}>
-      {/* Header */}
-      <View style={styles.header}>
+        {/* Gentle Peek Button from Stitch Design */}
         <TouchableOpacity
-          onPress={onBack}
-          style={styles.backButtonTop}
-          activeOpacity={0.75}
-          accessibilityRole="button"
-          accessibilityLabel="Back to games"
+          onPress={handleGentlePeek}
+          style={styles.peekButton}
+          activeOpacity={0.8}
+          disabled={isPeeking}
         >
-          <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-          <Text style={styles.backButtonTopText}>Exit Game</Text>
+          <Eye size={18} color={colors.teal} style={{ marginRight: 8 }} />
+          <Text style={styles.peekButtonText}>
+            {isPeeking ? 'Revealing cards gently…' : 'Need a Gentle Peek? (2 seconds)'}
+          </Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Memory Matching</Text>
-        <Text style={styles.subtitle}>
-          {`Level ${difficulty} • ${matchedPairs}/${numPairs} pairs found`}
-        </Text>
-      </View>
-
-      {/* Card Grid */}
-      <View style={styles.grid}>
-        {cards.map((card, index) => (
-          <TouchableOpacity
-            key={card.id}
-            onPress={() => handleCardPress(index)}
-            activeOpacity={0.7}
-            style={[
-              styles.card,
-              { width: `${Math.floor(92 / cols)}%` },
-              card.isFlipped || card.isMatched
-                ? styles.cardFlipped
-                : styles.cardFaceDown,
-              card.isMatched && styles.cardMatched,
-            ]}
-          >
-            {card.isFlipped || card.isMatched ? (
-              <View style={styles.cardContent}>
-                <Text style={styles.cardEmoji}>{card.emoji}</Text>
-                <Text style={styles.cardLabel}>{card.label}</Text>
-              </View>
-            ) : (
-              <Text style={styles.cardBack}>?</Text>
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -606,5 +644,35 @@ const styles = StyleSheet.create({
   actionBtnBack: {
     width: '100%',
     minHeight: 48,
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'ios' ? 160 : 130,
+  },
+  resultScrollContent: {
+    paddingHorizontal: spacing.screenMargin,
+    paddingBottom: Platform.OS === 'ios' ? 160 : 130,
+    alignItems: 'center',
+  },
+  peekButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.tealBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 113, 227, 0.2)',
+    marginTop: spacing.xl,
+    minHeight: 52,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  peekButtonText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.teal,
+    letterSpacing: 0,
   },
 });
