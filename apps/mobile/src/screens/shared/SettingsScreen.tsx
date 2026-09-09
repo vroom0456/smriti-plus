@@ -32,7 +32,8 @@ import {
 } from '../../theme/tokens';
 import { useAuthStore } from '../../state/authStore';
 import { useSettingsStore, TextSize } from '../../state/settingsStore';
-import { setLanguage, getLanguage, useTranslation, SupportedLanguage } from '../../i18n';
+import { useTranslation, SupportedLanguage } from '../../i18n';
+import { useAppTheme } from '../../theme/useAppTheme';
 import { languageRegistry } from '../../services/languageRegistry';
 import { voiceIntelligence } from '../../services/voiceIntelligence';
 import { voicePackManager, VoicePackInfo } from '../../services/voicePackManager';
@@ -313,6 +314,40 @@ export default function SettingsScreen() {
                   </TouchableOpacity>
                 );
               })}
+            </View>
+
+            {/* Live Text Preview Box */}
+            <View
+              style={{
+                marginTop: 14,
+                padding: 14,
+                borderRadius: borderRadius.md,
+                backgroundColor: highContrast ? '#000000' : '#F1F5F9',
+                borderWidth: highContrast ? 2 : 1,
+                borderColor: highContrast ? '#000000' : colors.borderLight,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fontFamily.display,
+                  fontSize: Math.round(18 * (fontScale || 1.0)),
+                  fontWeight: '700',
+                  color: highContrast ? '#FFFFFF' : colors.textDark,
+                  marginBottom: 4,
+                }}
+              >
+                Aa Preview: SMRITI+ Daily Care
+              </Text>
+              <Text
+                style={{
+                  fontFamily: fontFamily.text,
+                  fontSize: Math.round(14 * (fontScale || 1.0)),
+                  color: highContrast ? '#E2E8F0' : colors.textSecondary,
+                  lineHeight: Math.round(20 * (fontScale || 1.0)),
+                }}
+              >
+                Text size is {textSize.toUpperCase()} ({Math.round(fontScale * 100)}%) · High Contrast: {highContrast ? 'ON' : 'OFF'}
+              </Text>
             </View>
           </View>
 

@@ -27,7 +27,7 @@ import {
 import {
   Brain,
   UserCheck,
-  HeartHandshake,
+  Users,
   Stethoscope,
   ChevronRight,
   User,
@@ -419,7 +419,7 @@ export default function LoginScreen() {
                 activeOpacity={0.7}
               >
                 <View style={[styles.demoIconSquircle, { backgroundColor: 'rgba(52, 199, 89, 0.12)' }]}>
-                  <HeartHandshake size={22} color={colors.success} strokeWidth={2.2} />
+                  <Users size={22} color={colors.success} strokeWidth={2.2} />
                 </View>
                 <View style={styles.demoInfo}>
                   <Text style={styles.demoRoleName}>Caregiver (Priya Borah)</Text>
@@ -489,7 +489,7 @@ export default function LoginScreen() {
                 onPress={() => setSignupRole('caregiver')}
                 activeOpacity={0.7}
               >
-                <HeartHandshake size={26} color={signupRole === 'caregiver' ? colors.teal : colors.muted} strokeWidth={2.2} style={{ marginBottom: 4 }} />
+                <Users size={26} color={signupRole === 'caregiver' ? colors.teal : colors.muted} strokeWidth={2.2} style={{ marginBottom: 4 }} />
                 <Text
                   style={[
                     styles.roleLabel,

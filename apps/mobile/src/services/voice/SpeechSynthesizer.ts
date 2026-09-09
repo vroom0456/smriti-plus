@@ -88,6 +88,19 @@ function pickRegionalWebVoice(bcp47: string): SpeechSynthesisVoice | null {
   return indianEnglish || null;
 }
 
+/**
+ * Strips emojis and pictographs so TTS does NOT pronounce them aloud
+ * (e.g. preventing 'folded hands', 'holding hands', etc.)
+ */
+export function stripEmojisForSpeech(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F1E6}-\u{1F1FF}]/gu, '')
+    .replace(/[🙏✨💡🛡️⚡🎉❤️👍👋✓✕]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 class UniversalSpeechSynthesizer implements SpeechSynthesizer {
   private isSpeaking = false;
 
@@ -109,6 +122,12 @@ class UniversalSpeechSynthesizer implements SpeechSynthesizer {
   async speak(text: string, language: string, options?: SpeechOptions): Promise<void> {
     await this.stop();
 
+    const cleanText = stripEmojisForSpeech(text);
+    if (!cleanText) {
+      options?.onDone?.();
+      return;
+    }
+
     // Elder-friendly defaults: slightly slower, natural pitch
     const rate = options?.rate ?? 0.82;
     const pitch = options?.pitch ?? 1.0;
@@ -129,7 +148,7 @@ class UniversalSpeechSynthesizer implements SpeechSynthesizer {
       };
 
       if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
-        const utterance = new SpeechSynthesisUtterance(text);
+        const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = language;
         utterance.rate = rate;
         utterance.pitch = pitch;
@@ -154,7 +173,7 @@ class UniversalSpeechSynthesizer implements SpeechSynthesizer {
         }
       } else {
         // Native (expo-speech): language tag drives device TTS engine
-        Speech.speak(text, {
+        Speech.speak(cleanText, {
           language,
           rate,
           pitch,

@@ -5,7 +5,7 @@
  * an event in sync_queue. Network never blocks the elderly user interface.
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from '../utils/uuid';
 import { getDatabase } from './database';
 
 export interface LocalGameSession {

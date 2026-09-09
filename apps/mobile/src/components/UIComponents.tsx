@@ -20,6 +20,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  StyleProp,
   Platform,
 } from 'react-native';
 import {
@@ -227,7 +228,7 @@ export function DestructiveButton({ title, onPress, icon, style }: DestructiveBu
 
 interface HealthCardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   onPress?: () => void;
 }
 
@@ -445,6 +446,7 @@ interface ReminderCardProps {
   scheduledTime: string;
   status: 'pending' | 'done' | 'missed' | 'snoozed';
   onDone?: () => void;
+  doneLabel?: string;
 }
 
 export function ReminderCard({
@@ -453,6 +455,7 @@ export function ReminderCard({
   scheduledTime,
   status,
   onDone,
+  doneLabel,
 }: ReminderCardProps) {
   const config = CATEGORY_CONFIG[category] || {
     color: colors.muted,
@@ -498,7 +501,7 @@ export function ReminderCard({
           accessibilityLabel={`Mark ${title} as completed`}
         >
           <Check size={16} color={colors.white} strokeWidth={2.5} style={{ marginRight: 6 }} />
-          <Text style={styles.doneButtonText}>Done</Text>
+          <Text style={styles.doneButtonText}>{doneLabel || 'Done'}</Text>
         </TouchableOpacity>
       )}
 
@@ -1053,13 +1056,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   doneButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.success,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: borderRadius.button,
-    minHeight: 44,
+    borderRadius: borderRadius.pill,
+    minHeight: 46,
+    ...shadows.subtle,
   },
   doneButtonText: {
     fontFamily: fontFamily.display,

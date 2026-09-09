@@ -32,7 +32,7 @@ import {
   Volume2,
   ChevronRight,
   Clock,
-  HeartHandshake,
+  ShieldCheck,
 } from 'lucide-react-native';
 import {
   colors,
@@ -55,9 +55,16 @@ import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { defaultVoiceOrchestrator } from '../../services/voice/VoiceOrchestrator';
 import { useTranslation } from '../../i18n';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 interface HomeSummary {
   greeting: string;
+  next_reminder?: {
+    id?: string;
+    title?: string;
+    category?: string;
+    scheduled_time?: string;
+  } | null;
   next_action: {
     message: string;
     game_id: string;
@@ -74,12 +81,14 @@ interface HomeSummary {
 
 export default function ElderHomeScreen({ navigation }: any) {
   const { t } = useTranslation();
+  const { fontScale, highContrast, colors, scale, hcStyles } = useAppTheme();
   const user = useAuthStore((s) => s.user);
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [activeReminderDone, setActiveReminderDone] = useState(false);
 
   const fetchSummary = useCallback(async () => {
     if (!user) return;
@@ -105,7 +114,6 @@ export default function ElderHomeScreen({ navigation }: any) {
     fetchSummary();
   }, [fetchSummary]);
 
-  // Connect Voice Orchestrator to HomeScreen navigation and actions
   useEffect(() => {
     defaultVoiceOrchestrator.setCurrentScreen('home');
     defaultVoiceOrchestrator.registerActionHandlers({
@@ -130,17 +138,22 @@ export default function ElderHomeScreen({ navigation }: any) {
     fetchSummary();
   };
 
-  // Voice readout simulation / accessibility feature (Section 37)
   const handleReadAloud = () => {
+    if (isSpeaking) {
+      setIsSpeaking(false);
+      return;
+    }
     setIsSpeaking(true);
     setTimeout(() => setIsSpeaking(false), 3000);
   };
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
+      <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Preparing today’s companion…</Text>
+        <Text style={[styles.loadingText, { fontSize: scale(16), color: colors.textSecondary }]}>
+          {t('reminders.loading') || 'Loading today’s schedule…'}
+        </Text>
       </View>
     );
   }
@@ -149,16 +162,30 @@ export default function ElderHomeScreen({ navigation }: any) {
   const dayStr = now.toLocaleDateString([], { weekday: 'long' });
   const dateFormatted = now.toLocaleDateString([], { month: 'long', day: 'numeric' });
 
-  // Today progress metrics
-  const totalReminders = summary?.reminders_today_count || 3;
-  const pendingReminders = summary?.reminders_pending_count ?? 1;
-  const completedReminders = Math.max(0, totalReminders - pendingReminders);
+  const greetingPrefix =
+    now.getHours() < 12
+      ? t('home.goodMorning') || 'Good morning'
+      : now.getHours() < 17
+      ? t('home.goodAfternoon') || 'Good afternoon'
+      : t('home.goodEvening') || 'Good evening';
+  const greetingFull = `${greetingPrefix}, ${user?.name || 'Friend'}`;
 
-  const nextActivityTitle = summary?.next_action?.game_name || 'Memory Check';
-  const nextActivitySubtitle = summary?.next_action?.message || 'A gentle 5-minute exercise for focus';
+  const totalReminders = summary?.reminders_today_count || 3;
+  const rawPending = summary?.reminders_pending_count ?? 1;
+  const completedReminders = Math.min(
+    totalReminders,
+    Math.max(0, totalReminders - rawPending) + (activeReminderDone ? 1 : 0)
+  );
+
+  const nextActivityTitle = summary?.next_action?.game_name || t('games.memoryMatching') || 'Memory Matching';
+  const nextActivitySubtitle =
+    summary?.next_action?.message || t('games.subtitle') || 'A gentle 5-minute exercise for focus';
+
+  const upcomingMedTitle =
+    summary?.next_reminder?.title || (t('reminders.categories.medication') ? `${t('reminders.categories.medication')} - 08:00 AM` : 'Blood Pressure Medicine');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -172,20 +199,22 @@ export default function ElderHomeScreen({ navigation }: any) {
           />
         }
       >
-        {/* ── 1. HEADER / GREETING (Calm, Human, Accessible) ────── */}
         <View style={styles.header}>
           <View style={styles.dateRow}>
             <View style={styles.dateWrap}>
               <Calendar size={15} color={colors.textSecondary} strokeWidth={2.2} style={{ marginRight: 6 }} />
-              <Text style={styles.dateLabel}>
+              <Text style={[styles.dateLabel, { fontSize: scale(14), color: colors.textSecondary }]}>
                 {dayStr}, {dateFormatted}
               </Text>
             </View>
 
-            {/* Read Aloud Accessible Trigger (Section 37) */}
             <TouchableOpacity
               onPress={handleReadAloud}
-              style={styles.readAloudButton}
+              style={[
+                styles.readAloudButton,
+                { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                hcStyles.buttonBorder,
+              ]}
               activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel="Listen to screen instructions"
@@ -196,35 +225,84 @@ export default function ElderHomeScreen({ navigation }: any) {
                 strokeWidth={2.2}
                 style={{ marginRight: 4 }}
               />
-              <Text style={[styles.readAloudText, isSpeaking && styles.readAloudActive]}>
-                {isSpeaking ? 'Reading…' : 'Listen'}
+              <Text
+                style={[
+                  styles.readAloudText,
+                  { fontSize: scale(13), color: isSpeaking ? colors.primary : colors.textSecondary },
+                  isSpeaking && styles.readAloudActive,
+                ]}
+              >
+                {isSpeaking ? t('home.reading') || 'Reading…' : t('home.listen') || 'Listen'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.greetingTitle}>
-            {summary?.greeting || `Good morning, ${user?.name || 'Friend'}`}
+          <Text
+            style={[
+              styles.greetingTitle,
+              { fontSize: scale(26), lineHeight: scale(32), color: colors.textDark },
+              hcStyles.boldText,
+            ]}
+          >
+            {greetingFull}
           </Text>
-          <Text style={styles.greetingSubtitle}>How are you feeling today?</Text>
+          <Text style={[styles.greetingSubtitle, { fontSize: scale(16), lineHeight: scale(22), color: colors.textSecondary }]}>
+            {t('home.welcomeSubtitle') || 'Welcome to SMRITI+ — Your daily health companion'}
+          </Text>
         </View>
 
         {error ? <AlertBanner type="warning" message={error} /> : null}
 
-        {/* ── 2. TODAY'S ROUTINE (Large Card, Single Purpose) ────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeading}>TODAY</Text>
-          <HealthCard style={styles.routineCard}>
+          <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
+            {t('home.today') || 'TODAY'}
+          </Text>
+          <HealthCard style={[styles.routineCard, hcStyles.cardBorder]}>
             <View style={styles.routineHeaderRow}>
-              <View style={styles.routineIconWrap}>
+              <View style={[styles.routineIconWrap, { backgroundColor: colors.successBg }]}>
                 <CheckCircle2 size={24} color={colors.success} strokeWidth={2.2} />
               </View>
               <View style={styles.routineTextGroup}>
-                <Text style={styles.routineTitle}>Daily Routine</Text>
-                <Text style={styles.routineSubtitle}>
-                  {completedReminders} of {totalReminders} activities completed
+                <Text style={[styles.routineTitle, { fontSize: scale(19), color: colors.textDark }]}>
+                  {t('home.dailyRoutine') || 'Daily Routine'}
+                </Text>
+                <Text style={[styles.routineSubtitle, { fontSize: scale(14), color: colors.textSecondary }]}>
+                  {completedReminders} of {totalReminders} {t('home.todayReminders') || 'activities completed'}
                 </Text>
               </View>
             </View>
+
+            {!activeReminderDone ? (
+              <View style={[styles.interactiveReminderBox, { borderColor: colors.borderLight }]}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={[styles.reminderPillLabel, { fontSize: scale(11), color: colors.primary }]}>
+                    {t('home.nextReminder') || 'Next Reminder'}
+                  </Text>
+                  <Text style={[styles.reminderItemTitle, { fontSize: scale(15), color: colors.textDark }]} numberOfLines={1}>
+                    {upcomingMedTitle}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.markTakenBtn, { backgroundColor: colors.success }, hcStyles.buttonBorder]}
+                  onPress={() => setActiveReminderDone(true)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark reminder completed"
+                >
+                  <CheckCircle2 size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 4 }} />
+                  <Text style={[styles.markTakenBtnText, { fontSize: scale(13) }]}>
+                    {t('home.markDone') || 'Done'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={[styles.reminderSuccessBox, { backgroundColor: colors.successBg }]}>
+                <CheckCircle2 size={18} color={colors.success} strokeWidth={2.4} style={{ marginRight: 6 }} />
+                <Text style={[styles.reminderSuccessText, { fontSize: scale(14), color: colors.successDark }]}>
+                  {t('home.completedBadge') || 'Done ✓'} — {upcomingMedTitle}
+                </Text>
+              </View>
+            )}
 
             <ProgressBar
               current={completedReminders}
@@ -233,30 +311,36 @@ export default function ElderHomeScreen({ navigation }: any) {
             />
 
             <SecondaryButton
-              title="View Today’s Schedule"
+              title={t('home.viewSchedule') || 'View Today’s Schedule'}
               onPress={() => navigation.navigate('Reminders')}
               accessibilityLabel="View today's reminders schedule"
             />
           </HealthCard>
         </View>
 
-        {/* ── 3. YOUR NEXT ACTIVITY (Primary Focus, Full-Width Action) ────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeading}>RECOMMENDED FOR YOU</Text>
-          <HealthCard style={styles.activityCard}>
+          <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
+            {t('home.recommendedForYou') || 'RECOMMENDED FOR YOU'}
+          </Text>
+          <HealthCard style={[styles.activityCard, hcStyles.cardBorder]}>
             <View style={styles.activityBadgeRow}>
-              <View style={styles.activityPill}>
+              <View style={[styles.activityPill, { backgroundColor: colors.primaryMuted }]}>
                 <Brain size={14} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 5 }} />
-                <Text style={styles.activityPillText}>5 minutes</Text>
+                <Text style={[styles.activityPillText, { fontSize: scale(13), color: colors.primary }]}>
+                  {t('home.durationFiveMin') || '5 minutes'}
+                </Text>
               </View>
             </View>
 
-            <Text style={styles.activityTitle}>{nextActivityTitle}</Text>
-            <Text style={styles.activityDesc}>{nextActivitySubtitle}</Text>
+            <Text style={[styles.activityTitle, { fontSize: scale(22), lineHeight: scale(28), color: colors.textDark }]}>
+              {nextActivityTitle}
+            </Text>
+            <Text style={[styles.activityDesc, { fontSize: scale(15), lineHeight: scale(22), color: colors.textSecondary }]}>
+              {nextActivitySubtitle}
+            </Text>
 
-            {/* ONE PRIMARY ACTION BUTTON (Section 10: Full Width, 56px height) */}
             <PrimaryButton
-              title="Start Today’s Activity"
+              title={t('home.startActivity') || 'Start Today’s Activity'}
               size="large"
               onPress={() => navigation.navigate('Games')}
               accessibilityLabel={`Start today's activity: ${nextActivityTitle}`}
@@ -270,19 +354,22 @@ export default function ElderHomeScreen({ navigation }: any) {
               accessibilityRole="button"
               accessibilityLabel="View more activities"
             >
-              <Text style={styles.moreActivitiesText}>Explore other activities</Text>
+              <Text style={[styles.moreActivitiesText, { fontSize: scale(15), color: colors.primary }]}>
+                {t('home.moreActivities') || 'Explore other activities'}
+              </Text>
               <ChevronRight size={16} color={colors.primary} strokeWidth={2.2} />
             </TouchableOpacity>
           </HealthCard>
         </View>
 
-        {/* ── 4. QUICK HELP (Caregiver & Voice Assistance) ────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeading}>QUICK HELP</Text>
+          <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
+            {t('home.quickHelp') || 'QUICK HELP'}
+          </Text>
           <View style={styles.helpRow}>
             <TouchableOpacity
               onPress={() => navigation.navigate('FamilyCorner')}
-              style={styles.quickHelpButton}
+              style={[styles.quickHelpButton, { backgroundColor: colors.surface, borderColor: colors.border }, hcStyles.cardBorder]}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Call caregiver"
@@ -291,15 +378,19 @@ export default function ElderHomeScreen({ navigation }: any) {
                 <Phone size={22} color={colors.successDark} strokeWidth={2.2} />
               </View>
               <View style={styles.quickHelpTextGroup}>
-                <Text style={styles.quickHelpTitle}>Call Caregiver</Text>
-                <Text style={styles.quickHelpSubtitle}>Tap to connect with family</Text>
+                <Text style={[styles.quickHelpTitle, { fontSize: scale(17), color: colors.textDark }]}>
+                  {t('home.callCaregiver') || 'Call Caregiver'}
+                </Text>
+                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(13), color: colors.textSecondary }]}>
+                  {t('home.callCaregiverSub') || 'Tap to connect with family'}
+                </Text>
               </View>
               <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => navigation.navigate('VoiceAssistant')}
-              style={styles.quickHelpButton}
+              style={[styles.quickHelpButton, { backgroundColor: colors.surface, borderColor: colors.border }, hcStyles.cardBorder]}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Voice assistant help"
@@ -308,19 +399,22 @@ export default function ElderHomeScreen({ navigation }: any) {
                 <Mic size={22} color={colors.primary} strokeWidth={2.2} />
               </View>
               <View style={styles.quickHelpTextGroup}>
-                <Text style={styles.quickHelpTitle}>Talk to SMRITI+</Text>
-                <Text style={styles.quickHelpSubtitle}>Ask questions with your voice</Text>
+                <Text style={[styles.quickHelpTitle, { fontSize: scale(17), color: colors.textDark }]}>
+                  {t('home.talkSmriti') || 'Talk to SMRITI+'}
+                </Text>
+                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(13), color: colors.textSecondary }]}>
+                  {t('home.talkSmritiSub') || 'Ask questions with your voice'}
+                </Text>
               </View>
               <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── 5. SUBTLE PRIVACY NOTE (Section 53) ────── */}
         <View style={styles.privacyNote}>
-          <HeartHandshake size={15} color={colors.muted} strokeWidth={2} style={{ marginRight: 6 }} />
-          <Text style={styles.privacyNoteText}>
-            Your health details are private and shared only with your chosen caregiver.
+          <ShieldCheck size={16} color={colors.muted} strokeWidth={2} style={{ marginRight: 6 }} />
+          <Text style={[styles.privacyNoteText, { fontSize: scale(13), color: colors.muted }]}>
+            {t('home.privacyNote') || 'Your health details are private and shared only with your chosen caregiver.'}
           </Text>
         </View>
       </ScrollView>
@@ -441,6 +535,54 @@ const styles = StyleSheet.create({
   routineSubtitle: {
     ...typography.elderly.secondary,
     marginTop: 2,
+  },
+  interactiveReminderBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: borderRadius.md,
+    padding: 12,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  reminderPillLabel: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  reminderItemTitle: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700',
+  },
+  markTakenBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: borderRadius.pill,
+    minHeight: 42,
+    ...shadows.subtle,
+  },
+  markTakenBtnText: {
+    fontFamily: fontFamily.display,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  reminderSuccessBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.md,
+  },
+  reminderSuccessText: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700',
+    flex: 1,
   },
 
   // ── Activity Card ──

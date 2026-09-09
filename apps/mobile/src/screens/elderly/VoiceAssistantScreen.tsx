@@ -15,6 +15,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  TextInput,
+  KeyboardAvoidingView,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -23,7 +25,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
-import { ArrowLeft, RotateCcw } from 'lucide-react-native';
+import { ArrowLeft, RotateCcw, Send, Mic } from 'lucide-react-native';
 import {
   voiceIntelligence,
   VoiceState,
@@ -54,27 +56,27 @@ interface ChatTurn {
 // ─── Language-specific content maps ──────────────────────────────────────────
 
 const LANG_GREETINGS: Record<string, string> = {
-  te: 'నమస్కారం! 🙏\nమీకు ఎలా సహాయపడమంటారు?',
-  hi: 'नमस्ते! 🙏\nमैं आपकी क्या सहायता कर सकता हूँ?',
-  as: 'নমস্কাৰ! 🙏\nআপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?',
-  bn: 'নমস্কার! 🙏\nআমি কীভাবে সাহায্য করতে পারি?',
-  ta: 'வணக்கம்! 🙏\nநான் எப்படி உதவட்டும்?',
-  kn: 'ನಮಸ್ಕಾರ! 🙏\nನಾನು ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?',
-  ml: 'നമസ്കാരം! 🙏\nഞാൻ എങ്ങനെ സഹായിക്കട്ടേ?',
-  mr: 'नमस्कार! 🙏\nमी कशी मदत करू?',
-  en: 'Hello! 🙏\nHow can I help you today?',
+  te: 'నమస్కారం! నేను మీ స్మృతి వాయిస్ అసిస్టెంట్‌ని. ఈరోజు మీకు ఎలా సహాయపడగలను?',
+  hi: 'नमस्ते! मैं आपकी स्मृति वॉयस असिस्टेंट हूँ। आज मैं आपकी क्या सहायता कर सकती हूँ?',
+  as: 'নমস্কাৰ! মই আপোনাৰ স্মৃতি ভইচ এচিষ্টেণ্ট। আজি মই আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?',
+  bn: 'নমস্কার! আমি আপনার স্মৃতি ভয়েস সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?',
+  ta: 'வணக்கம்! நான் உங்கள் ஸ்மிருதி குரல் உதவியாளர். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?',
+  kn: 'ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಸ್ಮೃತಿ ಧ್ವನಿ ಸಹಾಯಕ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?',
+  ml: 'നമസ്കാരം! ഞാൻ നിങ്ങളുടെ സ്മൃതി വോയ്സ് അസിസ്റ്റന്റാണ്. ഇന്ന് ഞാൻ നിങ്ങളെ എങ്ങനെ സഹായിക്കട്ടെ?',
+  mr: 'नमस्कार! मी तुमची स्मृती व्हॉइस असिस्टंट आहे. आज मी तुम्हाला कशी मदत करू?',
+  en: 'Hello! I am your SMRITI voice assistant. How can I help you today?',
 };
 
 const LANG_LISTEN_PROMPT: Record<string, string> = {
-  te: 'చెప్పండి, వింటున్నాను. 👂',
-  hi: 'जी, मैं ध्यान से सुन रहा हूँ। 👂',
-  as: 'মই শুনি আছোঁ। 👂',
-  bn: 'আমি শুনছি। 👂',
-  ta: 'சொல்லுங்கள், நான் கேட்கிறேன். 👂',
-  kn: 'ಹೇಳಿ, ನಾನು ಕೇಳುತ್ತಿದ್ದೇನೆ. 👂',
-  ml: 'പറയൂ, ഞാൻ കേൾക്കുന്നു. 👂',
-  mr: 'सांगा, मी ऐकतो आहे. 👂',
-  en: 'I am listening. 👂',
+  te: 'చెప్పండి, వింటున్నాను.',
+  hi: 'जी, मैं ध्यान से सुन रही हूँ।',
+  as: 'মই শুনি আছোঁ।',
+  bn: 'আমি শুনছি, বলুন।',
+  ta: 'சொல்லுங்கள், நான் கேட்கிறேன்.',
+  kn: 'ಹೇಳಿ, ನಾನು ಕೇಳುತ್ತಿದ್ದೇನೆ.',
+  ml: 'പറയൂ, ഞാൻ കേൾക്കുന്നു.',
+  mr: 'सांगा, मी ऐकतो आहे.',
+  en: 'I am listening. Please speak.',
 };
 
 const LANG_STATE_LABELS: Record<string, Record<VoiceState, string>> = {
@@ -198,6 +200,7 @@ export default function VoiceAssistantScreen() {
   const [activePersona, setActivePersona] = useState<PersonaType>('warm_companion');
   const [activeHonorific, setActiveHonorific] = useState<HonorificType>('none');
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [inputPhrase, setInputPhrase] = useState('');
 
   // Wave animation values
   const waves = [
@@ -310,8 +313,7 @@ export default function VoiceAssistantScreen() {
       return;
     }
     if (voiceState === 'LISTENING') {
-      // Force-end recognition (demo)
-      processPhrase('రేపు ఉదయం 8 గంటలకు మందు గుర్తు చేయి');
+      setVoiceState('IDLE');
       return;
     }
 
@@ -322,31 +324,30 @@ export default function VoiceAssistantScreen() {
     const prompt = LANG_LISTEN_PROMPT[currentLang] || LANG_LISTEN_PROMPT['en'];
     await voiceIntelligence.speak(prompt, currentLang);
 
-    // Real Web Speech API recognition
-    if (Platform.OS === 'web') {
+    // Real Web Speech API recognition (Browser)
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SR) {
-        const recognition = new SR();
-        recognition.lang = langCap.bcp47;
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.onresult = (evt: any) => {
-          const t = evt.results[0][0].transcript;
-          processPhrase(t);
-        };
-        recognition.onerror = () => {
-          setVoiceState('ERROR');
-          setTimeout(() => setVoiceState('IDLE'), 2200);
-        };
-        recognition.start();
-        return;
+        try {
+          const recognition = new SR();
+          recognition.lang = langCap.bcp47;
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.onresult = (evt: any) => {
+            const t = evt.results[0][0]?.transcript;
+            if (t) processPhrase(t);
+          };
+          recognition.onerror = () => {
+            setVoiceState('IDLE');
+          };
+          recognition.onend = () => {
+            setVoiceState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
+          };
+          recognition.start();
+          return;
+        } catch {}
       }
     }
-
-    // Fallback demo phrase after 3 s
-    setTimeout(() => {
-      processPhrase('రేపు ఉదయం 8 గంటలకు మందు గుర్తు చేయి');
-    }, 3000);
   };
 
   const processPhrase = async (phrase: string) => {
@@ -595,7 +596,11 @@ export default function VoiceAssistantScreen() {
     : colors.teal;
 
   return (
-    <View style={styles.screen} {...panHandlers}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.screen}
+      {...panHandlers}
+    >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -610,7 +615,7 @@ export default function VoiceAssistantScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle} numberOfLines={1}>SMRITI+</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>SMRITI+ Voice</Text>
           <View style={styles.langPill}>
             <Text style={styles.langPillText} numberOfLines={1}>{langCap.nativeName}</Text>
           </View>
@@ -627,22 +632,9 @@ export default function VoiceAssistantScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Persona banner ──────────────────────────────────────────────── */}
-      <View style={styles.personaBanner}>
-        <Text style={styles.personaEmoji}>{personaIcon}</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.personaTone}>{personaProfile.toneDescription}</Text>
-          <Text style={styles.personaMeta}>
-            Speed: <Text style={{ color: colors.teal, fontWeight: '700' }}>{personaProfile.speechSpeed}x</Text>
-            {'  ·  '}Calling you: <Text style={{ color: colors.teal, fontWeight: '700' }}>"{activeHonorific}"</Text>
-          </Text>
-        </View>
-      </View>
-
-      {/* ── Visualizer + Mic ────────────────────────────────────────────── */}
-      <View style={styles.visualizerSection}>
-        {/* 7-bar animated wave */}
-        <View style={styles.waveRow}>
+      {/* ── Compact Visualizer & State Banner ────────────────────────────── */}
+      <View style={styles.compactVisualizerSection}>
+        <View style={styles.compactWaveRow}>
           {waves.map((w, i) => (
             <Animated.View
               key={i}
@@ -651,237 +643,157 @@ export default function VoiceAssistantScreen() {
                 {
                   transform: [{ scaleY: w }],
                   backgroundColor: waveColor,
-                  height: i === 3 ? 48 : i % 2 === 0 ? 36 : 42,
-                  opacity: voiceState === 'IDLE' ? 0.35 : 1,
+                  height: i === 3 ? 24 : 18,
+                  opacity: voiceState === 'IDLE' ? 0.4 : 1,
                 },
               ]}
             />
           ))}
         </View>
+        <Text style={styles.compactStateLabel}>{getStateLabel(currentLang, voiceState)}</Text>
 
-        {/* Mic button with glow ring */}
-        <Animated.View
-          style={[
-            styles.micGlow,
-            { backgroundColor: micBgColor + '28', transform: [{ scale: pulseMic }] },
-          ]}
-        >
-          <TouchableOpacity
-            style={[styles.micBtn, { backgroundColor: micBgColor }]}
-            onPress={handleMicPress}
-            activeOpacity={0.82}
-            accessibilityRole="button"
-            accessibilityLabel="Voice assistant microphone button"
-          >
-            <Text style={styles.micIcon}>{micIcon}</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <Text style={styles.stateLabel}>{getStateLabel(currentLang, voiceState)}</Text>
-
-        {/* ── Active Speech Floating Controls (Stop / Repeat / Slower) ── */}
+        {/* Floating Active Speech Controls */}
         {voiceState === 'SPEAKING' && (
           <View style={styles.speakingControlBar}>
-            <TouchableOpacity
-              style={styles.speakingBtnStop}
-              onPress={handleStopSpeech}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Stop speech"
-            >
+            <TouchableOpacity style={styles.speakingBtnStop} onPress={handleStopSpeech}>
               <Text style={styles.speakingBtnStopText}>🛑 Stop</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.speakingBtn}
-              onPress={handleRepeatSpeech}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Repeat speech"
-            >
+            <TouchableOpacity style={styles.speakingBtn} onPress={handleRepeatSpeech}>
               <Text style={styles.speakingBtnText}>🔁 Repeat</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.speakingBtn}
-              onPress={handleSlowerSpeech}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Speak slower"
-            >
+            <TouchableOpacity style={styles.speakingBtn} onPress={handleSlowerSpeech}>
               <Text style={styles.speakingBtnText}>🐢 Slower</Text>
             </TouchableOpacity>
           </View>
         )}
-
-        {transcript.length > 0 && voiceState !== 'IDLE' && (
-          <View style={styles.transcriptBubble}>
-            <Text style={styles.transcriptText}>"{transcript}"</Text>
-          </View>
-        )}
       </View>
 
-      {/* ── Scrollable content ──────────────────────────────────────────── */}
+      {/* ── Conversational Chat History (flex: 1) ─────────────────────────── */}
       <ScrollView
         ref={chatScrollRef}
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        style={styles.chatScroll}
+        contentContainerStyle={styles.chatScrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Confirmation card */}
+        {/* Confirmation Card if active */}
         {voiceState === 'CONFIRMING' && currentIntent && (
           <View style={styles.confirmCard}>
             <Text style={styles.confirmLabel}>⚡ CONFIRM ACTION</Text>
             <Text style={styles.confirmPrompt}>{currentIntent.confirmationPrompt}</Text>
             <View style={styles.confirmActions}>
-              <TouchableOpacity
-                style={styles.confirmYes}
-                onPress={handleConfirmAction}
-                accessibilityRole="button"
-                accessibilityLabel="Confirm action"
-              >
-                <Text style={styles.confirmYesText}>✓  Yes, Do This</Text>
+              <TouchableOpacity style={styles.confirmYes} onPress={handleConfirmAction}>
+                <Text style={styles.confirmYesText}>✓ Yes, Do This</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmNo}
-                onPress={handleCancelAction}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel action"
-              >
-                <Text style={styles.confirmNoText}>✕  Cancel</Text>
+              <TouchableOpacity style={styles.confirmNo} onPress={handleCancelAction}>
+                <Text style={styles.confirmNoText}>✕ Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Chat history */}
-        <View style={styles.chatSection}>
-          <Text style={styles.sectionTitle}>Conversation</Text>
-          {chatHistory.map((turn) => (
-            <View
-              key={turn.id}
-              style={[
-                styles.bubble,
-                turn.sender === 'user' ? styles.userBubble : styles.assistantBubble,
-              ]}
-            >
-              {/* Sender label */}
-              <View style={styles.bubbleHeader}>
-                <Text style={[styles.senderLabel, turn.sender === 'assistant' && { color: colors.teal }]}>
-                  {turn.sender === 'user' ? (user?.name || 'You') : 'SMRITI+'}
-                </Text>
-                {turn.intentLabel && (
-                  <View style={styles.intentPill}>
-                    <Text style={styles.intentPillText}>{turn.intentLabel.replace('_', ' ')}</Text>
-                  </View>
-                )}
-                {turn.spokenAudioText && turn.sender === 'assistant' && (
-                  <TouchableOpacity
-                    style={styles.replayBtn}
-                    onPress={() => handleReplay(turn)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Replay audio"
-                  >
-                    <Text style={styles.replayBtnText}>▶</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <Text style={[styles.bubbleText, turn.sender === 'user' && styles.userBubbleText]}>
-                {turn.text}
+        {chatHistory.map((turn) => (
+          <View
+            key={turn.id}
+            style={[
+              styles.bubble,
+              turn.sender === 'user' ? styles.userBubble : styles.assistantBubble,
+            ]}
+          >
+            <View style={styles.bubbleHeader}>
+              <Text style={[styles.senderLabel, turn.sender === 'assistant' && { color: colors.teal }]}>
+                {turn.sender === 'user' ? (user?.name || 'You') : 'SMRITI+'}
               </Text>
+              {turn.intentLabel && (
+                <View style={styles.intentPill}>
+                  <Text style={styles.intentPillText}>{turn.intentLabel.replace(/_/g, ' ')}</Text>
+                </View>
+              )}
+              {turn.spokenAudioText && turn.sender === 'assistant' && (
+                <TouchableOpacity
+                  style={styles.replayBtn}
+                  onPress={() => handleReplay(turn)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Replay audio"
+                >
+                  <Text style={styles.replayBtnText}>▶</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          ))}
-        </View>
+            <Text style={[styles.bubbleText, turn.sender === 'user' && styles.userBubbleText]}>
+              {turn.text}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
 
-        {/* Quick phrase chips */}
-        <View style={styles.chipsSection}>
-          <Text style={styles.sectionTitle}>Quick Phrases — Tap to try</Text>
+      {/* ── Single-Row Horizontal Quick Action Chips ──────────────────────── */}
+      <View style={styles.chipsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsScrollContent}
+        >
           {getLangChips(currentLang).map((chip, i) => (
             <TouchableOpacity
               key={i}
-              style={styles.chip}
+              style={styles.chipPill}
               onPress={() => processPhrase(chip.spoken)}
-              activeOpacity={0.8}
-              accessibilityRole="button"
+              activeOpacity={0.75}
             >
-              <Text style={styles.chipTag}>{chip.tag}</Text>
-              <Text style={styles.chipPhrase}>"{chip.phrase}"</Text>
+              <Text style={styles.chipPillText}>{chip.tag} · "{chip.phrase}"</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
+      </View>
 
-        {/* Debug / Persona panel */}
-        <View style={styles.debugSection}>
+      {/* ── Bottom Interactive Voice & Text Bar (Mobile Optimized) ────────── */}
+      <View style={styles.bottomControlBar}>
+        <Animated.View
+          style={[
+            styles.bottomMicRing,
+            { backgroundColor: micBgColor + '25', transform: [{ scale: pulseMic }] },
+          ]}
+        >
           <TouchableOpacity
-            style={styles.debugToggle}
-            onPress={() => setShowDebugPanel((v) => !v)}
+            style={[styles.bottomMicBtn, { backgroundColor: micBgColor }]}
+            onPress={handleMicPress}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Speak to SMRITI+"
           >
-            <Text style={styles.debugToggleText}>
-              {showDebugPanel ? '▲ Hide' : '▼ Persona & Voice Debug Panel'}
-            </Text>
+            <Mic size={22} color="#FFFFFF" strokeWidth={2.4} />
           </TouchableOpacity>
+        </Animated.View>
 
-          {showDebugPanel && (
-            <View style={styles.debugBody}>
-              <Text style={styles.debugHeading}>Behavioral Persona</Text>
-              <View style={styles.pillRow}>
-                {([
-                  { id: 'ultra_gentle', label: '🌿 Gentle' },
-                  { id: 'warm_companion', label: '☀️ Companion' },
-                  { id: 'encouraging_coach', label: '🌟 Joyful' },
-                  { id: 'calm_evening', label: '🌙 Evening' },
-                ] as { id: PersonaType; label: string }[]).map((p) => (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[styles.pill, activePersona === p.id && styles.pillActive]}
-                    onPress={() => {
-                      adaptivePersonaEngine.setManualPersona(p.id);
-                      syncPersona();
-                    }}
-                  >
-                    <Text style={[styles.pillText, activePersona === p.id && styles.pillTextActive]}>
-                      {p.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+        <TextInput
+          style={styles.textInputBar}
+          value={inputPhrase}
+          onChangeText={setInputPhrase}
+          placeholder={voiceState === 'LISTENING' ? 'Listening... Speak or tap send' : 'Type or tap quick phrase...'}
+          placeholderTextColor={colors.muted}
+          onSubmitEditing={() => {
+            if (inputPhrase.trim()) {
+              processPhrase(inputPhrase.trim());
+              setInputPhrase('');
+            }
+          }}
+          returnKeyType="send"
+        />
 
-              <Text style={[styles.debugHeading, { marginTop: 12 }]}>Honorific</Text>
-              <View style={styles.pillRow}>
-                {(['Amma', 'Babuji', 'Tatayya', 'Mataji', 'none'] as HonorificType[]).map((h) => (
-                  <TouchableOpacity
-                    key={h}
-                    style={[styles.pill, activeHonorific === h && styles.pillActive]}
-                    onPress={() => {
-                      setActiveHonorific(h);
-                      adaptivePersonaEngine.setHonorific(h);
-                    }}
-                  >
-                    <Text style={[styles.pillText, activeHonorific === h && styles.pillTextActive]}>
-                      {h}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.telemetry}>
-                {[
-                  `Voice State: ${voiceState}`,
-                  `Language: ${langCap.bcp47} (${langCap.englishName})`,
-                  `Persona: ${activePersona} @ ${personaProfile.speechSpeed}x`,
-                  `STT: Web Speech API / Native`,
-                  `TTS: Regional voice mapping active`,
-                  `Code-switching: Enabled`,
-                  `Offline-first: WAL SQLite`,
-                ].map((line, i) => (
-                  <Text key={i} style={styles.teleLine}>{'» '}{line}</Text>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+        <TouchableOpacity
+          style={[styles.sendBtn, !inputPhrase.trim() && { opacity: 0.4 }]}
+          disabled={!inputPhrase.trim()}
+          onPress={() => {
+            if (inputPhrase.trim()) {
+              processPhrase(inputPhrase.trim());
+              setInputPhrase('');
+            }
+          }}
+        >
+          <Send size={18} color="#FFFFFF" strokeWidth={2.4} />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -983,53 +895,34 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // Visualizer
-  visualizerSection: {
+  // Compact Visualizer (Mobile optimized, no excessive height)
+  compactVisualizerSection: {
     alignItems: 'center',
     backgroundColor: colors.surface,
-    paddingVertical: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
     ...shadows.subtle,
   },
-  waveRow: {
+  compactWaveRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    height: 64,
-    marginBottom: spacing.lg,
+    height: 26,
+  },
+  compactStateLabel: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.tealDeep,
+    marginTop: 4,
+    letterSpacing: 0.1,
   },
   waveBar: {
-    width: 7,
-    borderRadius: 4,
-  },
-  micGlow: {
-    width: 152,
-    height: 152,
-    borderRadius: 76,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  micBtn: {
-    width: 116,
-    height: 116,
-    borderRadius: 58,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.glowTeal,
-  },
-  micIcon: {
-    fontSize: 50,
-  },
-  stateLabel: {
-    fontFamily: fontFamily.display,
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.navy,
-    marginTop: spacing.md,
-    letterSpacing: 0.1,
+    width: 6,
+    borderRadius: 3,
   },
   speakingControlBar: {
     flexDirection: 'row',
@@ -1095,14 +988,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Scrollable area
-  scroll: {
+  // Chat Scrollable area (Fills middle viewport, scrolls naturally without layout sliding)
+  chatScroll: {
     flex: 1,
   },
-  scrollContent: {
+  chatScrollContent: {
     padding: spacing.md,
-    paddingBottom: spacing.xxl,
-    gap: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
 
   // Confirmation card
@@ -1247,32 +1140,82 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Quick phrase chips
-  chipsSection: {
-    gap: spacing.sm,
-  },
-  chip: {
+  // Horizontal Quick phrase chips (Single row swipe, zero excess scroll)
+  chipsWrapper: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    paddingVertical: 8,
+  },
+  chipsScrollContent: {
+    paddingHorizontal: spacing.md,
+    gap: 8,
+    alignItems: 'center',
+  },
+  chipPill: {
+    backgroundColor: colors.tealBg,
+    borderWidth: 1,
+    borderColor: colors.glassTealBorder,
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    ...shadows.subtle,
+  },
+  chipPillText: {
+    fontFamily: fontFamily.display,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.tealDeep,
+  },
+
+  // Interactive Bottom Bar (Mobile Navigation Safe & Production Ready)
+  bottomControlBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    paddingHorizontal: spacing.md,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'android' ? 24 : Platform.OS === 'ios' ? 24 : 12,
+    gap: 10,
+    ...shadows.elevated,
+  },
+  bottomMicRing: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomMicBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glowTeal,
+  },
+  textInputBar: {
+    flex: 1,
+    height: 46,
+    backgroundColor: '#F1F5F9',
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: 16,
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    color: colors.textDark,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.card,
   },
-  chipTag: {
-    fontFamily: fontFamily.display,
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.teal,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 3,
-  },
-  chipPhrase: {
-    fontFamily: fontFamily.display,
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.navy,
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glowTeal,
   },
 
   // Debug panel

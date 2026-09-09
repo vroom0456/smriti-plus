@@ -53,7 +53,7 @@ export class VoiceStateMachine {
         allowed = ['LISTENING', 'PROCESSING', 'SPEAKING', 'IDLE', 'ERROR'].includes(target);
         break;
       case 'SPEAKING':
-        allowed = ['IDLE', 'LISTENING', 'ERROR'].includes(target);
+        allowed = ['IDLE', 'LISTENING', 'ERROR', 'PROCESSING'].includes(target);
         break;
       case 'ERROR':
       case 'UNAVAILABLE':

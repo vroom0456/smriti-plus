@@ -16,7 +16,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from '../../../utils/uuid';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
 import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
 import { useAuthStore } from '../../../state/authStore';
@@ -69,12 +69,13 @@ interface MemoryMatchingGameProps {
 
 export default function MemoryMatchingGame({
   gameId,
-  difficulty,
+  difficulty: initialDifficulty,
   targetTimeMs,
   onComplete,
   onBack,
 }: MemoryMatchingGameProps) {
   const user = useAuthStore((s: any) => s.user);
+  const [difficulty, setDifficultyState] = useState(initialDifficulty);
   const numPairs = DIFFICULTY_PAIRS[difficulty] || 4;
 
   const { panHandlers } = useBackNavigation(null, {
@@ -117,6 +118,13 @@ export default function MemoryMatchingGame({
       stopGame: () => {
         onBack();
         return true;
+      },
+      setDifficulty: (direction: 'easier' | 'harder') => {
+        const nextDiff = direction === 'easier'
+          ? Math.max(1, difficulty - 1)
+          : Math.min(5, difficulty + 1);
+        setDifficultyState(nextDiff);
+        return nextDiff;
       },
     });
 

@@ -374,6 +374,25 @@ export class VoiceOrchestrator {
       };
     }
 
+    // Interruption / Barge-in: if user says stop or speaks while assistant is speaking
+    if (this.stateMachine.getState() === 'SPEAKING' || /^(stop|aapu|ruko|ruk|wait|ఆపు|ఆపండి|रुको|थमा|போதும்)$/i.test(trimmed)) {
+      await this.synthesizer.stop();
+      if (/^(stop|aapu|ruko|ruk|ఆపు|ఆపండి|रुको|थमा|போதும்)$/i.test(trimmed)) {
+        const ack = this.getLocalizedText(this.context.language, 'INTERRUPT_ACK');
+        await this.speak(ack);
+        return {
+          transcript: trimmed,
+          normalizedTranscript: trimmed,
+          detectedLanguage: this.context.language,
+          intent: 'CANCEL',
+          confidence: 0.99,
+          spokenResponse: ack,
+          actionExecuted: 'interrupted',
+          actionSuccess: true,
+        };
+      }
+    }
+
     this.stateMachine.transition('PROCESSING');
     this.notifyState();
 
@@ -938,6 +957,7 @@ export class VoiceOrchestrator {
         APPOINTMENT_STATUS_INFO: 'ఈ వారం మీ డాక్టర్ అపాయింట్‌మెంట్స్ అన్నీ సక్రమంగా ఉన్నాయి.',
         REMINDER_MARKED_DONE: 'సరే, నేను పూర్తయినట్లు నమోదు చేశాను. చాలా మంచిది.',
         REMINDER_SNOOZED: 'సరే, 10 నిమిషాల తర్వాత మళ్ళీ గుర్తుచేస్తాను.',
+        INTERRUPT_ACK: 'సరే.',
         GREETING: 'నమస్కారం! నేను మీకు ఎలా సహాయపడమంటారు?',
         HELP: 'మీరు మీ షెడ్యూల్, మందుల వివరాలు అడగవచ్చు లేదా నాతో ఒక మెదడు ఆట ఆడవచ్చు.',
         GENERIC_CONFIRMED: 'సరే, తప్పకుండా చేస్తాను.',
@@ -964,6 +984,7 @@ export class VoiceOrchestrator {
         APPOINTMENT_STATUS_INFO: 'इस सप्ताह डॉक्टर से मिलने का समय निर्धारित है।',
         REMINDER_MARKED_DONE: 'अच्छा हुआ! मैंने इसे पूरा दर्ज कर लिया है।',
         REMINDER_SNOOZED: 'ठीक है, मैं 10 मिनट बाद फिर से याद दिलाऊँगा।',
+        INTERRUPT_ACK: 'जी, ठीक है।',
         GREETING: 'नमस्ते! मैं आपकी किस प्रकार सहायता कर सकता हूँ?',
         HELP: 'आप मुझसे अपनी दिनचर्या, दवाइयों के बारे में पूछ सकते हैं या कोई खेल खेल सकते हैं।',
         GENERIC_CONFIRMED: 'ज़रूर, मैं इसे कर रहा हूँ।',
@@ -990,6 +1011,7 @@ export class VoiceOrchestrator {
         APPOINTMENT_STATUS_INFO: 'এই সপ্তাহত ডাক্তৰৰ এপইণ্টমেণ্ট নিৰ্ধাৰণ কৰা হৈছে।',
         REMINDER_MARKED_DONE: 'বৰ ভাল! মই সম্পূৰ্ণ হোৱা বুলি নথিভুক্ত কৰিলোঁ।',
         REMINDER_SNOOZED: 'বাৰু, ১০ মিনিট পিছত পুনৰ মনত পেলাম।',
+        INTERRUPT_ACK: 'বাৰু।',
         GREETING: 'নমস্কাৰ! আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?',
         HELP: 'আপুনি দিনলিপি, দৰবৰ কথা সুধিব পাৰে বা মগজুৰ খেল খেলিব পাৰে।',
         GENERIC_CONFIRMED: 'নিশ্চয়, মই কৰি আছোঁ।',
@@ -1016,6 +1038,7 @@ export class VoiceOrchestrator {
         APPOINTMENT_STATUS_INFO: 'Your healthcare appointments are on track for this week.',
         REMINDER_MARKED_DONE: 'Very well. I have marked that as completed.',
         REMINDER_SNOOZED: 'Okay, I will remind you again in 10 minutes.',
+        INTERRUPT_ACK: 'Okay.',
         GREETING: 'Hello! How can I assist you today?',
         HELP: 'You can ask about your schedule, medicines, or we can play a memory game together.',
         GENERIC_CONFIRMED: 'Certainly, taking care of that for you.',
