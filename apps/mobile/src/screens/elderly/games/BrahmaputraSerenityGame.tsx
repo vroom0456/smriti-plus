@@ -255,6 +255,7 @@ export default function BrahmaputraSerenityGame({
           <View style={styles.resultActions}>
             <PrimaryButton
               title="Practice Again"
+              variant="success"
               onPress={() => {
                 setIsFinished(false);
                 setSecondsRemaining(60);
@@ -340,7 +341,7 @@ export default function BrahmaputraSerenityGame({
           <Text style={styles.promptSub}>{activeCfg.sub}</Text>
         </View>
 
-        {/* Gentle Ripple Touch Button */}
+        {/* Gentle Ripple Touch Button: Ocean Azure */}
         <TouchableOpacity
           onPress={handleRippleTap}
           style={styles.rippleButton}
@@ -348,21 +349,21 @@ export default function BrahmaputraSerenityGame({
           accessibilityRole="button"
           accessibilityLabel={`Tap to feel peaceful ripple, current count ${calmTouches}`}
         >
-          <Heart size={20} color={colors.teal} style={{ marginRight: 8 }} />
+          <Heart size={22} color="#FFFFFF" style={{ marginRight: 10 }} />
           <Text style={styles.rippleButtonText}>
             Tap to feel peaceful ripple ({calmTouches})
           </Text>
         </TouchableOpacity>
 
-        {/* Early Refreshed Action */}
+        {/* Early Refreshed Action: Emerald Green */}
         <TouchableOpacity
           onPress={handleFinish}
           style={styles.finishEarlyButton}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="I Feel Calm & Refreshed"
         >
-          <CheckCircle2 size={18} color={colors.textSecondary} style={{ marginRight: 6 }} />
+          <CheckCircle2 size={20} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 8 }} />
           <Text style={styles.finishEarlyText}>I Feel Calm & Refreshed</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -511,33 +512,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    backgroundColor: colors.tealBg,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 113, 227, 0.2)',
+    paddingVertical: 16,
+    backgroundColor: '#0071E3',
+    borderRadius: 20,
     marginTop: spacing.sm,
-    minHeight: 52,
+    minHeight: 56,
+    ...shadows.subtle,
   },
   rippleButtonText: {
     fontFamily: fontFamily.display,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '700',
-    color: colors.teal,
+    color: '#FFFFFF',
     letterSpacing: 0,
   },
   finishEarlyButton: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
+    backgroundColor: '#16A34A',
+    borderRadius: 20,
     marginTop: spacing.md,
+    minHeight: 52,
+    ...shadows.subtle,
   },
   finishEarlyText: {
     fontFamily: fontFamily.display,
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
     letterSpacing: 0,
   },
   topBarResult: {

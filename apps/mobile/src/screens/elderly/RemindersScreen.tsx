@@ -272,8 +272,8 @@ export default function RemindersScreen({ navigation }: any) {
         {/* Pending Items */}
         {pending.length > 0 && (
           <View style={styles.sectionWrap}>
-            <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
-              {t('reminders.upcoming') || 'UPCOMING TODAY'}
+            <Text style={[styles.sectionHeading, { fontSize: scale(16), color: colors.textDark }]}>
+              {t('reminders.upcoming') || 'Upcoming Today'}
             </Text>
             {pending.map((r) => (
               <ReminderCard
@@ -292,8 +292,8 @@ export default function RemindersScreen({ navigation }: any) {
         {/* Completed Items */}
         {completed.length > 0 && (
           <View style={styles.sectionWrap}>
-            <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
-              {t('reminders.completedMissed') || 'COMPLETED'}
+            <Text style={[styles.sectionHeading, { fontSize: scale(16), color: colors.textDark }]}>
+              {t('reminders.completedMissed') || 'Completed'}
             </Text>
             {completed.map((r) => (
               <ReminderCard
@@ -377,12 +377,11 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontFamily: fontFamily.display,
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
-    color: colors.muted,
+    color: colors.textDark,
     letterSpacing: 0,
-    textTransform: 'uppercase',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.sm + 2,
     paddingHorizontal: 4,
   },
 });

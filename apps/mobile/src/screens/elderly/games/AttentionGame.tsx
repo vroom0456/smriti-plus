@@ -268,6 +268,7 @@ export default function AttentionGame({ gameId, difficulty: initialDifficulty, t
             <PrimaryButton
               title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
               onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+              variant="success"
               style={styles.actionBtnPlayNext}
             />
             <PrimaryButton

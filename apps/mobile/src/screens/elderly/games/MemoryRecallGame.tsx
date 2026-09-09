@@ -311,6 +311,7 @@ export default function MemoryRecallGame({
             <PrimaryButton
               title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
               onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+              variant="success"
               style={styles.actionBtnPlayNext}
             />
             <PrimaryButton
@@ -366,6 +367,7 @@ export default function MemoryRecallGame({
           title={`Submit (${selected.size} selected)`}
           onPress={handleSubmit}
           disabled={selected.size === 0}
+          variant="success"
           style={styles.submitBtn}
         />
       </ScrollView>

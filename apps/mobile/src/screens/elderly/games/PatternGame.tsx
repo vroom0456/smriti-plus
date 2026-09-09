@@ -253,6 +253,7 @@ export default function PatternGame({ gameId, difficulty: initialDifficulty, tar
             <PrimaryButton
               title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
               onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+              variant="success"
               style={styles.actionBtnPlayNext}
             />
             <PrimaryButton

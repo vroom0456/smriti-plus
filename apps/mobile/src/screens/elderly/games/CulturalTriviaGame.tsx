@@ -216,6 +216,7 @@ export default function CulturalTriviaGame({
           <View style={styles.resultActions}>
             <PrimaryButton
               title="Play Trivia Again"
+              variant="success"
               onPress={() => {
                 setIsFinished(false);
                 setCurrentIndex(0);
@@ -320,8 +321,9 @@ export default function CulturalTriviaGame({
 
             <PrimaryButton
               title={currentIndex + 1 < TRIVIA_QUESTIONS.length ? 'Next Treasure ➔' : 'See Results'}
+              variant="success"
               onPress={handleNext}
-              style={{ marginTop: spacing.md, minHeight: 52 }}
+              style={{ marginTop: spacing.md, minHeight: 56 }}
             />
           </View>
         )}
@@ -440,48 +442,49 @@ const styles = StyleSheet.create({
   },
   optionButtonText: {
     fontFamily: fontFamily.display,
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.textDark,
     letterSpacing: 0,
     flex: 1,
   },
   optionCorrect: {
-    backgroundColor: 'rgba(52, 199, 89, 0.1)',
-    borderColor: colors.success,
+    backgroundColor: '#DCFCE7',
+    borderColor: '#16A34A',
   },
   optionCorrectText: {
-    color: colors.successDark || '#1E7E34',
-    fontWeight: '700',
+    color: '#15803D',
+    fontWeight: '800',
   },
   optionIncorrect: {
-    backgroundColor: 'rgba(255, 59, 48, 0.08)',
-    borderColor: colors.error,
+    backgroundColor: '#FEE2E2',
+    borderColor: '#DC2626',
   },
   optionIncorrectText: {
-    color: colors.error,
+    color: '#B91C1C',
+    fontWeight: '700',
   },
   explanationBox: {
-    backgroundColor: colors.tealBg,
+    backgroundColor: '#EFF6FF',
     padding: spacing.lg,
     borderRadius: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 113, 227, 0.2)',
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
     marginBottom: spacing.xl,
   },
   explanationTitle: {
     fontFamily: fontFamily.display,
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
-    color: colors.teal,
+    color: '#1E40AF',
     marginBottom: 6,
     letterSpacing: 0,
   },
   explanationText: {
     fontFamily: fontFamily.text,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.textDark,
-    lineHeight: 22,
+    lineHeight: 24,
     letterSpacing: 0,
   },
   topBarResult: {

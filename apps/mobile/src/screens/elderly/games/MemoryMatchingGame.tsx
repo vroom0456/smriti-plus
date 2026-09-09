@@ -370,6 +370,7 @@ export default function MemoryMatchingGame({
             <PrimaryButton
               title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
               onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+              variant="success"
               style={styles.actionBtnPlayNext}
             />
             <PrimaryButton

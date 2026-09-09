@@ -230,22 +230,32 @@ export default function GamesListScreen({ navigation }: any) {
     );
   }
 
+const CATEGORY_THEMES: Record<string, { iconColor: string; bgColor: string }> = {
+  memory_matching: { iconColor: '#0071E3', bgColor: '#EFF6FF' },
+  memory_recall: { iconColor: '#0071E3', bgColor: '#EFF6FF' },
+  relaxation: { iconColor: '#0D9488', bgColor: '#F0FDFA' },
+  heritage_trivia: { iconColor: '#D97706', bgColor: '#FEF3C7' },
+  attention: { iconColor: '#059669', bgColor: '#ECFDF5' },
+  pattern_recognition: { iconColor: '#7C3AED', bgColor: '#F5F3FF' },
+};
+
   const renderIconForGame = (category: string) => {
+    const theme = CATEGORY_THEMES[category] || { iconColor: colors.primary, bgColor: '#EFF6FF' };
     switch (category) {
       case 'memory_matching':
-        return <Sparkles size={24} color={colors.primary} strokeWidth={2.2} />;
+        return <Sparkles size={26} color={theme.iconColor} strokeWidth={2.4} />;
       case 'memory_recall':
-        return <Brain size={24} color={colors.primary} strokeWidth={2.2} />;
+        return <Brain size={26} color={theme.iconColor} strokeWidth={2.4} />;
       case 'attention':
-        return <Eye size={24} color={colors.primary} strokeWidth={2.2} />;
+        return <Eye size={26} color={theme.iconColor} strokeWidth={2.4} />;
       case 'pattern_recognition':
-        return <Puzzle size={24} color={colors.primary} strokeWidth={2.2} />;
+        return <Puzzle size={26} color={theme.iconColor} strokeWidth={2.4} />;
       case 'relaxation':
-        return <Waves size={24} color={colors.primary} strokeWidth={2.2} />;
+        return <Waves size={26} color={theme.iconColor} strokeWidth={2.4} />;
       case 'heritage_trivia':
-        return <Flower2 size={24} color={colors.primary} strokeWidth={2.2} />;
+        return <Flower2 size={26} color={theme.iconColor} strokeWidth={2.4} />;
       default:
-        return <Gamepad2 size={24} color={colors.primary} strokeWidth={2.2} />;
+        return <Gamepad2 size={26} color={theme.iconColor} strokeWidth={2.4} />;
     }
   };
 
@@ -264,56 +274,59 @@ export default function GamesListScreen({ navigation }: any) {
           accessibilityLabel="Back to Home"
           activeOpacity={0.75}
         >
-          <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
+          <ArrowLeft size={20} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
           <Text style={styles.backText}>Home</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>{t('games.title') || 'Memory Activities'}</Text>
+        <Text style={styles.title}>{t('games.title') || 'Mind Activities'}</Text>
         <Text style={styles.subtitle}>
-          {t('games.subtitle') || 'Gentle daily exercises to exercise memory and focus'}
+          {t('games.subtitle') || 'Gentle daily exercises to keep your mind active and clear'}
         </Text>
 
         {/* Daily Mind Gym Streak Banner from Serene Heritage Stitch Design */}
         <View style={styles.streakBanner}>
           <View style={styles.streakIconWrap}>
-            <Sparkles size={22} color="#FFFFFF" strokeWidth={2.2} />
+            <Sparkles size={24} color="#FFFFFF" strokeWidth={2.4} />
           </View>
           <View style={styles.streakInfo}>
             <Text style={styles.streakTitle}>Keep Your Mind Glowing</Text>
             <Text style={styles.streakSub}>
-              Complete at least 1 activity daily to maintain your streak!
+              Complete at least 1 gentle activity daily to maintain your streak!
             </Text>
           </View>
         </View>
 
         <View style={styles.gamesList}>
-          {games.map((game) => (
-            <TouchableOpacity
-              key={game.id}
-              onPress={() => startGame(game)}
-              activeOpacity={0.78}
-              accessibilityRole="button"
-              accessibilityLabel={`Start ${game.name}: ${game.description || 'Memory exercise'}`}
-              style={[styles.activityItem, shadows.card]}
-            >
-              <View style={styles.activityIconWrap}>
-                {renderIconForGame(game.category)}
-              </View>
+          {games.map((game) => {
+            const theme = CATEGORY_THEMES[game.category] || { iconColor: colors.primary, bgColor: '#EFF6FF' };
+            return (
+              <TouchableOpacity
+                key={game.id}
+                onPress={() => startGame(game)}
+                activeOpacity={0.78}
+                accessibilityRole="button"
+                accessibilityLabel={`Start ${game.name}: ${game.description || 'Memory exercise'}`}
+                style={[styles.activityItem, shadows.card]}
+              >
+                <View style={[styles.activityIconWrap, { backgroundColor: theme.bgColor }]}>
+                  {renderIconForGame(game.category)}
+                </View>
 
-              <View style={styles.activityInfo}>
-                <Text style={styles.activityName} numberOfLines={1}>
-                  {game.name}
-                </Text>
-                <Text style={styles.activityDesc} numberOfLines={2}>
-                  {game.description || 'Engaging cognitive activity tailored for today'}
-                </Text>
-              </View>
+                <View style={styles.activityInfo}>
+                  <Text style={styles.activityName} numberOfLines={1}>
+                    {game.name}
+                  </Text>
+                  <Text style={styles.activityDesc} numberOfLines={2}>
+                    {game.description || 'Engaging cognitive activity tailored for today'}
+                  </Text>
+                </View>
 
-              <View style={styles.activityArrowWrap}>
-                <ChevronRight size={20} color={colors.muted} strokeWidth={2.2} />
-              </View>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.activityArrowWrap}>
+                  <ChevronRight size={22} color={theme.iconColor} strokeWidth={2.4} />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Calming Senior Reassurance Footer from Stitch */}
@@ -402,20 +415,20 @@ const styles = StyleSheet.create({
   },
   streakTitle: {
     fontFamily: fontFamily.display,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.teal,
     letterSpacing: 0,
   },
   streakSub: {
     fontFamily: fontFamily.text,
-    fontSize: 13,
+    fontSize: 15,
     color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 18,
+    marginTop: 3,
+    lineHeight: 20,
   },
   gamesList: {
-    gap: 12,
+    gap: 14,
   },
   activityItem: {
     backgroundColor: colors.surface,
@@ -425,12 +438,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 80,
+    minHeight: 84,
   },
   activityIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     backgroundColor: colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
@@ -442,11 +455,16 @@ const styles = StyleSheet.create({
   },
   activityName: {
     ...typography.elderly.cardHeading,
+    fontSize: 19,
+    fontWeight: '800',
+    color: colors.textDark,
   },
   activityDesc: {
     ...typography.elderly.secondary,
-    marginTop: 3,
-    lineHeight: 20,
+    fontSize: 15,
+    marginTop: 4,
+    lineHeight: 22,
+    color: colors.textSecondary,
   },
   activityArrowWrap: {
     paddingLeft: 4,
@@ -454,7 +472,7 @@ const styles = StyleSheet.create({
   seniorReassuranceFooter: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: spacing.md,
+    padding: spacing.md + 2,
     marginTop: spacing.xl,
     borderWidth: 1,
     borderColor: colors.border,
@@ -463,7 +481,8 @@ const styles = StyleSheet.create({
   },
   seniorReassuranceText: {
     fontFamily: fontFamily.text,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,

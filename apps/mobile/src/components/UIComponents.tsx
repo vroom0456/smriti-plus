@@ -58,7 +58,7 @@ import {
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'danger';
+  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'danger' | 'success' | 'amber' | 'teal';
   size?: 'large' | 'medium';
   icon?: React.ReactNode;
   loading?: boolean;
@@ -88,7 +88,16 @@ export function PrimaryButton({
   let textColor = colors.white;
   let borderColor = 'transparent';
 
-  if (isSecondary) {
+  if (variant === 'success') {
+    backgroundColor = colors.success;
+    textColor = colors.white;
+  } else if (variant === 'amber') {
+    backgroundColor = '#D97706';
+    textColor = colors.white;
+  } else if (variant === 'teal') {
+    backgroundColor = colors.teal;
+    textColor = colors.white;
+  } else if (isSecondary) {
     backgroundColor = colors.surfaceSecondary;
     textColor = colors.textDark;
     borderColor = colors.border;
@@ -1043,7 +1052,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: colors.textDark,
-    letterSpacing: -0.2,
+    letterSpacing: 0,
   },
   reminderTitleDone: {
     color: colors.muted,
@@ -1051,53 +1060,58 @@ const styles = StyleSheet.create({
   },
   reminderTime: {
     fontFamily: fontFamily.text,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '500',
     color: colors.textSecondary,
     marginTop: 2,
+    letterSpacing: 0,
   },
   doneButton: {
     backgroundColor: colors.success,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: borderRadius.pill,
-    minHeight: 46,
+    minHeight: 48,
     ...shadows.subtle,
   },
   doneButtonText: {
     fontFamily: fontFamily.display,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.white,
+    letterSpacing: 0,
   },
   statusCompletedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.successBg,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: borderRadius.pill,
   },
   statusCompletedText: {
     fontFamily: fontFamily.display,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.successDark,
+    letterSpacing: 0,
   },
   statusMissedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.dangerBg,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: borderRadius.pill,
   },
   statusMissedText: {
     fontFamily: fontFamily.display,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.danger,
+    letterSpacing: 0,
   },
 
   // Alert Banner

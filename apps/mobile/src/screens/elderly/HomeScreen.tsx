@@ -283,39 +283,39 @@ export default function ElderHomeScreen({ navigation }: any) {
           >
             {greetingFull}
           </Text>
-          <Text style={[styles.greetingSubtitle, { fontSize: scale(15), lineHeight: scale(21), color: colors.textSecondary }]}>
-            Welcome to SMRITI+ — Your daily companion
+          <Text style={[styles.greetingSubtitle, { fontSize: scale(16), lineHeight: scale(23), color: colors.textSecondary }]}>
+            Your peaceful daily companion
           </Text>
         </View>
 
         {error ? <AlertBanner type="warning" message={error} /> : null}
 
         <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
-            {t('home.today') || 'TODAY'}
+          <Text style={[styles.sectionHeading, { fontSize: scale(14), color: colors.textDark }]}>
+            {t('home.today') || 'TODAY’S SCHEDULE'}
           </Text>
           <HealthCard style={[styles.routineCard, hcStyles.cardBorder]}>
             <View style={styles.routineHeaderRow}>
               <View style={[styles.routineIconWrap, { backgroundColor: colors.successBg }]}>
-                <CheckCircle2 size={24} color={colors.success} strokeWidth={2.2} />
+                <CheckCircle2 size={26} color={colors.success} strokeWidth={2.4} />
               </View>
               <View style={styles.routineTextGroup}>
-                <Text style={[styles.routineTitle, { fontSize: scale(19), color: colors.textDark }]}>
+                <Text style={[styles.routineTitle, { fontSize: scale(20), color: colors.textDark, fontWeight: '700' }]}>
                   {t('home.dailyRoutine') || 'Daily Routine'}
                 </Text>
-                <Text style={[styles.routineSubtitle, { fontSize: scale(14), color: colors.textSecondary }]}>
+                <Text style={[styles.routineSubtitle, { fontSize: scale(16), color: colors.textSecondary, marginTop: 2 }]}>
                   {completedReminders} of {totalReminders} completed
                 </Text>
               </View>
             </View>
 
             {!activeReminderDone ? (
-              <View style={[styles.interactiveReminderBox, { borderColor: colors.borderLight }]}>
-                <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={[styles.reminderPillLabel, { fontSize: scale(11), color: colors.primary }]}>
-                    NEXT REMINDER
+              <View style={[styles.interactiveReminderBox, { borderColor: colors.borderLight, backgroundColor: '#F8FAFC' }]}>
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text style={[styles.reminderPillLabel, { fontSize: scale(13), color: colors.teal, fontWeight: '700' }]}>
+                    UPCOMING REMINDER
                   </Text>
-                  <Text style={[styles.reminderItemTitle, { fontSize: scale(15), color: colors.textDark }]} numberOfLines={1}>
+                  <Text style={[styles.reminderItemTitle, { fontSize: scale(17), color: colors.textDark, fontWeight: '700', marginTop: 2 }]} numberOfLines={1}>
                     {upcomingMedTitle}
                   </Text>
                 </View>
@@ -326,16 +326,16 @@ export default function ElderHomeScreen({ navigation }: any) {
                   accessibilityRole="button"
                   accessibilityLabel="Mark reminder completed"
                 >
-                  <CheckCircle2 size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 4 }} />
-                  <Text style={[styles.markTakenBtnText, { fontSize: scale(13) }]}>
+                  <CheckCircle2 size={18} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 6 }} />
+                  <Text style={[styles.markTakenBtnText, { fontSize: scale(15), fontWeight: '700' }]}>
                     Mark Taken
                   </Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={[styles.reminderSuccessBox, { backgroundColor: colors.successBg }]}>
-                <CheckCircle2 size={18} color={colors.success} strokeWidth={2.4} style={{ marginRight: 6 }} />
-                <Text style={[styles.reminderSuccessText, { fontSize: scale(14), color: colors.successDark }]}>
+                <CheckCircle2 size={20} color={colors.success} strokeWidth={2.4} style={{ marginRight: 8 }} />
+                <Text style={[styles.reminderSuccessText, { fontSize: scale(16), color: colors.successDark, fontWeight: '700' }]}>
                   {t('home.completedBadge') || 'Done ✓'} — {upcomingMedTitle}
                 </Text>
               </View>
@@ -348,7 +348,7 @@ export default function ElderHomeScreen({ navigation }: any) {
             />
 
             <SecondaryButton
-              title={t('home.viewSchedule') || 'View Today’s Schedule'}
+              title={t('home.viewSchedule') || 'View Full Schedule'}
               onPress={() => navigation.navigate('Reminders')}
               accessibilityLabel="View today's reminders schedule"
             />
@@ -356,32 +356,32 @@ export default function ElderHomeScreen({ navigation }: any) {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
-            {t('home.recommendedForYou') || 'RECOMMENDED FOR YOU'}
+          <Text style={[styles.sectionHeading, { fontSize: scale(14), color: colors.textDark }]}>
+            {t('home.recommendedForYou') || 'TODAY’S MIND EXERCISE'}
           </Text>
           <HealthCard style={[styles.activityCard, hcStyles.cardBorder]}>
             <View style={styles.activityBadgeRow}>
-              <View style={[styles.activityPill, { backgroundColor: colors.primaryMuted }]}>
-                <Brain size={14} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 5 }} />
-                <Text style={[styles.activityPillText, { fontSize: scale(13), color: colors.primary }]}>
-                  5 minutes
+              <View style={[styles.activityPill, { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' }]}>
+                <Brain size={16} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 6 }} />
+                <Text style={[styles.activityPillText, { fontSize: scale(14), color: colors.primary, fontWeight: '700' }]}>
+                  5-minute gentle activity
                 </Text>
               </View>
             </View>
 
-            <Text style={[styles.activityTitle, { fontSize: scale(22), lineHeight: scale(28), color: colors.textDark }]}>
+            <Text style={[styles.activityTitle, { fontSize: scale(22), lineHeight: scale(28), color: colors.textDark, fontWeight: '800' }]}>
               {nextActivityTitle}
             </Text>
-            <Text style={[styles.activityDesc, { fontSize: scale(15), lineHeight: scale(22), color: colors.textSecondary }]}>
-              Choose a game to exercise your mind
+            <Text style={[styles.activityDesc, { fontSize: scale(16), lineHeight: scale(24), color: colors.textSecondary, marginTop: 4 }]}>
+              A relaxing activity designed to keep your memory sharp and clear.
             </Text>
 
             <PrimaryButton
-              title={t('home.startActivity') || 'Start Today’s Activity'}
+              title={t('home.startActivity') || 'Start Activity ➔'}
               size="large"
               onPress={() => navigation.navigate('Games')}
               accessibilityLabel={`Start today's activity: ${nextActivityTitle}`}
-              style={{ marginTop: spacing.lg }}
+              style={{ marginTop: spacing.lg, minHeight: 56 }}
             />
 
             <TouchableOpacity
@@ -389,62 +389,64 @@ export default function ElderHomeScreen({ navigation }: any) {
               style={styles.moreActivitiesLink}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="Explore more activities"
+              accessibilityLabel="Explore all activities"
             >
-              <Text style={[styles.moreActivitiesText, { fontSize: scale(15), color: colors.primary }]}>
-                {t('home.moreActivities') || 'Explore More Activities'}
+              <Text style={[styles.moreActivitiesText, { fontSize: scale(16), color: colors.primary, fontWeight: '700' }]}>
+                {t('home.moreActivities') || 'Explore All Mind Activities'}
               </Text>
-              <ChevronRight size={16} color={colors.primary} strokeWidth={2.2} />
+              <ChevronRight size={18} color={colors.primary} strokeWidth={2.4} />
             </TouchableOpacity>
           </HealthCard>
         </View>
 
-        {/* ── Quick Help ── */}
+        {/* ── Quick Help (Elder-Friendly Semantic Colors) ── */}
         <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
-            {t('home.quickHelp') || 'QUICK HELP'}
+          <Text style={[styles.sectionHeading, { fontSize: scale(14), color: colors.textDark }]}>
+            {t('home.quickHelp') || 'NEED ASSISTANCE?'}
           </Text>
           <View style={styles.helpRow}>
+            {/* Call Family: Warm Amber */}
             <TouchableOpacity
               onPress={() => navigation.navigate('CaregiverHelp')}
-              style={[styles.quickHelpButton, { backgroundColor: colors.surface, borderColor: colors.border }, hcStyles.cardBorder]}
+              style={[styles.quickHelpButton, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A', borderWidth: 1.5 }]}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Call caregiver for help"
             >
-              <View style={[styles.quickHelpIconWrap, { backgroundColor: colors.primaryMuted }]}>
-                <Phone size={22} color={colors.primary} strokeWidth={2.2} />
+              <View style={[styles.quickHelpIconWrap, { backgroundColor: '#FEF3C7' }]}>
+                <Phone size={24} color="#D97706" strokeWidth={2.4} />
               </View>
               <View style={styles.quickHelpTextGroup}>
-                <Text style={[styles.quickHelpTitle, { fontSize: scale(17), color: colors.textDark }]}>
-                  {t('home.callCaregiver') || 'Call Caregiver'}
+                <Text style={[styles.quickHelpTitle, { fontSize: scale(18), color: '#92400E', fontWeight: '800' }]}>
+                  {t('home.callCaregiver') || 'Call Family'}
                 </Text>
-                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(13), color: colors.textSecondary }]}>
-                  Tap to connect with family
+                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(15), color: '#B45309', marginTop: 2 }]}>
+                  1-tap phone call
                 </Text>
               </View>
-              <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
+              <ChevronRight size={20} color="#D97706" strokeWidth={2.4} />
             </TouchableOpacity>
 
+            {/* Talk to SMRITI+: Ocean Azure */}
             <TouchableOpacity
               onPress={() => navigation.navigate('VoiceAssistant')}
-              style={[styles.quickHelpButton, { backgroundColor: colors.surface, borderColor: colors.border }, hcStyles.cardBorder]}
+              style={[styles.quickHelpButton, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderWidth: 1.5 }]}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Voice assistant help"
             >
-              <View style={[styles.quickHelpIconWrap, { backgroundColor: colors.primaryMuted }]}>
-                <Mic size={22} color={colors.primary} strokeWidth={2.2} />
+              <View style={[styles.quickHelpIconWrap, { backgroundColor: '#DBEAFE' }]}>
+                <Mic size={24} color="#1D4ED8" strokeWidth={2.4} />
               </View>
               <View style={styles.quickHelpTextGroup}>
-                <Text style={[styles.quickHelpTitle, { fontSize: scale(17), color: colors.textDark }]}>
-                  {t('home.talkSmriti') || 'Talk to SMRITI+'}
+                <Text style={[styles.quickHelpTitle, { fontSize: scale(18), color: '#1E40AF', fontWeight: '800' }]}>
+                  {t('home.talkSmriti') || 'Voice Helper'}
                 </Text>
-                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(13), color: colors.textSecondary }]}>
-                  Ask questions with your voice
+                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(15), color: '#2563EB', marginTop: 2 }]}>
+                  Speak naturally to ask
                 </Text>
               </View>
-              <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
+              <ChevronRight size={20} color="#1D4ED8" strokeWidth={2.4} />
             </TouchableOpacity>
           </View>
         </View>
@@ -452,10 +454,10 @@ export default function ElderHomeScreen({ navigation }: any) {
         {/* Serene Heritage Daily Whisper Footer Banner */}
         <View style={styles.serenityFooter}>
           <Text style={styles.serenityQuoteMark}>“</Text>
-          <Text style={styles.serenityQuoteText}>
+          <Text style={[styles.serenityQuoteText, { fontSize: scale(17), lineHeight: scale(25) }]}>
             A calm mind is a healthy mind. Take your time, there is no hurry.
           </Text>
-          <Text style={styles.serenityAuthorText}>— SMRITI+ Daily Companion</Text>
+          <Text style={[styles.serenityAuthorText, { fontSize: scale(15), marginTop: 6 }]}>— SMRITI+ Daily Companion</Text>
         </View>
 
         <View style={styles.privacyNote}>
