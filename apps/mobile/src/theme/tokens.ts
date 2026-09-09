@@ -288,6 +288,97 @@ export const typography = {
 };
 
 /**
+ * Dynamic typography helper responding to fontScale & highContrast
+ */
+export function getScaledTypography(fontScale: number = 1.0, highContrast: boolean = false) {
+  const contrastTextColor = highContrast ? '#000000' : colors.textDark;
+  const contrastSecondaryColor = highContrast ? '#1C1C1E' : colors.textSecondary;
+
+  return {
+    elderly: {
+      screenTitle: {
+        ...typography.elderly.screenTitle,
+        fontSize: Math.round(typography.elderly.screenTitle.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.screenTitle.lineHeight * fontScale),
+        color: contrastTextColor,
+      },
+      sectionHeading: {
+        ...typography.elderly.sectionHeading,
+        fontSize: Math.round(typography.elderly.sectionHeading.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.sectionHeading.lineHeight * fontScale),
+        color: contrastTextColor,
+      },
+      cardHeading: {
+        ...typography.elderly.cardHeading,
+        fontSize: Math.round(typography.elderly.cardHeading.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.cardHeading.lineHeight * fontScale),
+        color: contrastTextColor,
+      },
+      body: {
+        ...typography.elderly.body,
+        fontSize: Math.round(typography.elderly.body.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.body.lineHeight * fontScale),
+        color: contrastTextColor,
+      },
+      bodyBold: {
+        ...typography.elderly.bodyBold,
+        fontSize: Math.round(typography.elderly.bodyBold.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.bodyBold.lineHeight * fontScale),
+        color: contrastTextColor,
+      },
+      secondary: {
+        ...typography.elderly.secondary,
+        fontSize: Math.round(typography.elderly.secondary.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.secondary.lineHeight * fontScale),
+        color: contrastSecondaryColor,
+      },
+      caption: {
+        ...typography.elderly.caption,
+        fontSize: Math.round(typography.elderly.caption.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.caption.lineHeight * fontScale),
+        color: contrastSecondaryColor,
+      },
+      buttonPrimary: {
+        ...typography.elderly.buttonPrimary,
+        fontSize: Math.round(typography.elderly.buttonPrimary.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.buttonPrimary.lineHeight * fontScale),
+      },
+      buttonSecondary: {
+        ...typography.elderly.buttonSecondary,
+        fontSize: Math.round(typography.elderly.buttonSecondary.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.buttonSecondary.lineHeight * fontScale),
+      },
+      h1: {
+        ...typography.elderly.h1,
+        fontSize: Math.round(typography.elderly.h1.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.h1.lineHeight * fontScale),
+      },
+      h2: {
+        ...typography.elderly.h2,
+        fontSize: Math.round(typography.elderly.h2.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.h2.lineHeight * fontScale),
+      },
+      h3: {
+        ...typography.elderly.h3,
+        fontSize: Math.round(typography.elderly.h3.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.h3.lineHeight * fontScale),
+      },
+      small: {
+        ...typography.elderly.small,
+        fontSize: Math.round(typography.elderly.small.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.small.lineHeight * fontScale),
+      },
+      button: {
+        ...typography.elderly.button,
+        fontSize: Math.round(typography.elderly.button.fontSize * fontScale),
+        lineHeight: Math.round(typography.elderly.button.lineHeight * fontScale),
+      },
+    },
+    standard: typography.standard,
+  };
+}
+
+/**
  * 8-Point Spacing Grid (Section 11)
  * 8, 16, 24, 32, 40, 48, 56, 64
  * Screen margins: 24px (Section 12)

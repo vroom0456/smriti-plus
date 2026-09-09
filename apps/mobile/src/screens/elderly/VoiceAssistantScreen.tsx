@@ -35,6 +35,7 @@ import { languageRegistry } from '../../services/languageRegistry';
 import { offlineStore } from '../../services/offlineStore';
 import { VoiceTools, ToolResult } from '../../services/voiceTools';
 import { LanguageProfileManager } from '../../services/languageProfiles';
+import { defaultVoiceOrchestrator } from '../../services/voice/VoiceOrchestrator';
 import { useAuthStore } from '../../state/authStore';
 import { useTranslation, getLanguage } from '../../i18n';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
@@ -239,6 +240,26 @@ export default function VoiceAssistantScreen() {
     }, 600);
   }, [currentLang]);
 
+  useEffect(() => {
+    defaultVoiceOrchestrator.setLanguage(currentLang);
+    defaultVoiceOrchestrator.setCurrentScreen('voice');
+    defaultVoiceOrchestrator.registerActionHandlers({
+      startGame: (gameId?: string, difficulty?: number) => {
+        navigation.navigate('Games');
+        return true;
+      },
+      openReminders: () => {
+        navigation.navigate('Reminders');
+      },
+      openProgress: () => {
+        navigation.navigate('Reminders');
+      },
+      navigate: (screen: string) => {
+        navigation.navigate(screen);
+      },
+    });
+  }, [currentLang, navigation]);
+
   const syncPersona = () => {
     const p = adaptivePersonaEngine.getProfile();
     setActivePersona(p.currentPersona);
@@ -365,7 +386,28 @@ export default function VoiceAssistantScreen() {
       return;
     }
 
-    // 3. Master Voice Intelligence Router (Tools & Medical Safety Boundaries)
+    // 3. Master Voice Orchestrator Pipeline (Context, Multi-turn, In-Game, Plan)
+    const orchResult = await defaultVoiceOrchestrator.processUserSpeech(phrase);
+    if (orchResult && orchResult.intent !== 'UNKNOWN') {
+      const assistantTurn: ChatTurn = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: orchResult.spokenResponse,
+        spokenAudioText: orchResult.spokenResponse,
+        timestamp: 'Just now',
+        intentLabel: orchResult.intent.replace(/_/g, ' '),
+      };
+      setChatHistory((prev) => [...prev, assistantTurn]);
+      if (orchResult.requiresConfirmation) {
+        setVoiceState('CONFIRMING');
+      } else {
+        setVoiceState('SPEAKING');
+        setTimeout(() => setVoiceState('IDLE'), 3500);
+      }
+      return;
+    }
+
+    // 4. Voice Intelligence Router (Tools & Medical Safety Boundaries)
     const execResult = await voiceIntelligence.executeVoiceCommand(phrase, user?.id || 'demo-elder-id');
 
     if (execResult.isSafetyRefusal) {

@@ -31,7 +31,8 @@ import {
   fontFamily,
 } from '../../theme/tokens';
 import { useAuthStore } from '../../state/authStore';
-import { setLanguage, getLanguage, SupportedLanguage } from '../../i18n';
+import { useSettingsStore, TextSize } from '../../state/settingsStore';
+import { setLanguage, getLanguage, useTranslation, SupportedLanguage } from '../../i18n';
 import { languageRegistry } from '../../services/languageRegistry';
 import { voiceIntelligence } from '../../services/voiceIntelligence';
 import { voicePackManager, VoicePackInfo } from '../../services/voicePackManager';
@@ -75,13 +76,24 @@ export default function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { goBackSafe, panHandlers } = useBackNavigation(navigation, { fallbackTab: 'Home' });
   const { user, logout } = useAuthStore();
+  const { t } = useTranslation();
 
-  const [activeLang, setActiveLang] = useState<string>(getLanguage() || 'en');
-  const [voiceSpeed, setVoiceSpeed] = useState<number>(0.85);
-  const [voiceGuidance, setVoiceGuidance] = useState<boolean>(true);
-  const [privateVoiceMode, setPrivateVoiceMode] = useState<boolean>(false);
-  const [textSize, setTextSize] = useState<'normal' | 'large' | 'xlarge'>('large');
-  const [highContrast, setHighContrast] = useState<boolean>(false);
+  const {
+    textSize,
+    fontScale,
+    highContrast,
+    language: activeLang,
+    voiceSpeed,
+    voiceGuidance,
+    privateVoiceMode,
+    setTextSize,
+    setHighContrast,
+    setAppLanguage,
+    setVoiceSpeed,
+    setVoiceGuidance,
+    setPrivateVoiceMode,
+  } = useSettingsStore();
+
   const [showLangModal, setShowLangModal] = useState<boolean>(false);
   const [showVoicePacksModal, setShowVoicePacksModal] = useState<boolean>(false);
   const [voicePacks, setVoicePacks] = useState<VoicePackInfo[]>(voicePackManager.getVoicePacks());
@@ -111,18 +123,13 @@ export default function SettingsScreen() {
   const currentLangObj =
     ALL_LANGUAGES.find((l) => l.code === activeLang) || ALL_LANGUAGES[0];
 
-  const handleSelectLanguage = (code: string) => {
-    setActiveLang(code);
-    if (['en', 'as', 'bodo', 'te', 'hi', 'ta', 'bn'].includes(code)) {
-      setLanguage(code as SupportedLanguage);
-    }
-    voiceIntelligence.updateContext({ primaryLanguage: code });
+  const handleSelectLanguage = async (code: string) => {
+    await setAppLanguage(code as SupportedLanguage);
     setShowLangModal(false);
   };
 
-  const handleSpeedChange = (speed: number) => {
-    setVoiceSpeed(speed);
-    voiceIntelligence.updateContext({ voiceSpeed: speed });
+  const handleSpeedChange = async (speed: number) => {
+    await setVoiceSpeed(speed);
   };
 
   const handleLogout = () => {
@@ -515,7 +522,7 @@ export default function SettingsScreen() {
                             activeOpacity={0.7}
                             accessibilityLabel={`Delete ${pack.name} pack`}
                           >
-                            <Trash2 size={16} color={colors.textTertiary} strokeWidth={2} />
+                            <Trash2 size={16} color={colors.muted} strokeWidth={2} />
                           </TouchableOpacity>
                         </View>
                       ) : isDownloading ? (

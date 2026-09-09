@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     database_url: str = (
         os.getenv("DATABASE_URL")
         or os.getenv("SMRITI_DATABASE_URL")
-        or "postgresql://postgres:postgres@localhost:5432/smriti_plus"
+        or "sqlite:///./smriti_local.db"
     )
 
     # JWT Auth — reads SECRET_KEY or JWT_SECRET

@@ -53,6 +53,7 @@ import {
 import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
+import { defaultVoiceOrchestrator } from '../../services/voice/VoiceOrchestrator';
 import { useTranslation } from '../../i18n';
 
 interface HomeSummary {
@@ -103,6 +104,26 @@ export default function ElderHomeScreen({ navigation }: any) {
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
+
+  // Connect Voice Orchestrator to HomeScreen navigation and actions
+  useEffect(() => {
+    defaultVoiceOrchestrator.setCurrentScreen('home');
+    defaultVoiceOrchestrator.registerActionHandlers({
+      startGame: () => {
+        navigation.navigate('Games');
+        return true;
+      },
+      openReminders: () => {
+        navigation.navigate('Reminders');
+      },
+      openProgress: () => {
+        navigation.navigate('Reminders');
+      },
+      navigate: (screen: string) => {
+        navigation.navigate(screen);
+      },
+    });
+  }, [navigation]);
 
   const onRefresh = () => {
     setRefreshing(true);

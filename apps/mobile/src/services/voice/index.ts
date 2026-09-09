@@ -21,8 +21,10 @@ export * from './ConfirmationManager';
 export * from './VoiceErrorHandler';
 export * from './VoiceService';
 export * from './VoiceContext';
+export * from './VoiceOrchestrator';
 
 // Default singleton exports
 import { defaultVoiceService } from './VoiceService';
-export { defaultVoiceService as voiceService };
-export default defaultVoiceService;
+import { defaultVoiceOrchestrator } from './VoiceOrchestrator';
+export { defaultVoiceService as voiceService, defaultVoiceOrchestrator as voiceOrchestrator };
+export default defaultVoiceOrchestrator;

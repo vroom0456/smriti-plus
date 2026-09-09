@@ -15,6 +15,7 @@ import { LanguageService } from './LanguageService';
 import { VoiceCommandParser, VoiceIntent, ParsedVoiceResult } from './VoiceCommandParser';
 import { defaultConfirmationManager, ConfirmationManager } from './ConfirmationManager';
 import { defaultVoiceErrorHandler, VoiceErrorHandler } from './VoiceErrorHandler';
+import { defaultVoiceOrchestrator } from './VoiceOrchestrator';
 import { api } from '../api';
 
 export interface VoiceSessionState {
@@ -150,6 +151,10 @@ export class VoiceService {
     this.syncState();
   }
 
+  async stop(): Promise<void> {
+    await this.cancel();
+  }
+
   async speak(text: string, lang?: string): Promise<void> {
     const targetLang = lang || this.activeLanguage;
     this.stateMachine.transition('SPEAKING');
@@ -200,7 +205,21 @@ export class VoiceService {
       this.activeLanguage
     );
 
-    // 1. Try local parser first for immediate instant responsiveness
+    // 1. Check Master Voice Orchestrator Pipeline (multi-turn context, in-game controls, plan)
+    const orchResult = await defaultVoiceOrchestrator.processUserSpeech(rawTranscript);
+    if (orchResult && orchResult.intent !== 'UNKNOWN') {
+      this.currentSessionState.intent = (orchResult.intent as any);
+      this.currentSessionState.confidence = orchResult.confidence;
+      this.currentSessionState.spokenResponse = orchResult.spokenResponse;
+      this.currentSessionState.showTouchFallback = Boolean(orchResult.showTouchFallback);
+      this.currentSessionState.requiresConfirmation = Boolean(orchResult.requiresConfirmation);
+      this.currentSessionState.confirmationPrompt = orchResult.confirmationPrompt;
+      this.syncState();
+      this.errorHandler.recordSuccess();
+      return;
+    }
+
+    // 2. Try legacy local parser fallback
     const localParsed: ParsedVoiceResult = VoiceCommandParser.parse(normalizedText, detectedLanguage);
 
     // 2. Check if this is an affirmation or negation for a pending action

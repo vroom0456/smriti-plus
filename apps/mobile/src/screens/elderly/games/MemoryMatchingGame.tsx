@@ -22,6 +22,7 @@ import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
 import { useAuthStore } from '../../../state/authStore';
 import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
+import { defaultVoiceOrchestrator } from '../../../services/voice/VoiceOrchestrator';
 import { ArrowLeft } from 'lucide-react-native';
 import { useBackNavigation } from '../../../navigation/useBackNavigation';
 
@@ -107,6 +108,22 @@ export default function MemoryMatchingGame({
 
     setCards(cardPairs.sort(() => Math.random() - 0.5));
   }, [numPairs]);
+
+  // Register in-game voice assistant context and actions
+  useEffect(() => {
+    defaultVoiceOrchestrator.setCurrentGame('memory_matching', difficulty);
+    defaultVoiceOrchestrator.registerActionHandlers({
+      repeatInstruction: () => 'Flip cards to find matching pairs. Take your time without rushing.',
+      stopGame: () => {
+        onBack();
+        return true;
+      },
+    });
+
+    return () => {
+      defaultVoiceOrchestrator.setCurrentGame(null);
+    };
+  }, [difficulty, onBack]);
 
   const handleCardPress = useCallback((index: number) => {
     if (isChecking || cards[index].isFlipped || cards[index].isMatched || isComplete) return;
@@ -219,6 +236,7 @@ export default function MemoryMatchingGame({
       }
     }
     setRecommendation(rec);
+    defaultVoiceOrchestrator.notifyGameCompleted();
 
     onComplete(session);
   };

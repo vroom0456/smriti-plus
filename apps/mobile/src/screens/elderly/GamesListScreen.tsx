@@ -31,6 +31,7 @@ import {
 import { api } from '../../services/api';
 import { useAuthStore } from '../../state/authStore';
 import { offlineStore, DEFAULT_GAMES } from '../../services/offlineStore';
+import { defaultVoiceOrchestrator } from '../../services/voice/VoiceOrchestrator';
 import { useTranslation } from '../../i18n';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
 import MemoryMatchingGame from './games/MemoryMatchingGame';
@@ -110,7 +111,39 @@ export default function GamesListScreen({ navigation }: any) {
 
   const handleGameComplete = () => {
     // Session completion handled inside game component
+    defaultVoiceOrchestrator.notifyGameCompleted();
   };
+
+  // Register voice action handlers for game management
+  useEffect(() => {
+    defaultVoiceOrchestrator.setCurrentScreen('games');
+    defaultVoiceOrchestrator.registerActionHandlers({
+      startGame: async (gameId?: string, targetDiff?: number) => {
+        const found = games.find((g) => g.id === gameId || g.category === gameId) || games[0] || DEFAULT_GAMES[0];
+        const diff = targetDiff || 1;
+        setActiveGame({ game: found, difficulty: diff });
+        return true;
+      },
+      setDifficulty: async (direction: 'easier' | 'harder') => {
+        if (!activeGame) return 1;
+        const cur = activeGame.difficulty;
+        const nextDiff = direction === 'easier' ? Math.max(1, cur - 1) : Math.min(5, cur + 1);
+        setActiveGame({ game: activeGame.game, difficulty: nextDiff });
+        try {
+          await offlineStore.setDifficulty(user?.id || 'demo-elder-id', activeGame.game.id, nextDiff);
+        } catch {}
+        return nextDiff;
+      },
+      stopGame: () => {
+        setActiveGame(null);
+        return true;
+      },
+    });
+
+    return () => {
+      defaultVoiceOrchestrator.setCurrentScreen('home');
+    };
+  }, [games, activeGame, user]);
 
   // Render active game
   if (activeGame) {

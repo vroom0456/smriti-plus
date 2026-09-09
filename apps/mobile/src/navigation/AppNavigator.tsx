@@ -220,12 +220,19 @@ function HealthWorkerTabs() {
   );
 }
 
+import { useSettingsStore } from '../state/settingsStore';
+
 // ── Root Navigator ──
 export default function AppNavigator() {
   const { isAuthenticated, user } = useAuthStore();
   const { setLanguage } = useTranslation();
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true);
   const [showingConsent, setShowingConsent] = useState(false);
+
+  React.useEffect(() => {
+    useAuthStore.getState().hydrateAuth();
+    useSettingsStore.getState().loadSettings();
+  }, []);
 
   const getRoleNavigator = (role?: UserRole) => {
     switch (role) {
