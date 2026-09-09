@@ -140,5 +140,24 @@ async function initTables(db: SQLite.SQLiteDatabase): Promise<void> {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS patient_identity_story (
+      id TEXT PRIMARY KEY,
+      elderly_id TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
+      preferred_name TEXT,
+      birth_place TEXT,
+      schooling_location TEXT,
+      college TEXT,
+      study_details TEXT,
+      childhood_friends TEXT,
+      parents_names TEXT,
+      spouse_name TEXT,
+      kids TEXT,
+      profession TEXT,
+      home_town TEXT,
+      comfort_message TEXT,
+      updated_at TEXT NOT NULL
+    );
   `);
 }

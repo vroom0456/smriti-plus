@@ -399,6 +399,26 @@ export default function ElderHomeScreen({ navigation }: any) {
           </HealthCard>
         </View>
 
+        {/* ── Who Am I? Identity Card ── */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('PatientIdentityStory')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Who Am I? — Tap to see your life story"
+            style={styles.whoAmICard}
+          >
+            <View style={styles.whoAmILeft}>
+              <Text style={styles.whoAmIEmoji}>👤</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.whoAmITitle}>Feeling confused?</Text>
+                <Text style={styles.whoAmISubtitle}>Tap to read "Who Am I? — My Life Story"</Text>
+              </View>
+            </View>
+            <ChevronRight size={22} color={colors.white} strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
+
         {/* ── Quick Help (Elder-Friendly Semantic Colors) ── */}
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { fontSize: scale(14), color: colors.textDark }]}>
@@ -826,5 +846,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.teal,
     letterSpacing: 0,
+  },
+  // Who Am I card
+  whoAmICard: {
+    backgroundColor: colors.navy,
+    borderRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...shadows.card,
+  },
+  whoAmILeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+    marginRight: 8,
+  },
+  whoAmIEmoji: {
+    fontSize: 36,
+  },
+  whoAmITitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.white,
+    marginBottom: 3,
+  },
+  whoAmISubtitle: {
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.75)',
+    lineHeight: 22,
   },
 });

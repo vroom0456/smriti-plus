@@ -20,6 +20,8 @@ class WebDatabase {
     sync_queue: [],
     personalization_preferences: [],
     family_contacts: [],
+    memory_items: [],
+    patient_identity_story: [],
   };
 
   constructor() {

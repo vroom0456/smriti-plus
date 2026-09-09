@@ -426,6 +426,7 @@ export function StatCard({
 
 const CATEGORY_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   medicine: { color: colors.danger, bg: colors.dangerBg, label: 'Medicine' },
+  medication: { color: colors.danger, bg: colors.dangerBg, label: 'Medicine' },
   hydration: { color: colors.primary, bg: colors.primaryMuted, label: 'Water' },
   meal: { color: colors.success, bg: colors.successBg, label: 'Meal' },
   activity: { color: colors.warning, bg: colors.warningBg, label: 'Exercise' },
@@ -483,6 +484,7 @@ export function ReminderCard({
         isMissed && styles.reminderMissed,
       ]}
     >
+      {/* Left: icon + text */}
       <View style={styles.reminderLeft}>
         <View style={[styles.reminderIconWrap, { backgroundColor: config.bg }]}>
           {renderReminderCategoryIcon(category, config.color)}
@@ -490,43 +492,48 @@ export function ReminderCard({
         <View style={styles.reminderInfo}>
           <Text
             style={[styles.reminderTitle, isDone && styles.reminderTitleDone]}
-            numberOfLines={1}
+            numberOfLines={2}
             ellipsizeMode="tail"
           >
             {title}
           </Text>
           <Text style={styles.reminderTime} numberOfLines={1}>
-            {scheduledTime}
+            🕐 {scheduledTime}
           </Text>
         </View>
       </View>
 
-      {status === 'pending' && onDone && (
-        <TouchableOpacity
-          onPress={onDone}
-          style={styles.doneButton}
-          activeOpacity={0.78}
-          accessibilityRole="button"
-          accessibilityLabel={`Mark ${title} as completed`}
-        >
-          <Check size={16} color={colors.white} strokeWidth={2.5} style={{ marginRight: 6 }} />
-          <Text style={styles.doneButtonText}>{doneLabel || 'Done'}</Text>
-        </TouchableOpacity>
-      )}
-
-      {isDone && (
-        <View style={styles.statusCompletedBadge}>
-          <Check size={14} color={colors.success} strokeWidth={2.5} style={{ marginRight: 4 }} />
-          <Text style={styles.statusCompletedText}>Done</Text>
-        </View>
-      )}
-
-      {isMissed && (
-        <View style={styles.statusMissedBadge}>
-          <AlertTriangle size={14} color={colors.danger} strokeWidth={2.2} style={{ marginRight: 4 }} />
-          <Text style={styles.statusMissedText}>Missed</Text>
-        </View>
-      )}
+      {/* Right: large checkbox column */}
+      <TouchableOpacity
+        onPress={onDone}
+        disabled={!onDone}
+        style={[
+          styles.reminderCheckbox,
+          isDone && styles.reminderCheckboxDone,
+          isMissed && styles.reminderCheckboxMissed,
+        ]}
+        activeOpacity={0.75}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isDone }}
+        accessibilityLabel={isDone ? `${title}: completed. Tap to undo.` : `Mark ${title} as done`}
+      >
+        {isDone ? (
+          <CheckCircle2 size={32} color={colors.white} strokeWidth={2.5} />
+        ) : isMissed ? (
+          <AlertTriangle size={28} color={colors.danger} strokeWidth={2.2} />
+        ) : (
+          <View style={styles.reminderCircleOutline}>
+            <Check size={22} color={colors.muted} strokeWidth={2.5} />
+          </View>
+        )}
+        <Text style={[
+          styles.reminderCheckboxLabel,
+          isDone && { color: colors.white },
+          isMissed && { color: colors.danger },
+        ]}>
+          {isDone ? 'Done ✓' : isMissed ? 'Missed' : doneLabel || 'Mark\nDone'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -1010,39 +1017,41 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Reminder Card
+  // Reminder Card — large checkbox pattern for elderly
   reminderCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.card,
-    padding: spacing.md,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'space-between',
     marginBottom: spacing.sm + 4,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    minHeight: 64,
+    minHeight: 80,
+    overflow: 'hidden',
   },
   reminderDone: {
-    backgroundColor: '#FAFBF9',
-    borderColor: 'rgba(52, 199, 89, 0.25)',
+    backgroundColor: '#F0FDF4',
+    borderColor: 'rgba(52, 199, 89, 0.4)',
   },
   reminderMissed: {
-    borderColor: 'rgba(255, 59, 48, 0.25)',
+    backgroundColor: '#FFF5F5',
+    borderColor: 'rgba(255, 59, 48, 0.3)',
   },
   reminderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: spacing.sm,
+    padding: spacing.md,
   },
   reminderIconWrap: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
+    flexShrink: 0,
   },
   reminderInfo: {
     flex: 1,
@@ -1050,9 +1059,10 @@ const styles = StyleSheet.create({
   reminderTitle: {
     fontFamily: fontFamily.display,
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textDark,
-    letterSpacing: 0,
+    letterSpacing: -0.2,
+    marginBottom: 3,
   },
   reminderTitleDone: {
     color: colors.muted,
@@ -1060,12 +1070,49 @@ const styles = StyleSheet.create({
   },
   reminderTime: {
     fontFamily: fontFamily.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
     color: colors.textSecondary,
-    marginTop: 2,
     letterSpacing: 0,
   },
+  // Large checkbox column — 72px wide, full height
+  reminderCheckbox: {
+    width: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
+    borderLeftWidth: 1.5,
+    borderLeftColor: colors.border,
+    gap: 4,
+    paddingVertical: 8,
+  },
+  reminderCheckboxDone: {
+    backgroundColor: colors.success,
+    borderLeftColor: colors.success,
+  },
+  reminderCheckboxMissed: {
+    backgroundColor: colors.dangerBg,
+    borderLeftColor: 'rgba(255, 59, 48, 0.3)',
+  },
+  reminderCircleOutline: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reminderCheckboxLabel: {
+    fontFamily: fontFamily.display,
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.muted,
+    textAlign: 'center',
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+  },
+  // Legacy - kept for back-compat
   doneButton: {
     backgroundColor: colors.success,
     flexDirection: 'row',

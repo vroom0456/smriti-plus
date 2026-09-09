@@ -361,6 +361,68 @@ class MemoryItemResponse(BaseModel):
 
 
 # ──────────────────────────────────────────────
+# PATIENT IDENTITY & LIFE STORY ("WHO AM I?")
+# ──────────────────────────────────────────────
+
+class KidDetail(BaseModel):
+    name: str
+    relation: str = "Child"
+    location: Optional[str] = None
+    note: Optional[str] = None
+
+class PatientIdentityStoryCreate(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=255)
+    preferred_name: Optional[str] = None
+    birth_place: Optional[str] = None
+    schooling_location: Optional[str] = None
+    college: Optional[str] = None
+    study_details: Optional[str] = None
+    childhood_friends: Optional[str] = None
+    parents_names: Optional[str] = None
+    spouse_name: Optional[str] = None
+    kids: Optional[str] = None  # JSON string or formatted list of kids
+    profession: Optional[str] = None
+    home_town: Optional[str] = None
+    comfort_message: Optional[str] = None
+
+class PatientIdentityStoryUpdate(BaseModel):
+    full_name: Optional[str] = None
+    preferred_name: Optional[str] = None
+    birth_place: Optional[str] = None
+    schooling_location: Optional[str] = None
+    college: Optional[str] = None
+    study_details: Optional[str] = None
+    childhood_friends: Optional[str] = None
+    parents_names: Optional[str] = None
+    spouse_name: Optional[str] = None
+    kids: Optional[str] = None
+    profession: Optional[str] = None
+    home_town: Optional[str] = None
+    comfort_message: Optional[str] = None
+
+class PatientIdentityStoryResponse(BaseModel):
+    id: UUID
+    elderly_id: UUID
+    full_name: str
+    preferred_name: Optional[str] = None
+    birth_place: Optional[str] = None
+    schooling_location: Optional[str] = None
+    college: Optional[str] = None
+    study_details: Optional[str] = None
+    childhood_friends: Optional[str] = None
+    parents_names: Optional[str] = None
+    spouse_name: Optional[str] = None
+    kids: Optional[str] = None
+    profession: Optional[str] = None
+    home_town: Optional[str] = None
+    comfort_message: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ──────────────────────────────────────────────
 # PHASE 2: FAMILY VOICE MESSAGES
 # ──────────────────────────────────────────────
 

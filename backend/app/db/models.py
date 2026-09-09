@@ -427,3 +427,36 @@ class PersonalizationPreference(Base):
     # Relationships
     elderly = relationship("User", foreign_keys=[elderly_id])
 
+
+# ──────────────────────────────────────────────
+# PATIENT IDENTITY & LIFE STORY ("WHO AM I?")
+# ──────────────────────────────────────────────
+
+class PatientIdentityStory(Base):
+    __tablename__ = "patient_identity_stories"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    elderly_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    full_name = Column(String(255), nullable=False)
+    preferred_name = Column(String(255), nullable=True)
+    birth_place = Column(String(255), nullable=True)
+    schooling_location = Column(String(500), nullable=True)
+    college = Column(String(500), nullable=True)
+    study_details = Column(Text, nullable=True)
+    childhood_friends = Column(Text, nullable=True)
+    parents_names = Column(String(500), nullable=True)
+    spouse_name = Column(String(255), nullable=True)
+    kids = Column(Text, nullable=True)  # JSON serialized list of kids
+    profession = Column(String(500), nullable=True)
+    home_town = Column(String(255), nullable=True)
+    comfort_message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+    # Relationships
+    elderly = relationship("User", foreign_keys=[elderly_id])
+
+    __table_args__ = (
+        Index("ix_patient_identity_stories_elderly_id", "elderly_id"),
+    )
+

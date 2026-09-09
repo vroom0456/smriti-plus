@@ -8,6 +8,8 @@
 
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { offlineStore } from './offlineStore';
+import { v4 as uuidv4 } from '../utils/uuid';
 
 // Supabase Cloud Configuration
 const SUPABASE_URL = 'https://tffkslztyrejetxewlbi.supabase.co';
@@ -141,6 +143,12 @@ export const api = {
     // 8. Handle Family Voice Messages
     if (endpoint.includes('/voice-messages') && method === 'GET') {
       return this.handleVoiceMessagesList<T>();
+    }
+
+    // 9. Handle Patient Identity Story ("Who Am I?")
+    if (endpoint.includes('/identity-story')) {
+      if (method === 'GET') return this.handleGetIdentityStory<T>(endpoint);
+      if (method === 'PUT' || method === 'POST') return this.handleUpdateIdentityStory<T>(endpoint, body);
     }
 
     // 9. Generic Fallback
@@ -572,6 +580,101 @@ export const api = {
       // Fallback
     }
     return [] as unknown as T;
+  },
+
+  /**
+   * Get Patient Identity Story ("Who Am I?")
+   */
+  async handleGetIdentityStory<T>(endpoint: string): Promise<T> {
+    const elderId = endpoint.split('/elders/')[1]?.split('/')[0] || 'demo-elder-id';
+
+    // 1. Check local SQLite cache first
+    try {
+      const cached = await offlineStore.getCachedIdentityStory(elderId);
+      if (cached && cached.full_name) {
+        return cached as unknown as T;
+      }
+    } catch {}
+
+    // 2. Try FastAPI backend if available
+    try {
+      const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+        headers: getHeaders(),
+      });
+      if (res.ok) {
+        const remote = await res.json();
+        await offlineStore.cacheIdentityStory(remote);
+        return remote as unknown as T;
+      }
+    } catch {}
+
+    // 3. Fallback culturally rich default story for demo/offline
+    const defaultStory = {
+      id: 'story-demo-1',
+      elderly_id: elderId,
+      full_name: 'Amit Borah',
+      preferred_name: 'Borah Babu',
+      birth_place: 'Tezpur, Assam',
+      schooling_location: 'Tezpur Government Higher Secondary School',
+      college: 'Cotton College, Guwahati',
+      study_details: 'Bachelor of Science in Botany (Class of 1968)',
+      childhood_friends: 'Bhaben, Monojit, and Pranjal — your lifelong school friends with whom you played football and cycled along the river.',
+      parents_names: 'Late Hemanta Borah (Father) & Late Pratima Devi (Mother)',
+      spouse_name: 'Anjali Borah',
+      kids: JSON.stringify([
+        { name: 'Priya Borah', relation: 'Daughter', location: 'Guwahati', note: 'Takes care of you at home' },
+        { name: 'Rahul Borah', relation: 'Son', location: 'Bengaluru', note: 'Software engineer, calls every Sunday' },
+      ]),
+      profession: 'Retired Biology Teacher, Guwahati High School (35 years of service)',
+      home_town: 'Uzan Bazar, Guwahati, Assam',
+      comfort_message: 'You are safe at home with your loving family. Everything is calm and well.',
+      updated_at: new Date().toISOString(),
+    };
+
+    await offlineStore.cacheIdentityStory(defaultStory);
+    return defaultStory as unknown as T;
+  },
+
+  /**
+   * Upsert Patient Identity Story ("Who Am I?")
+   */
+  async handleUpdateIdentityStory<T>(endpoint: string, body: any): Promise<T> {
+    const elderId = endpoint.split('/elders/')[1]?.split('/')[0] || body?.elderly_id || 'demo-elder-id';
+    const updatedStory = {
+      id: body.id || uuidv4(),
+      elderly_id: elderId,
+      full_name: body.full_name || 'Amit Borah',
+      preferred_name: body.preferred_name || '',
+      birth_place: body.birth_place || '',
+      schooling_location: body.schooling_location || '',
+      college: body.college || '',
+      study_details: body.study_details || '',
+      childhood_friends: body.childhood_friends || '',
+      parents_names: body.parents_names || '',
+      spouse_name: body.spouse_name || '',
+      kids: typeof body.kids === 'string' ? body.kids : JSON.stringify(body.kids || []),
+      profession: body.profession || '',
+      home_town: body.home_town || '',
+      comfort_message: body.comfort_message || '',
+      updated_at: new Date().toISOString(),
+    };
+
+    // Cache locally
+    await offlineStore.cacheIdentityStory(updatedStory);
+
+    // Sync to backend if accessible
+    try {
+      const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+        method: 'PUT',
+        headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        return (await res.json()) as unknown as T;
+      }
+    } catch {}
+
+    return updatedStory as unknown as T;
   },
 
   /**

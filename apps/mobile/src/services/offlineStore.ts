@@ -640,6 +640,51 @@ export const offlineStore = {
       stage_label: 'Independent Assistance',
     };
   },
+
+  /**
+   * Get cached patient identity & life story
+   */
+  async getCachedIdentityStory(elder_id: string): Promise<any | null> {
+    const db = await getDatabase();
+    return db.getFirstAsync<any>(
+      `SELECT * FROM patient_identity_story WHERE elderly_id = ?`,
+      [elder_id]
+    );
+  },
+
+  /**
+   * Cache patient identity & life story locally
+   */
+  async cacheIdentityStory(story: any): Promise<void> {
+    const db = await getDatabase();
+    const id = story.id || uuidv4();
+    const updated_at = story.updated_at || new Date().toISOString();
+    const kids_str = typeof story.kids === 'string' ? story.kids : JSON.stringify(story.kids || []);
+
+    await db.runAsync(
+      `INSERT OR REPLACE INTO patient_identity_story
+       (id, elderly_id, full_name, preferred_name, birth_place, schooling_location, college, study_details, childhood_friends, parents_names, spouse_name, kids, profession, home_town, comfort_message, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        story.elderly_id,
+        story.full_name,
+        story.preferred_name || null,
+        story.birth_place || null,
+        story.schooling_location || null,
+        story.college || null,
+        story.study_details || null,
+        story.childhood_friends || null,
+        story.parents_names || null,
+        story.spouse_name || null,
+        kids_str,
+        story.profession || null,
+        story.home_town || null,
+        story.comfort_message || null,
+        updated_at,
+      ]
+    );
+  },
 };
 
 export const DEFAULT_GAMES = [
