@@ -214,6 +214,8 @@ export default function VoiceAssistantScreen() {
   ];
   const pulseMic = useRef(new Animated.Value(1)).current;
   const chatScrollRef = useRef<ScrollView>(null);
+  const textInputRef = useRef<TextInput>(null);
+  const listenTimeoutRef = useRef<any>(null);
 
   const currentLang = getLanguage() || 'en';
   const langCap = languageRegistry.getCapability(currentLang);
@@ -313,6 +315,7 @@ export default function VoiceAssistantScreen() {
       return;
     }
     if (voiceState === 'LISTENING') {
+      if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
       setVoiceState('IDLE');
       return;
     }
@@ -322,13 +325,16 @@ export default function VoiceAssistantScreen() {
     setCurrentIntent(null);
 
     const prompt = LANG_LISTEN_PROMPT[currentLang] || LANG_LISTEN_PROMPT['en'];
-    await voiceIntelligence.speak(prompt, currentLang);
+
+    if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
 
     // Real Web Speech API recognition (Browser)
+    let recognitionStarted = false;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SR) {
         try {
+          await voiceIntelligence.speak(prompt, currentLang);
           const recognition = new SR();
           recognition.lang = langCap.bcp47;
           recognition.continuous = false;
@@ -339,18 +345,32 @@ export default function VoiceAssistantScreen() {
           };
           recognition.onerror = () => {
             setVoiceState('IDLE');
+            textInputRef.current?.focus();
           };
           recognition.onend = () => {
             setVoiceState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
           };
           recognition.start();
+          recognitionStarted = true;
+          listenTimeoutRef.current = setTimeout(() => {
+            setVoiceState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
+          }, 8000);
           return;
         } catch {}
       }
     }
+
+    if (!recognitionStarted) {
+      await voiceIntelligence.speak(prompt, currentLang);
+      textInputRef.current?.focus();
+      listenTimeoutRef.current = setTimeout(() => {
+        setVoiceState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
+      }, 6000);
+    }
   };
 
   const processPhrase = async (phrase: string) => {
+    if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
     setVoiceState('PROCESSING');
     setTranscript(phrase);
 
@@ -766,6 +786,7 @@ export default function VoiceAssistantScreen() {
         </Animated.View>
 
         <TextInput
+          ref={textInputRef}
           style={styles.textInputBar}
           value={inputPhrase}
           onChangeText={setInputPhrase}

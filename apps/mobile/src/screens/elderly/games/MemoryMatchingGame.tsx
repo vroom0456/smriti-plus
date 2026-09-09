@@ -86,11 +86,40 @@ export default function MemoryMatchingGame({
   const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
   const [matchedPairs, setMatchedPairs] = useState(0);
   const [attempts, setAttempts] = useState(0);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [isComplete, setIsComplete] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [sessionResult, setSessionResult] = useState<any>(null);
   const [recommendation, setRecommendation] = useState<any>(null);
+  const [updatedDifficulty, setUpdatedDifficulty] = useState<number | null>(null);
+
+  // Load current saved difficulty from offline store on mount
+  useEffect(() => {
+    async function loadSavedDifficulty() {
+      try {
+        const saved = await offlineStore.getDifficulty(user?.id || 'demo-elder-id', gameId);
+        if (saved && saved >= 1 && saved <= 5) {
+          setDifficultyState(saved);
+        }
+      } catch {}
+    }
+    loadSavedDifficulty();
+  }, [user?.id, gameId]);
+
+  // Restart game helper
+  const handleRestartGame = (newDiff?: number) => {
+    const targetDiff = newDiff || difficulty;
+    setDifficultyState(targetDiff);
+    setMatchedPairs(0);
+    setAttempts(0);
+    setFlippedIndices([]);
+    setIsChecking(false);
+    setIsComplete(false);
+    setSessionResult(null);
+    setRecommendation(null);
+    setUpdatedDifficulty(null);
+    setStartTime(Date.now());
+  };
 
   // Generate cards
   useEffect(() => {
@@ -108,7 +137,7 @@ export default function MemoryMatchingGame({
     });
 
     setCards(cardPairs.sort(() => Math.random() - 0.5));
-  }, [numPairs]);
+  }, [numPairs, startTime]);
 
   // Register in-game voice assistant context and actions
   useEffect(() => {
@@ -198,9 +227,11 @@ export default function MemoryMatchingGame({
     setSessionResult(session);
     setIsComplete(true);
 
+    let nextDifficulty = difficulty;
+
     // 1. Offline-first: save locally in SQLite + sync_queue
     try {
-      await offlineStore.recordGameSession({
+      const recordResult = await offlineStore.recordGameSession({
         elder_id: user?.id || 'demo-elder-id',
         game_id: gameId,
         difficulty_level: difficulty,
@@ -210,6 +241,10 @@ export default function MemoryMatchingGame({
         response_time_ms: responseTime,
         metrics_payload: { attempts: totalAttempts, pairs: numPairs },
       });
+      if (recordResult?.newDifficulty) {
+        nextDifficulty = recordResult.newDifficulty;
+        setUpdatedDifficulty(nextDifficulty);
+      }
     } catch (localErr) {
       console.warn('[OfflineStore] Failed to save local session:', localErr);
     }
@@ -279,10 +314,25 @@ export default function MemoryMatchingGame({
         <Text style={styles.completeTitle}>Game Complete!</Text>
         <ProgressRing
           progress={sessionResult.accuracy}
-          size={124}
+          size={110}
           color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent}
           label="Accuracy"
         />
+
+        {/* Dynamic Difficulty Progression Badge */}
+        <View style={[
+          styles.difficultyBadge,
+          updatedDifficulty && updatedDifficulty > difficulty ? styles.difficultyBadgeUp : null,
+        ]}>
+          <Text style={styles.difficultyBadgeText}>
+            {updatedDifficulty && updatedDifficulty > difficulty
+              ? `Level Up! Level ${difficulty} ➔ Level ${updatedDifficulty} 🎉`
+              : updatedDifficulty && updatedDifficulty < difficulty
+              ? `Comfort Pace: Level ${difficulty} ➔ Level ${updatedDifficulty}`
+              : `Level ${difficulty} Mastered ⭐`}
+          </Text>
+        </View>
+
         <Text style={styles.encouragement}>{getEncouragement()}</Text>
         <Text style={styles.statText}>
           {`Pairs found: ${numPairs} • Attempts: ${sessionResult.attempts}`}
@@ -298,11 +348,19 @@ export default function MemoryMatchingGame({
           </View>
         )}
 
-        <PrimaryButton
-          title="Back to Games"
-          onPress={onBack}
-          style={styles.backButton}
-        />
+        <View style={styles.resultActions}>
+          <PrimaryButton
+            title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
+            onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+            style={styles.actionBtnPlayNext}
+          />
+          <PrimaryButton
+            title="Back to Activities"
+            onPress={onBack}
+            variant="secondary"
+            style={styles.actionBtnBack}
+          />
+        </View>
       </View>
     );
   }
@@ -511,5 +569,42 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     width: '100%',
     minHeight: 56,
+  },
+  difficultyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0FDFA',
+    borderWidth: 1.5,
+    borderColor: '#99F6E4',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  difficultyBadgeUp: {
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
+    borderColor: colors.success,
+  },
+  difficultyBadgeText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.teal,
+    letterSpacing: -0.2,
+  },
+  resultActions: {
+    width: '100%',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  actionBtnPlayNext: {
+    width: '100%',
+    minHeight: 52,
+  },
+  actionBtnBack: {
+    width: '100%',
+    minHeight: 48,
   },
 });

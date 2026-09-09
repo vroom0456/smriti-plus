@@ -215,49 +215,57 @@ export default function CaregiverDashboardScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text style={styles.headerTitle} numberOfLines={1}>Caregiver Overview</Text>
-          <Text style={styles.elderName} numberOfLines={1}>Monitoring: {elder.name}</Text>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.headerTitle}>Caregiver Overview</Text>
+          <RoleBadge role="caregiver" />
         </View>
-        <View style={styles.headerActions}>
+        <View style={styles.headerSubRow}>
+          <Text style={styles.elderName} numberOfLines={1}>Monitoring: {elder.name}</Text>
           <TouchableOpacity
             style={styles.headerAddBtn}
             onPress={() => setShowConnectModal(true)}
             activeOpacity={0.8}
           >
-            <UserPlus size={15} color={colors.teal} strokeWidth={2.2} />
+            <UserPlus size={13} color={colors.teal} strokeWidth={2.2} />
             <Text style={styles.headerAddText}>Switch / Add</Text>
           </TouchableOpacity>
-          <RoleBadge role="caregiver" />
         </View>
       </View>
 
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <StatCard
-          renderIcon={() => <Gamepad2 size={20} color={colors.teal} strokeWidth={2.2} />}
-          label="Sessions"
-          value={stats.engagement_this_week}
-          subtitle="This week"
-        />
-        <StatCard
-          renderIcon={() => <CheckCircle2 size={20} color={stats.reminder_adherence_pct >= 70 ? colors.success : colors.accent} strokeWidth={2.2} />}
-          label="Adherence"
-          value={`${stats.reminder_adherence_pct}%`}
-          color={stats.reminder_adherence_pct >= 70 ? colors.success : colors.accent}
-        />
-        <StatCard
-          renderIcon={() => <AlertCircle size={20} color={colors.accent} strokeWidth={2.2} />}
-          label="Missed"
-          value={stats.missed_activities}
-          color={colors.accent}
-        />
-        <StatCard
-          renderIcon={() => <Flame size={20} color="#D97706" strokeWidth={2.2} />}
-          label="Streak"
-          value={`${stats.current_streak}d`}
-          color="#D97706"
-        />
+      {/* Stats Grid (2x2 Responsive Layout) */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statCardHalf}>
+          <StatCard
+            renderIcon={() => <Gamepad2 size={18} color={colors.teal} strokeWidth={2.2} />}
+            label="Sessions"
+            value={stats.engagement_this_week}
+            subtitle="This week"
+          />
+        </View>
+        <View style={styles.statCardHalf}>
+          <StatCard
+            renderIcon={() => <CheckCircle2 size={18} color={stats.reminder_adherence_pct >= 70 ? colors.success : colors.accent} strokeWidth={2.2} />}
+            label="Adherence"
+            value={`${stats.reminder_adherence_pct}%`}
+            color={stats.reminder_adherence_pct >= 70 ? colors.success : colors.accent}
+          />
+        </View>
+        <View style={styles.statCardHalf}>
+          <StatCard
+            renderIcon={() => <AlertCircle size={18} color={colors.accent} strokeWidth={2.2} />}
+            label="Missed"
+            value={stats.missed_activities}
+            color={colors.accent}
+          />
+        </View>
+        <View style={styles.statCardHalf}>
+          <StatCard
+            renderIcon={() => <Flame size={18} color="#D97706" strokeWidth={2.2} />}
+            label="Streak"
+            value={`${stats.current_streak}d`}
+            color="#D97706"
+          />
+        </View>
       </View>
 
       {/* Alerts */}
@@ -356,10 +364,33 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
   },
   errorText: { ...typography.standard.body, color: colors.muted, textAlign: 'center', padding: spacing.xl },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xl },
-  headerTitle: { fontFamily: fontFamily.display, fontSize: 26, fontWeight: '800', color: colors.textDark, letterSpacing: -0.5 },
-  elderName: { ...typography.standard.body, color: colors.muted, marginTop: 4 },
-  statsRow: { flexDirection: 'row', marginBottom: spacing.lg, gap: spacing.xs },
+  header: {
+    marginBottom: spacing.lg,
+    gap: 8,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerSubRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerTitle: { fontFamily: fontFamily.display, fontSize: 24, fontWeight: '800', color: colors.textDark, letterSpacing: -0.4 },
+  elderName: { ...typography.standard.body, color: colors.muted, fontSize: 13, flex: 1 },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+    marginBottom: spacing.lg,
+  },
+  statCardHalf: {
+    width: '48.5%',
+  },
   section: { marginBottom: spacing.xl },
   sectionTitle: {
     fontFamily: fontFamily.display,

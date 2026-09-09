@@ -90,6 +90,15 @@ export interface SpeechSynthesizer {
   isSpeaking(): Promise<boolean>;
 }
 
+export function stripEmojis(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F1E6}-\u{1F1FF}]/gu, '')
+    .replace(/[🙏✨💡🛡️⚡🎉❤️👍👋✓✗⏰💧💊📋🎮📞🔄🛑👴👥🩺]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 class DefaultSpeechSynthesizer implements SpeechSynthesizer {
   async speak(
     text: string,
@@ -102,10 +111,13 @@ class DefaultSpeechSynthesizer implements SpeechSynthesizer {
         await Speech.stop();
       }
 
+      const cleanText = stripEmojis(text);
+      if (!cleanText) return;
+
       const cap = languageRegistry.getCapability(language);
       const speechLang = cap.bcp47 || 'en-IN';
 
-      await Speech.speak(text, {
+      await Speech.speak(cleanText, {
         language: speechLang,
         pitch: options?.pitch ?? 1.0,
         rate: options?.rate ?? 0.85, // Elder-friendly comfortable rate
@@ -773,6 +785,59 @@ export class VoiceIntelligenceEngine {
         as: 'মই আপোনাক বহু ধৰণে সহায় কৰিব পাৰোঁ! দৈনিক কাৰ্যসূচী কওঁ, ঔষধ মনত পেলাওঁ, পৰিয়াললৈ ফোন কৰোঁ, মগজুৰ খেল খেলোঁ, আৰু স্মৃতি দেখুওৱাওঁ।',
         bn: 'আমি আপনাকে অনেকভাবে সাহায্য করতে পারি! রুটিন বলতে পারি, ওষুধ মনে করাতে পারি, পরিবারকে ফোন করাতে পারি, মস্তিষ্কের খেলা খেলতে পারি, এবং স্মৃতি দেখাতে পারি।',
         en: 'I can help you in many ways! I can tell you your daily schedule, remind you about medicines, connect you with family, play brain games together, and show your family memories.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 15. Health Complaints / Headache / Pain / Dizziness
+    const isHealthComplaint =
+      lower.includes('headache') ||
+      lower.includes('pain') ||
+      lower.includes('dizzy') ||
+      lower.includes('dizziness') ||
+      lower.includes('feel sick') ||
+      lower.includes('fever') ||
+      lower.includes('తలనొప్పి') ||
+      lower.includes('నొప్పి') ||
+      lower.includes('తల తిరుగు') ||
+      lower.includes('బాధ') ||
+      lower.includes('सिर दर्द') ||
+      lower.includes('दर्द') ||
+      lower.includes('चक्कर') ||
+      lower.includes('গা বিষ') ||
+      lower.includes('মূৰ ঘূৰোৱা');
+
+    if (isHealthComplaint) {
+      const responses: Record<string, string> = {
+        te: 'మీకు కాస్త అసౌకర్యంగా ఉన్నట్లు ఉంది. దయచేసి సౌకర్యవంతమైన కుర్చీలో విశ్రాంతి తీసుకోండి మరియు ఒక గ్లాసు గోరువెచ్చని నీళ్ళు తాగండి. నేను మీ కేర్‌గివర్ ప్రియా గారికి తెలియజేయమంటారా?',
+        hi: 'लगता है आपकी तबियत थोड़ी सुस्त है। कृपया आराम से बैठें और थोड़ा गुनगुना पानी पिएं। क्या मैं आपकी देखभालकर्ता प्रिया जी को इस बारे में सूचित कर दूँ?',
+        as: 'আপোনাৰ গাটো অলপ বেয়া লাগিছে যেন পাইছোঁ। অনুগ্ৰহ কৰি আৰামেৰে বহক আৰু অলপ কুহুমীয়া পানী খাওক। মই আপোনাৰ প্ৰিয়াক জনামনে?',
+        bn: 'মনে হচ্ছে আপনার শরীরটা একটু খারাপ লাগছে। শান্ত হয়ে আরাম করে বসুন এবং একটু উষ্ণ জল পান করুন। আমি কি প্রিয়াকে খবর দেব?',
+        en: 'I hear that you are not feeling your best. Please rest comfortably in your favorite chair and sip a little warm water. Would you like me to notify your caregiver Priya?',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 16. Emergency / Fall / Urgent Help
+    const isEmergency =
+      lower.includes('emergency') ||
+      lower.includes('fell down') ||
+      lower.includes('help me') ||
+      lower.includes('call doctor') ||
+      lower.includes('ambulance') ||
+      lower.includes('సహాయం') ||
+      lower.includes('కింద పడిపోయా') ||
+      lower.includes('మదద్') ||
+      lower.includes('गिर गया') ||
+      lower.includes('সহায় কৰক');
+
+    if (isEmergency) {
+      const responses: Record<string, string> = {
+        te: 'కంగారు పడకండి, నేను మీతోనే ఉన్నాను. నిదానంగా అక్కడే స్థిరంగా ఉండండి. మీ కుటుంబానికి మరియు సహాయకులకు తక్షణమే హెచ్చరిక పంపుతున్నాను.',
+        hi: 'बिल्कुल घबराएं नहीं, मैं आपके साथ हूँ। जहाँ हैं वहीं आराम से रहें। मैं आपकी मदद के लिए परिवार और स्वास्थ्य सहायक को तुरंत सूचित कर रहा हूँ।',
+        as: 'ভয় নকৰিব, মই আপোনাৰ লগতে আছোঁ। লাহেকৈ থিতাপি লওক, মই পৰিয়ালক জৰুৰীভাৱে জনাই আছোঁ।',
+        bn: 'আতঙ্কিত হবেন না, আমি আপনার সাথেই আছি। সাবধানে থাকুন, আমি অবিলম্বে আপনার পরিবারকে খবর পাঠাচ্ছি।',
+        en: 'Please stay calm, I am right here with you. Do not try to rush. I am alerting your family and emergency care contacts immediately.',
       };
       return responses[lang] || responses['en'];
     }

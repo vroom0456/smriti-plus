@@ -1008,6 +1008,8 @@ const styles = StyleSheet.create({
   recurrenceRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
+    marginRight: 8,
   },
   recurrenceText: {
     fontFamily: fontFamily.text,

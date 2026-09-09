@@ -39,11 +39,13 @@ interface AttentionGameProps {
   onBack: () => void;
 }
 
-export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComplete, onBack }: AttentionGameProps) {
+export default function AttentionGame({ gameId, difficulty: initialDifficulty, targetTimeMs, onComplete, onBack }: AttentionGameProps) {
   const user = useAuthStore((s: any) => s.user);
   const { panHandlers } = useBackNavigation(null, {
     onCustomBack: onBack,
   });
+
+  const [difficulty, setDifficulty] = useState(initialDifficulty);
   const gridSize = GRID_SIZE[difficulty] || 6;
   const totalRounds = 3 + difficulty;
 
@@ -53,11 +55,39 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
   const [grid, setGrid] = useState<{ emoji: string; isOdd: boolean }[]>([]);
   const [oddIndex, setOddIndex] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [isComplete, setIsComplete] = useState(false);
   const [sessionResult, setSessionResult] = useState<any>(null);
   const [recommendation, setRecommendation] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(Math.max(10, 20 - difficulty * 2));
+  const [updatedDifficulty, setUpdatedDifficulty] = useState<number | null>(null);
+
+  // Load current saved difficulty from offline store on mount
+  useEffect(() => {
+    async function loadSavedDifficulty() {
+      try {
+        const saved = await offlineStore.getDifficulty(user?.id || 'demo-elder-id', gameId);
+        if (saved && saved >= 1 && saved <= 5) {
+          setDifficulty(saved);
+        }
+      } catch {}
+    }
+    loadSavedDifficulty();
+  }, [user?.id, gameId]);
+
+  // Restart game helper
+  const handleRestartGame = (newDiff?: number) => {
+    const targetDiff = newDiff || difficulty;
+    setDifficulty(targetDiff);
+    setRound(0);
+    setScore(0);
+    setFeedback(null);
+    setIsComplete(false);
+    setSessionResult(null);
+    setRecommendation(null);
+    setUpdatedDifficulty(null);
+    setStartTime(Date.now());
+  };
 
   const generateRound = () => {
     const setIndex = (round + Math.floor(Math.random() * ODD_ONE_OUT_SETS.length)) % ODD_ONE_OUT_SETS.length;
@@ -75,7 +105,7 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
     setTimeLeft(Math.max(10, 20 - difficulty * 2));
   };
 
-  useEffect(() => { generateRound(); }, [round]);
+  useEffect(() => { generateRound(); }, [round, difficulty]);
 
   // Timer
   useEffect(() => {
@@ -123,9 +153,11 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
     setSessionResult({ ...session, correct: finalScore, total: finalTotal });
     setIsComplete(true);
 
+    let nextDifficulty = difficulty;
+
     // 1. Offline-first persistence
     try {
-      await offlineStore.recordGameSession({
+      const recordResult = await offlineStore.recordGameSession({
         elder_id: user?.id || 'demo-elder-id',
         game_id: gameId,
         difficulty_level: difficulty,
@@ -135,6 +167,10 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
         response_time_ms: responseTime,
         metrics_payload: { correct: finalScore, total: finalTotal },
       });
+      if (recordResult?.newDifficulty) {
+        nextDifficulty = recordResult.newDifficulty;
+        setUpdatedDifficulty(nextDifficulty);
+      }
     } catch (localErr) {
       console.warn('[OfflineStore] Failed to save local session:', localErr);
     }
@@ -196,8 +232,23 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
         </View>
 
         <Text style={styles.completeTitle}>Game Complete!</Text>
-        <ProgressRing progress={sessionResult.accuracy} size={124}
+        <ProgressRing progress={sessionResult.accuracy} size={110}
           color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent} label="Accuracy" />
+
+        {/* Dynamic Difficulty Progression Badge */}
+        <View style={[
+          styles.difficultyBadge,
+          updatedDifficulty && updatedDifficulty > difficulty ? styles.difficultyBadgeUp : null,
+        ]}>
+          <Text style={styles.difficultyBadgeText}>
+            {updatedDifficulty && updatedDifficulty > difficulty
+              ? `Level Up! Level ${difficulty} ➔ Level ${updatedDifficulty} 🎉`
+              : updatedDifficulty && updatedDifficulty < difficulty
+              ? `Comfort Pace: Level ${difficulty} ➔ Level ${updatedDifficulty}`
+              : `Level ${difficulty} Mastered ⭐`}
+          </Text>
+        </View>
+
         <Text style={styles.enc}>{enc}</Text>
         <Text style={styles.stat}>{`Found: ${sessionResult.correct}/${sessionResult.total}`}</Text>
 
@@ -208,7 +259,19 @@ export default function AttentionGame({ gameId, difficulty, targetTimeMs, onComp
           </View>
         )}
 
-        <PrimaryButton title="Back to Games" onPress={onBack} style={styles.backBtn} />
+        <View style={styles.resultActions}>
+          <PrimaryButton
+            title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
+            onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+            style={styles.actionBtnPlayNext}
+          />
+          <PrimaryButton
+            title="Back to Activities"
+            onPress={onBack}
+            variant="secondary"
+            style={styles.actionBtnBack}
+          />
+        </View>
       </View>
     );
   }
@@ -402,5 +465,42 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textDark,
     lineHeight: 22,
+  },
+  difficultyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0FDFA',
+    borderWidth: 1.5,
+    borderColor: '#99F6E4',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  difficultyBadgeUp: {
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
+    borderColor: colors.success,
+  },
+  difficultyBadgeText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.teal,
+    letterSpacing: -0.2,
+  },
+  resultActions: {
+    width: '100%',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  actionBtnPlayNext: {
+    width: '100%',
+    minHeight: 52,
+  },
+  actionBtnBack: {
+    width: '100%',
+    minHeight: 48,
   },
 });

@@ -48,7 +48,7 @@ export const offlineStore = {
   /**
    * Save game session locally and queue for server sync
    */
-  async recordGameSession(session: Omit<LocalGameSession, 'id' | 'completed_at'>): Promise<string> {
+  async recordGameSession(session: Omit<LocalGameSession, 'id' | 'completed_at'>): Promise<{ id: string; newDifficulty: number; previousDifficulty: number }> {
     const db = await getDatabase();
     const id = uuidv4();
     const completed_at = new Date().toISOString();
@@ -102,9 +102,10 @@ export const offlineStore = {
     );
 
     // Update local difficulty estimation
-    await this.updateLocalDifficulty(session.elder_id, session.game_id, session.accuracy_percentage);
+    const previousDifficulty = session.difficulty_level;
+    const newDifficulty = await this.updateLocalDifficulty(session.elder_id, session.game_id, session.accuracy_percentage);
 
-    return id;
+    return { id, newDifficulty, previousDifficulty };
   },
 
   /**
@@ -129,16 +130,14 @@ export const offlineStore = {
     if (accuracy >= 80) {
       succ += 1;
       fail = 0;
-      if (succ >= 2 && diff < 5) {
+      if (diff < 5) {
         diff += 1;
-        succ = 0;
       }
     } else if (accuracy < 50) {
       fail += 1;
       succ = 0;
-      if (fail >= 2 && diff > 1) {
+      if (diff > 1) {
         diff -= 1;
-        fail = 0;
       }
     } else {
       succ = 0;

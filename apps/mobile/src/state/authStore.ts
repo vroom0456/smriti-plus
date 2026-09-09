@@ -73,7 +73,7 @@ interface AuthState {
 
   login: (email: string, password: string) => Promise<void>;
   loginWithOtp: (phone: string, otp: string) => Promise<void>;
-  loginWithCode: (link_code: string) => Promise<void>;
+  loginWithCode: (link_code: string, rolePreference?: 'elderly' | 'caregiver') => Promise<void>;
   signup: (data: {
     name: string;
     role: UserRole;
@@ -176,25 +176,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  loginWithCode: async (link_code: string) => {
+  loginWithCode: async (link_code: string, rolePreference?: 'elderly' | 'caregiver') => {
     set({ isLoading: true, error: null });
     try {
       const response = await api.post<{
         access_token: string;
         user: User;
-      }>('/auth/login', { link_code: link_code.trim().toUpperCase() });
+      }>('/auth/login', { link_code: link_code.trim().toUpperCase(), role: rolePreference });
 
       await api.setToken(response.access_token);
       await persistUser(response.user);
       set({ user: response.user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: any) {
-      const demoUser: User = {
-        id: '44444444-4444-4444-4444-444444444444',
-        role: 'caregiver',
-        name: 'Priya Borah (Caregiver)',
-        language: 'en',
-      };
-      await api.setToken('sb-token-44444444-4444-4444-4444-444444444444');
+      const isElder = rolePreference === 'elderly';
+      const demoUser: User = isElder
+        ? {
+            id: '11111111-1111-1111-1111-111111111111',
+            role: 'elderly',
+            name: 'Amit Borah',
+            language: 'en',
+          }
+        : {
+            id: '44444444-4444-4444-4444-444444444444',
+            role: 'caregiver',
+            name: 'Priya Borah (Caregiver)',
+            language: 'en',
+          };
+      await api.setToken(`sb-token-${demoUser.id}`);
       await persistUser(demoUser);
       set({ user: demoUser, isAuthenticated: true, isLoading: false, error: null });
     }

@@ -56,21 +56,49 @@ interface MemoryRecallGameProps {
 }
 
 export default function MemoryRecallGame({
-  gameId, difficulty, targetTimeMs, onComplete, onBack,
+  gameId, difficulty: initialDifficulty, targetTimeMs, onComplete, onBack,
 }: MemoryRecallGameProps) {
   const user = useAuthStore((s: any) => s.user);
   const { panHandlers } = useBackNavigation(null, {
     onCustomBack: onBack,
   });
+  const [difficulty, setDifficulty] = useState(initialDifficulty);
   const itemCount = ITEMS_PER_LEVEL[difficulty] || 4;
   const [phase, setPhase] = useState<Phase>('memorize');
   const [targetItems, setTargetItems] = useState<typeof ALL_ITEMS>([]);
   const [allOptions, setAllOptions] = useState<typeof ALL_ITEMS>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [timer, setTimer] = useState(3 + difficulty); // seconds to memorize
   const [sessionResult, setSessionResult] = useState<any>(null);
   const [recommendation, setRecommendation] = useState<any>(null);
+  const [updatedDifficulty, setUpdatedDifficulty] = useState<number | null>(null);
+
+  // Load current saved difficulty from offline store on mount
+  useEffect(() => {
+    async function loadSavedDifficulty() {
+      try {
+        const saved = await offlineStore.getDifficulty(user?.id || 'demo-elder-id', gameId);
+        if (saved && saved >= 1 && saved <= 5) {
+          setDifficulty(saved);
+        }
+      } catch {}
+    }
+    loadSavedDifficulty();
+  }, [user?.id, gameId]);
+
+  // Restart game helper
+  const handleRestartGame = (newDiff?: number) => {
+    const targetDiff = newDiff || difficulty;
+    setDifficulty(targetDiff);
+    setSelected(new Set());
+    setSessionResult(null);
+    setRecommendation(null);
+    setUpdatedDifficulty(null);
+    setStartTime(Date.now());
+    setTimer(3 + targetDiff);
+    setPhase('memorize');
+  };
 
   // Generate round
   useEffect(() => {
@@ -81,7 +109,7 @@ export default function MemoryRecallGame({
 
     setTargetItems(targets);
     setAllOptions(options);
-  }, [itemCount]);
+  }, [itemCount, startTime]);
 
   // Memorize countdown
   useEffect(() => {
@@ -130,9 +158,11 @@ export default function MemoryRecallGame({
     setSessionResult({ ...session, correct, total: targetItems.length });
     setPhase('result');
 
+    let nextDifficulty = difficulty;
+
     // 1. Offline-first: save locally in SQLite + sync_queue
     try {
-      await offlineStore.recordGameSession({
+      const recordResult = await offlineStore.recordGameSession({
         elder_id: user?.id || 'demo-elder-id',
         game_id: gameId,
         difficulty_level: difficulty,
@@ -142,6 +172,10 @@ export default function MemoryRecallGame({
         response_time_ms: responseTime,
         metrics_payload: { correct, total: targetItems.length },
       });
+      if (recordResult?.newDifficulty) {
+        nextDifficulty = recordResult.newDifficulty;
+        setUpdatedDifficulty(nextDifficulty);
+      }
     } catch (localErr) {
       console.warn('[OfflineStore] Failed to save local session:', localErr);
     }
@@ -183,8 +217,8 @@ export default function MemoryRecallGame({
   const getEncouragement = () => {
     if (!sessionResult) return '';
     if (sessionResult.accuracy >= 0.85) return 'Superb! You recalled nearly everything accurately.';
-    if (sessionResult.accuracy >= 0.6) return 'Well done! You are building strong recall skills.';
-    return 'Good effort! Practice makes continuous progress.';
+    if (sessionResult.accuracy >= 0.5) return 'Good job! Regular practice builds mental stamina.';
+    return 'Good effort! Each attempt exercises your focus.';
   };
 
   // MEMORIZE phase
@@ -237,10 +271,25 @@ export default function MemoryRecallGame({
         <Text style={styles.completeTitle}>Game Complete!</Text>
         <ProgressRing
           progress={sessionResult.accuracy}
-          size={124}
+          size={110}
           color={sessionResult.accuracy >= 0.7 ? colors.success : colors.accent}
           label="Recall"
         />
+
+        {/* Dynamic Difficulty Progression Badge */}
+        <View style={[
+          styles.difficultyBadge,
+          updatedDifficulty && updatedDifficulty > difficulty ? styles.difficultyBadgeUp : null,
+        ]}>
+          <Text style={styles.difficultyBadgeText}>
+            {updatedDifficulty && updatedDifficulty > difficulty
+              ? `Level Up! Level ${difficulty} ➔ Level ${updatedDifficulty} 🎉`
+              : updatedDifficulty && updatedDifficulty < difficulty
+              ? `Comfort Pace: Level ${difficulty} ➔ Level ${updatedDifficulty}`
+              : `Level ${difficulty} Mastered ⭐`}
+          </Text>
+        </View>
+
         <Text style={styles.encouragement}>{getEncouragement()}</Text>
         <Text style={styles.statText}>
           {`Remembered: ${sessionResult.correct}/${sessionResult.total}`}
@@ -253,7 +302,19 @@ export default function MemoryRecallGame({
           </View>
         )}
 
-        <PrimaryButton title="Back to Games" onPress={onBack} style={styles.backBtn} />
+        <View style={styles.resultActions}>
+          <PrimaryButton
+            title={updatedDifficulty && updatedDifficulty > difficulty ? `Play Level ${updatedDifficulty} ➔` : 'Play Again'}
+            onPress={() => handleRestartGame(updatedDifficulty || difficulty)}
+            style={styles.actionBtnPlayNext}
+          />
+          <PrimaryButton
+            title="Back to Activities"
+            onPress={onBack}
+            variant="secondary"
+            style={styles.actionBtnBack}
+          />
+        </View>
       </View>
     );
   }
@@ -478,5 +539,42 @@ const styles = StyleSheet.create({
     ...typography.elderly.body,
     color: colors.navy,
     lineHeight: 24,
+  },
+  difficultyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0FDFA',
+    borderWidth: 1.5,
+    borderColor: '#99F6E4',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  difficultyBadgeUp: {
+    backgroundColor: 'rgba(52, 199, 89, 0.12)',
+    borderColor: colors.success,
+  },
+  difficultyBadgeText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.teal,
+    letterSpacing: -0.2,
+  },
+  resultActions: {
+    width: '100%',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  actionBtnPlayNext: {
+    width: '100%',
+    minHeight: 52,
+  },
+  actionBtnBack: {
+    width: '100%',
+    minHeight: 48,
   },
 });
