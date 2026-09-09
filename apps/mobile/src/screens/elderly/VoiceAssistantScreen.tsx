@@ -123,6 +123,8 @@ const QUICK_PHRASE_CHIPS: Record<string, Array<{ tag: string; phrase: string; sp
   te: [
     { tag: '📋 షెడ్యూల్', phrase: 'ఈ రోజు షెడ్యూల్ ఏమిటి?', spoken: 'నా ఈ రోజు షెడ్యూల్ ఏమిటి?' },
     { tag: '💊 తర్వాతి మందు', phrase: 'నా తర్వాతి మందు ఎప్పుడు?', spoken: 'నా తర్వాతి మందు ఎప్పుడు?' },
+    { tag: '🌬️ శ్వాస', phrase: 'నాకు ప్రశాంత శ్వాస వ్యాయామం చెప్పు', spoken: 'నాకు ప్రశాంత శ్వాస వ్యాయామం చెప్పు' },
+    { tag: '🧩 పొడుపు కథ', phrase: 'ఒక సరదా పొడుపు కథ చెప్పు', spoken: 'ఒక సరదా పొడుపు కథ చెప్పు' },
     { tag: '💧 నీళ్ళు', phrase: 'ఈ రోజు నీళ్ళు తాగానా?', spoken: 'ఈ రోజు నేను నీళ్ళు తాగానా?' },
     { tag: '🖼️ జ్ఞాపకాలు', phrase: 'ఫ్యామిలీ జ్ఞాపకాలు చూపించు', spoken: 'ఫ్యామిలీ జ్ఞాపకాలు చూపించు' },
     { tag: '🎮 ఆట', phrase: 'ఒక మెదడు ఆట చెప్పు', spoken: 'ఒక మెదడు ఆట చెప్పు' },
@@ -134,6 +136,8 @@ const QUICK_PHRASE_CHIPS: Record<string, Array<{ tag: string; phrase: string; sp
   hi: [
     { tag: '📋 कार्यक्रम', phrase: 'आज का कार्यक्रम क्या है?', spoken: 'मेरा आज का कार्यक्रम क्या है?' },
     { tag: '💊 अगली दवा', phrase: 'मेरी अगली दवाई कब है?', spoken: 'मेरी अगली दवाई कब है?' },
+    { tag: '🌬️ सांस', phrase: 'शांति से सांस लेने की कसरत', spoken: 'मुझे शांति से सांस लेने की कसरत कराओ' },
+    { tag: '🧩 पहेली', phrase: 'एक मजेदार पहेली पूछो', spoken: 'एक मजेदार पहेली पूछो' },
     { tag: '💧 पानी', phrase: 'क्या मैंने पानी पिया?', spoken: 'क्या मैंने आज पानी पिया?' },
     { tag: '🖼️ यादें', phrase: 'परिवार की यादें दिखाओ', spoken: 'परिवार की यादें दिखाओ' },
     { tag: '🎮 खेल', phrase: 'दिमागी खेल बताओ', spoken: 'दिमागी खेल बताओ' },
@@ -145,6 +149,8 @@ const QUICK_PHRASE_CHIPS: Record<string, Array<{ tag: string; phrase: string; sp
   as: [
     { tag: '📋 কাৰ্যসূচী', phrase: 'আজি মোৰ কি কি কাম আছে?', spoken: 'আজি মোৰ কি কি কাম আছে?' },
     { tag: '💊 পিছৰ দৰব', phrase: 'মোৰ পিছৰ দৰব কেতিয়া?', spoken: 'মোৰ পিছৰ দৰব কেতিয়া খাব লাগে?' },
+    { tag: '🌬️ উশাহ', phrase: 'শান্তিৰে উশাহ লোৱা অভ্যাস কৰোৱা', spoken: 'মোক শান্তিৰে উশাহ লোৱাৰ অভ্যাস কৰোৱা' },
+    { tag: '🧩 সাঁথৰ', phrase: 'এটা ধেমেলীয়া সাঁথৰ সোধা', spoken: 'মোক এটা ধেমেলীয়া সাঁথৰ সোধা' },
     { tag: '💧 পানী', phrase: 'মই আজি পানী খালোঁনে?', spoken: 'মই আজি পানী খালোঁনে?' },
     { tag: '🖼️ স্মৃতি', phrase: 'পৰিয়ালৰ স্মৃতি দেখুওৱা', spoken: 'পৰিয়ালৰ স্মৃতি দেখুওৱা' },
     { tag: '🎮 খেল', phrase: 'এটা মগজুৰ খেল কোৱা', spoken: 'এটা মগজুৰ খেল কোৱা' },
@@ -156,6 +162,8 @@ const QUICK_PHRASE_CHIPS: Record<string, Array<{ tag: string; phrase: string; sp
   en: [
     { tag: '📋 Schedule', phrase: 'What is my schedule today?', spoken: 'What is my schedule today?' },
     { tag: '💊 Next Med', phrase: 'When is my next medicine?', spoken: 'When is my next medicine?' },
+    { tag: '🌬️ Breathe', phrase: 'Help me relax with breathing', spoken: 'Help me relax with a breathing exercise' },
+    { tag: '🧩 Riddle', phrase: 'Tell me a fun riddle', spoken: 'Tell me a fun riddle' },
     { tag: '💧 Water', phrase: 'Did I drink water today?', spoken: 'Did I drink water today?' },
     { tag: '🖼️ Memories', phrase: 'Show my family memories', spoken: 'Show my family memories' },
     { tag: '🎮 Game', phrase: 'Recommend a brain game', spoken: 'Recommend a brain game for me' },
@@ -863,7 +871,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: colors.navy,
-    letterSpacing: -0.3,
+    letterSpacing: 0,
   },
   langPill: {
     marginTop: 3,
@@ -1086,7 +1094,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: colors.textDark,
-    letterSpacing: -0.3,
+    letterSpacing: 0,
     marginBottom: spacing.xs,
   },
   bubble: {
@@ -1154,7 +1162,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     color: colors.textDark,
     fontWeight: '500',
-    letterSpacing: -0.2,
+    letterSpacing: 0,
   },
   userBubbleText: {
     color: colors.white,

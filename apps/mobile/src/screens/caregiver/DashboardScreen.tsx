@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  headerTitle: { fontFamily: fontFamily.display, fontSize: 24, fontWeight: '800', color: colors.textDark, letterSpacing: -0.4 },
+  headerTitle: { fontFamily: fontFamily.display, fontSize: 24, fontWeight: '800', color: colors.textDark, letterSpacing: 0 },
   elderName: { ...typography.standard.body, color: colors.muted, fontSize: 13, flex: 1 },
   statsGrid: {
     flexDirection: 'row',
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textDark,
     marginBottom: spacing.md,
-    letterSpacing: -0.3,
+    letterSpacing: 0,
   },
 
   chartContainer: {

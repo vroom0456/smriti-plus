@@ -835,9 +835,86 @@ export class VoiceIntelligenceEngine {
       const responses: Record<string, string> = {
         te: 'కంగారు పడకండి, నేను మీతోనే ఉన్నాను. నిదానంగా అక్కడే స్థిరంగా ఉండండి. మీ కుటుంబానికి మరియు సహాయకులకు తక్షణమే హెచ్చరిక పంపుతున్నాను.',
         hi: 'बिल्कुल घबराएं नहीं, मैं आपके साथ हूँ। जहाँ हैं वहीं आराम से रहें। मैं आपकी मदद के लिए परिवार और स्वास्थ्य सहायक को तुरंत सूचित कर रहा हूँ।',
-        as: 'ভয় নকৰিব, মই আপোনাৰ লগতে আছোঁ। লাহেকৈ থিতাপি লওক, মই পৰিয়ালক জৰুৰীভাৱে জনাই আছোঁ।',
+        as: 'ভয় নকৰিব, মই আপোনাৰ লগতে আছোঁ। লাহেকৈ থితাপি লওক, মই পৰিয়ালক জৰুৰীভাৱে জনাই আছোঁ।',
         bn: 'আতঙ্কিত হবেন না, আমি আপনার সাথেই আছি। সাবধানে থাকুন, আমি অবিলম্বে আপনার পরিবারকে খবর পাঠাচ্ছি।',
         en: 'Please stay calm, I am right here with you. Do not try to rush. I am alerting your family and emergency care contacts immediately.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 17. Calming 4-7-8 Breathing & Relaxation Exercise
+    const isBreathingExercise =
+      lower.includes('relax') ||
+      lower.includes('calm down') ||
+      lower.includes('breathe') ||
+      lower.includes('breathing exercise') ||
+      lower.includes('deep breath') ||
+      lower.includes('శ్వాస') ||
+      lower.includes('రిలాక్స్') ||
+      lower.includes('కంగారుగా ఉంది') ||
+      lower.includes('सांस') ||
+      lower.includes('रिलैक्स') ||
+      lower.includes('শান্ত') ||
+      lower.includes('উশাহ');
+
+    if (isBreathingExercise) {
+      const responses: Record<string, string> = {
+        te: 'రండి, మనం కలిసి ఒక ప్రశాంతమైన శ్వాస వ్యాయామం చేద్దాం. నిదానంగా సౌకర్యంగా కూర్చోండి. ముక్కుతో లోతుగా గాలి పీల్చుకోండి... 1, 2, 3, 4. కాసేపు ఆపండి... 1, 2, 3. ఇప్పుడు నెమ్మదిగా నోటితో గాలి వదలండి... మనస్సు ఎంత తేలికగా ఉందో గమనించండి. మీరు చాలా ప్రశాంతంగా ఉన్నారు.',
+        hi: 'आइए मिलकर एक गहरी और शांत साँस लेते हैं। आराम से बैठ जाइए और कंधों को ढीला छोड़िए। नाक से धीरे-धीरे साँस अंदर लीजिए... 1, 2, 3, 4. थोड़ा रोकिए... 1, 2, 3. अब मुँह से धीरे-धीरे साँस बाहर छोड़िए... सारा तनाव दूर हो रहा है। आप बिल्कुल सुरक्षित हैं।',
+        as: 'আহক, আমি একেলগে এটা শান্ত উশাহ-নিশাহ লওঁ। আৰামত বহক। নাকেৰে লাহেকৈ উশাহ লওক... 1, 2, 3, 4. অলপ ধৰি ৰাখক... 1, 2, 3. এতিয়া লাহেকৈ এৰি দিয়ক... মনটো বৰ পাতল অনুভৱ হৈছে। আপুনি সম্পূৰ্ণ শান্ত।',
+        bn: 'আসুন, আমরা একসাথে একটি শান্ত ও গভীর শ্বাস নিই। আরামে বসুন। নাক দিয়ে ধীরে ধীরে শ্বাস নিন... 1, 2, 3, 4. একটু ধরে রাখুন... 1, 2, 3. এবার মুখ দিয়ে ধীরে ধীরে শ্বাস ছাড়ুন... সমস্ত ক্লান্তি দূর হয়ে যাচ্ছে। আপনি সম্পূর্ণ সুরক্ষিত।',
+        en: 'Let’s take a calm, gentle breath together. Sit comfortably and let your shoulders drop. Breathe in slowly through your nose... 1, 2, 3, 4. Hold gently... 1, 2, 3. Now breathe out softly through your mouth... Feel all tension dissolve away. You are safe and at peace.',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 18. Interactive Cognitive Riddle / Mind Quiz
+    const isRiddle =
+      lower.includes('riddle') ||
+      lower.includes('quiz') ||
+      lower.includes('quiz me') ||
+      lower.includes('question') ||
+      lower.includes('mind game') ||
+      lower.includes('పొడుపు కథ') ||
+      lower.includes('పజిల్') ||
+      lower.includes('రహస్యం') ||
+      lower.includes('पहेली') ||
+      lower.includes('दिमागी सवाल') ||
+      lower.includes('সাধু প্ৰশ্ন') ||
+      lower.includes('ধাঁধা');
+
+    if (isRiddle) {
+      const responses: Record<string, string> = {
+        te: 'మీ కోసం ఒక అందమైన పొడుపు కథ: చేతులు ఉంటాయి కానీ చప్పట్లు కొట్టలేదు, ముఖం ఉంటుంది కానీ మాట్లాడలేదు. ఏమిటది? ... కాసేపు ఆలోచించండి... అవును, సరిగ్గా చెప్పారు—గడియారం! మీ ఆలోచనా శక్తి చాలా అద్భుతం!',
+        hi: 'आपके लिए एक प्यारी सी पहेली: ऐसी कौन सी चीज़ है जिसके हाथ होते हैं पर वह ताली नहीं बजा सकती? ... थोड़ा सोचिए... जी हाँ, बिल्कुल सही—घड़ी! आपका दिमाग बहुत तेज़ है!',
+        as: "আপোনাৰ বাবে এটা ধুনীয়া সাঁথৰ: হাত আছে কিন্তু হাতচাপৰি বজাব নোৱাৰে, মুখ আছে কিন্তু কথা কব নোৱাৰে। বস্তুটো কি? ... হয়, সঠিক উত্তৰ—ঘড়ী! আপোনাৰ মনটো বৰ তীক্ষ্ণ!",
+        bn: 'আপনার জন্য একটি সুন্দর ধাঁধা: কার হাত আছে কিন্তু তালি বাজাতে পারে না? ... একদম ঠিক—ঘড়ি! আপনার বুদ্ধি দারুণ!',
+        en: 'Here is a gentle riddle for your active mind: What has hands, but cannot clap? ... Think about it for a moment... Yes, it is a clock! You have a wonderful, sharp mind!',
+      };
+      return responses[lang] || responses['en'];
+    }
+
+    // 19. Next Medicine & Routine Lookup
+    const isMedicineSchedule =
+      lower.includes('what is my next medicine') ||
+      lower.includes('what medicine') ||
+      lower.includes('do i have medicine') ||
+      lower.includes('which tablet') ||
+      lower.includes('tablet time') ||
+      lower.includes('నా మందులు చెప్పు') ||
+      lower.includes('తర్వాతి మందు ఏమిటి') ||
+      lower.includes('మాత్రలు') ||
+      lower.includes('मेरी दवाइयाँ') ||
+      lower.includes('अगली दवाई कौन सी') ||
+      lower.includes('दवा का समय');
+
+    if (isMedicineSchedule) {
+      const responses: Record<string, string> = {
+        te: 'ఉదయం రక్తపోటు మాత్ర చల్లటి లేదా గోరువెచ్చని నీటితో తీసుకోవాలని ఉంది. రాత్రి 8:00 గంటలకు మీ మల్టీవిటమిన్ సమయం. ప్రశాంతంగా ఉండండి, సమయానికి మందులు వేసుకోవడం చాలా మంచిది.',
+        hi: 'सुबह की ब्लड प्रेशर की दवाई एक गिलास गुनगुने पानी के साथ लेनी है। शाम को 8:00 बजे आपका मल्टीविटामिन है। सब कुछ समय पर सुरक्षित रूप से निर्धारित है।',
+        as: 'পুৱাৰ ৰক্তচাপৰ দৰবখিনি এগিলাচ পানীৰ সৈতে খাবলৈ আছে। গধূলি 8:00 বজাত ভিটামিনৰ সময়। সকলো ঠিকমতে চলি আছে।',
+        bn: 'সকালের প্রেসারের ওষুধটি এক গ্লাস জলের সাথে খাওয়ার রুটিন রয়েছে। রাতে ৮টায় ভিটামিন। সময়মতো ওষুধ খাওয়া শরীরের জন্য খুব উপকারী।',
+        en: 'Your morning blood pressure medicine is scheduled with a refreshing glass of water. Later in the evening at 8:00 PM, you have your multivitamin. Everything is nicely on schedule.',
       };
       return responses[lang] || responses['en'];
     }

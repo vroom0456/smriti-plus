@@ -169,6 +169,18 @@ export default function RemindersScreen({ navigation }: any) {
     }
   };
 
+  const handleUndo = async (reminderId: string) => {
+    try {
+      await offlineStore.toggleReminderTaken(reminderId, false);
+    } catch (localErr) {
+      console.warn('Failed to undo local reminder action:', localErr);
+    }
+
+    setReminders((prev) =>
+      prev.map((r) => (r.id === reminderId ? { ...r, today_status: 'pending' } : r))
+    );
+  };
+
   const pending = reminders.filter((r) => r.today_status === 'pending');
   const completed = reminders.filter((r) => r.today_status !== 'pending');
   const total = reminders.length;
@@ -233,10 +245,10 @@ export default function RemindersScreen({ navigation }: any) {
         <Text
           style={[
             styles.subtitle,
-            { fontSize: scale(16), lineHeight: scale(22), color: colors.textSecondary },
+            { fontSize: scale(15), lineHeight: scale(21), color: colors.textSecondary },
           ]}
         >
-          {t('reminders.subtitle') || 'Your medicine and activity schedule for today'}
+          Your medicine and activity schedule for today
         </Text>
 
         {/* Progress summary banner */}
@@ -245,7 +257,7 @@ export default function RemindersScreen({ navigation }: any) {
             <ProgressBar
               current={completedCount}
               total={total}
-              label={`${completedCount} of ${total} ${t('home.todayReminders') || 'items completed'}`}
+              label={`${completedCount} of ${total} items completed`}
             />
           </View>
         )}
@@ -253,7 +265,7 @@ export default function RemindersScreen({ navigation }: any) {
         {total === 0 && (
           <AlertBanner
             type="info"
-            message={t('reminders.noReminders') || 'No scheduled activities for today. Enjoy your day!'}
+            message="No scheduled activities for today. Enjoy your day!"
           />
         )}
 
@@ -271,7 +283,7 @@ export default function RemindersScreen({ navigation }: any) {
                 scheduledTime={r.scheduled_time}
                 status="pending"
                 onDone={() => handleDone(r.id)}
-                doneLabel={t('reminders.done') || 'Done'}
+                doneLabel="Done"
               />
             ))}
           </View>
@@ -290,6 +302,8 @@ export default function RemindersScreen({ navigation }: any) {
                 category={r.category}
                 scheduledTime={r.scheduled_time}
                 status={r.today_status as any}
+                onDone={() => handleUndo(r.id)}
+                doneLabel="Undo"
               />
             ))}
           </View>
@@ -366,7 +380,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: colors.muted,
-    letterSpacing: 0.8,
+    letterSpacing: 0,
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
     paddingHorizontal: 4,

@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     color: colors.textDark,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   subtitle: {
     ...typography.elderly.caption,
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: colors.teal,
-    letterSpacing: -0.2,
+    letterSpacing: 0,
   },
   resultActions: {
     width: '100%',

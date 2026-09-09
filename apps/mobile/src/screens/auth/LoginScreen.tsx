@@ -737,14 +737,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     color: colors.textDark,
-    letterSpacing: -0.4,
+    letterSpacing: 0,
   },
   tagline: {
     fontSize: 13,
     fontWeight: '600',
     color: colors.teal,
     marginTop: 2,
-    letterSpacing: -0.2,
+    letterSpacing: 0,
   },
 
   // Primary Segmented Control (Sign In / Create Account)
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
     fontSize: 19,
     fontWeight: '800',
     color: colors.textDark,
-    letterSpacing: -0.3,
+    letterSpacing: 0,
     marginBottom: 2,
   },
   formSubheading: {

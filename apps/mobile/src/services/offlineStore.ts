@@ -232,6 +232,38 @@ export const offlineStore = {
   },
 
   /**
+   * Toggle completed status of a reminder and record log
+   */
+  async toggleReminderTaken(reminderId: string, isTaken: boolean): Promise<void> {
+    const db = await getDatabase();
+    const now = new Date().toISOString();
+    const id = uuidv4();
+    const action = isTaken ? 'completed' : 'pending';
+    await db.runAsync(
+      `INSERT OR REPLACE INTO reminder_logs
+       (id, reminder_id, elder_id, scheduled_for, action, response_time_seconds, confirmed_via, logged_at)
+       VALUES (?, ?, 'elder_1', ?, ?, 0, 'touch', ?)`,
+      [id, reminderId, now, action, now]
+    );
+
+    const syncEventId = uuidv4();
+    const payload = JSON.stringify({
+      id,
+      reminder_id: reminderId,
+      status: isTaken ? 'done' : 'pending',
+      responded_via: 'touch',
+      action,
+      logged_at: now,
+    });
+
+    await db.runAsync(
+      `INSERT INTO sync_queue (id, event_type, payload, status, retry_count, created_at)
+       VALUES (?, 'reminder_log', ?, 'pending', 0, ?)`,
+      [syncEventId, payload, now]
+    );
+  },
+
+  /**
    * Cache reminders from server into local SQLite
    */
   async cacheReminders(reminders: LocalReminder[]): Promise<void> {

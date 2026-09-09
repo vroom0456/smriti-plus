@@ -131,7 +131,7 @@ export const typography = {
       fontSize: 32,
       fontWeight: '700' as const,
       lineHeight: 38,
-      letterSpacing: -0.6,
+      letterSpacing: 0,
       color: colors.textDark,
     },
     sectionHeading: {
@@ -139,7 +139,7 @@ export const typography = {
       fontSize: 22,
       fontWeight: '600' as const,
       lineHeight: 28,
-      letterSpacing: -0.4,
+      letterSpacing: 0,
       color: colors.textDark,
     },
     cardHeading: {
@@ -147,7 +147,7 @@ export const typography = {
       fontSize: 18,
       fontWeight: '600' as const,
       lineHeight: 24,
-      letterSpacing: -0.2,
+      letterSpacing: 0,
       color: colors.textDark,
     },
     body: {
@@ -183,14 +183,14 @@ export const typography = {
       fontSize: 17,
       fontWeight: '600' as const,
       lineHeight: 24,
-      letterSpacing: -0.2,
+      letterSpacing: 0,
     },
     buttonSecondary: {
       fontFamily: fontFamily.display,
       fontSize: 16,
       fontWeight: '600' as const,
       lineHeight: 22,
-      letterSpacing: -0.1,
+      letterSpacing: 0,
     },
 
     // Legacy compatibility aliases
@@ -236,7 +236,7 @@ export const typography = {
       fontSize: 28,
       fontWeight: '700' as const,
       lineHeight: 34,
-      letterSpacing: -0.4,
+      letterSpacing: 0,
       color: colors.textDark,
     },
     h1: {
@@ -244,7 +244,7 @@ export const typography = {
       fontSize: 26,
       fontWeight: '700' as const,
       lineHeight: 32,
-      letterSpacing: -0.4,
+      letterSpacing: 0,
     },
     h2: {
       fontFamily: fontFamily.display,

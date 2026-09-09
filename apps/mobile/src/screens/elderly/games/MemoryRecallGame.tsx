@@ -561,8 +561,8 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.display,
     fontSize: 15,
     fontWeight: '800',
-    color: colors.teal,
-    letterSpacing: -0.2,
+    color: colors.textDark,
+    letterSpacing: 0,
   },
   resultActions: {
     width: '100%',

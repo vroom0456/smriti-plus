@@ -90,6 +90,14 @@ export default function ElderHomeScreen({ navigation }: any) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [activeReminderDone, setActiveReminderDone] = useState(false);
 
+  const handleMarkTaken = async () => {
+    setActiveReminderDone(true);
+    const remId = summary?.next_reminder?.id || 'med-1';
+    try {
+      await offlineStore.toggleReminderTaken(remId, true);
+    } catch {}
+  };
+
   const fetchSummary = useCallback(async () => {
     if (!user) return;
     try {
@@ -246,8 +254,8 @@ export default function ElderHomeScreen({ navigation }: any) {
           >
             {greetingFull}
           </Text>
-          <Text style={[styles.greetingSubtitle, { fontSize: scale(16), lineHeight: scale(22), color: colors.textSecondary }]}>
-            {t('home.welcomeSubtitle') || 'Welcome to SMRITI+ — Your daily health companion'}
+          <Text style={[styles.greetingSubtitle, { fontSize: scale(15), lineHeight: scale(21), color: colors.textSecondary }]}>
+            Welcome to SMRITI+ — Your daily companion
           </Text>
         </View>
 
@@ -267,7 +275,7 @@ export default function ElderHomeScreen({ navigation }: any) {
                   {t('home.dailyRoutine') || 'Daily Routine'}
                 </Text>
                 <Text style={[styles.routineSubtitle, { fontSize: scale(14), color: colors.textSecondary }]}>
-                  {completedReminders} of {totalReminders} {t('home.todayReminders') || 'activities completed'}
+                  {completedReminders} of {totalReminders} completed
                 </Text>
               </View>
             </View>
@@ -276,7 +284,7 @@ export default function ElderHomeScreen({ navigation }: any) {
               <View style={[styles.interactiveReminderBox, { borderColor: colors.borderLight }]}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={[styles.reminderPillLabel, { fontSize: scale(11), color: colors.primary }]}>
-                    {t('home.nextReminder') || 'Next Reminder'}
+                    NEXT REMINDER
                   </Text>
                   <Text style={[styles.reminderItemTitle, { fontSize: scale(15), color: colors.textDark }]} numberOfLines={1}>
                     {upcomingMedTitle}
@@ -284,14 +292,14 @@ export default function ElderHomeScreen({ navigation }: any) {
                 </View>
                 <TouchableOpacity
                   style={[styles.markTakenBtn, { backgroundColor: colors.success }, hcStyles.buttonBorder]}
-                  onPress={() => setActiveReminderDone(true)}
+                  onPress={handleMarkTaken}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="Mark reminder completed"
                 >
                   <CheckCircle2 size={16} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 4 }} />
                   <Text style={[styles.markTakenBtnText, { fontSize: scale(13) }]}>
-                    {t('home.markDone') || 'Done'}
+                    Mark Taken
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -327,7 +335,7 @@ export default function ElderHomeScreen({ navigation }: any) {
               <View style={[styles.activityPill, { backgroundColor: colors.primaryMuted }]}>
                 <Brain size={14} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 5 }} />
                 <Text style={[styles.activityPillText, { fontSize: scale(13), color: colors.primary }]}>
-                  {t('home.durationFiveMin') || '5 minutes'}
+                  5 minutes
                 </Text>
               </View>
             </View>
@@ -336,7 +344,7 @@ export default function ElderHomeScreen({ navigation }: any) {
               {nextActivityTitle}
             </Text>
             <Text style={[styles.activityDesc, { fontSize: scale(15), lineHeight: scale(22), color: colors.textSecondary }]}>
-              {nextActivitySubtitle}
+              Choose a game to exercise your mind
             </Text>
 
             <PrimaryButton
@@ -352,37 +360,38 @@ export default function ElderHomeScreen({ navigation }: any) {
               style={styles.moreActivitiesLink}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="View more activities"
+              accessibilityLabel="Explore more activities"
             >
               <Text style={[styles.moreActivitiesText, { fontSize: scale(15), color: colors.primary }]}>
-                {t('home.moreActivities') || 'Explore other activities'}
+                {t('home.moreActivities') || 'Explore More Activities'}
               </Text>
               <ChevronRight size={16} color={colors.primary} strokeWidth={2.2} />
             </TouchableOpacity>
           </HealthCard>
         </View>
 
+        {/* ── Quick Help ── */}
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { fontSize: scale(12), color: colors.muted }]}>
             {t('home.quickHelp') || 'QUICK HELP'}
           </Text>
           <View style={styles.helpRow}>
             <TouchableOpacity
-              onPress={() => navigation.navigate('FamilyCorner')}
+              onPress={() => navigation.navigate('CaregiverHelp')}
               style={[styles.quickHelpButton, { backgroundColor: colors.surface, borderColor: colors.border }, hcStyles.cardBorder]}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Call caregiver"
+              accessibilityLabel="Call caregiver for help"
             >
-              <View style={[styles.quickHelpIconWrap, { backgroundColor: 'rgba(52, 199, 89, 0.12)' }]}>
-                <Phone size={22} color={colors.successDark} strokeWidth={2.2} />
+              <View style={[styles.quickHelpIconWrap, { backgroundColor: colors.primaryMuted }]}>
+                <Phone size={22} color={colors.primary} strokeWidth={2.2} />
               </View>
               <View style={styles.quickHelpTextGroup}>
                 <Text style={[styles.quickHelpTitle, { fontSize: scale(17), color: colors.textDark }]}>
                   {t('home.callCaregiver') || 'Call Caregiver'}
                 </Text>
                 <Text style={[styles.quickHelpSubtitle, { fontSize: scale(13), color: colors.textSecondary }]}>
-                  {t('home.callCaregiverSub') || 'Tap to connect with family'}
+                  Tap to connect with family
                 </Text>
               </View>
               <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
@@ -403,7 +412,7 @@ export default function ElderHomeScreen({ navigation }: any) {
                   {t('home.talkSmriti') || 'Talk to SMRITI+'}
                 </Text>
                 <Text style={[styles.quickHelpSubtitle, { fontSize: scale(13), color: colors.textSecondary }]}>
-                  {t('home.talkSmritiSub') || 'Ask questions with your voice'}
+                  Ask questions with your voice
                 </Text>
               </View>
               <ChevronRight size={18} color={colors.muted} strokeWidth={2.2} />
@@ -414,7 +423,7 @@ export default function ElderHomeScreen({ navigation }: any) {
         <View style={styles.privacyNote}>
           <ShieldCheck size={16} color={colors.muted} strokeWidth={2} style={{ marginRight: 6 }} />
           <Text style={[styles.privacyNoteText, { fontSize: scale(13), color: colors.muted }]}>
-            {t('home.privacyNote') || 'Your health details are private and shared only with your chosen caregiver.'}
+            Your health details are strictly private.
           </Text>
         </View>
       </ScrollView>
@@ -503,7 +512,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: colors.muted,
-    letterSpacing: 0.8,
+    letterSpacing: 0,
     textTransform: 'uppercase',
     marginBottom: spacing.xs + 2,
     paddingHorizontal: 4,
@@ -551,7 +560,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.display,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0,
     marginBottom: 2,
   },
   reminderItemTitle: {
