@@ -58,7 +58,7 @@ const REGIONAL_VOICE_PREFERENCE: Record<string, string[]> = {
 
 /** Pick the best available Web Speech voice for a given BCP-47 code */
 function pickRegionalWebVoice(bcp47: string): SpeechSynthesisVoice | null {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+  if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
 

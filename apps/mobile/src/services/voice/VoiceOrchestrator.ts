@@ -8,6 +8,7 @@
  * Fully supports offline operation, regional Indian languages, in-game context, and multi-turn state.
  */
 
+import { Platform } from 'react-native';
 import { defaultSpeechRecognizer, SpeechRecognizer } from './SpeechRecognizer';
 import { defaultSpeechSynthesizer, SpeechSynthesizer } from './SpeechSynthesizer';
 import { defaultVoiceStateMachine, VoiceStateMachine, VoiceState } from './VoiceStateMachine';
@@ -225,29 +226,33 @@ export class VoiceOrchestrator {
     this.stateMachine = stateMachine;
 
     // Listen to low-level recognizer events
-    this.recognizer.setListener({
-      onTranscript: (text, isFinal) => {
-        if (isFinal) {
-          this.processUserSpeech(text);
-        }
-      },
-      onError: (err) => {
-        this.stateMachine.transition('ERROR');
-        this.notifyState();
-      },
-      onEnd: () => {
-        if (this.stateMachine.getState() === 'LISTENING') {
-          this.stateMachine.transition('IDLE');
+    if (this.recognizer && typeof this.recognizer.setListener === 'function') {
+      this.recognizer.setListener({
+        onTranscript: (text, isFinal) => {
+          if (isFinal) {
+            this.processUserSpeech(text);
+          }
+        },
+        onError: (err) => {
+          this.stateMachine.transition('ERROR');
           this.notifyState();
-        }
-      },
-    });
+        },
+        onEnd: () => {
+          if (this.stateMachine.getState() === 'LISTENING') {
+            this.stateMachine.transition('IDLE');
+            this.notifyState();
+          }
+        },
+      });
+    }
 
-    // Detect browser offline events
-    if (typeof window !== 'undefined') {
+    // Detect browser offline events (Web only)
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
       window.addEventListener('online', () => this.handleNetworkChange(false));
       window.addEventListener('offline', () => this.handleNetworkChange(true));
-      this.context.isOffline = !navigator.onLine;
+      if (typeof navigator !== 'undefined' && 'onLine' in navigator) {
+        this.context.isOffline = !navigator.onLine;
+      }
     }
   }
 
