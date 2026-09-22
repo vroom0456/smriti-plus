@@ -34,6 +34,7 @@ import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '
 import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
+import { voiceService } from '../../services/voice';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
 import { useTranslation } from '../../i18n';
 
@@ -91,7 +92,6 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
   const [story, setStory] = useState<IdentityStory>(DEFAULT_IDENTITY);
   const [loading, setLoading] = useState(true);
   const [speaking, setSpeaking] = useState(false);
-  const { goBackSafe, panHandlers } = useBackNavigation(navigation, { fallbackTab: 'Home' });
 
   const fetchStory = useCallback(async () => {
     try {
@@ -146,22 +146,34 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
   };
 
   const handleSpeak = async () => {
-    if (speaking) return;
+    if (speaking) {
+      await voiceService.stop();
+      setSpeaking(false);
+      return;
+    }
     setSpeaking(true);
     const narration = buildNarration();
     try {
-      const Speech = require('expo-speech');
-      await Speech.speakAsync(narration, {
-        rate: 0.85,
-        pitch: 1.0,
-        onDone: () => setSpeaking(false),
-        onError: () => setSpeaking(false),
-        onStopped: () => setSpeaking(false),
-      });
+      await voiceService.speak(narration, 'en');
     } catch {
+      // Speech ended or interrupted
+    } finally {
       setSpeaking(false);
     }
   };
+
+  const onCustomBack = useCallback(() => {
+    if (speaking) {
+      voiceService.stop();
+      setSpeaking(false);
+    }
+    return false;
+  }, [speaking]);
+
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, {
+    onCustomBack,
+    fallbackTab: 'Home',
+  });
 
   const kids = parseKids(story.kids);
 
@@ -212,13 +224,12 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
         <TouchableOpacity
           style={[styles.listenBtn, speaking && styles.listenBtnActive]}
           onPress={handleSpeak}
-          disabled={speaking}
           accessibilityRole="button"
-          accessibilityLabel="Listen to your life story"
+          accessibilityLabel={speaking ? 'Stop reading life story' : 'Listen to your life story'}
         >
           <Volume2 size={22} color={colors.white} strokeWidth={2.5} />
           <Text style={styles.listenBtnText}>
-            {speaking ? `▶ ${t('identity.listeningBtn') || 'Listening…'}` : `▶ ${t('identity.listenBtn') || 'Listen to My Life Story'}`}
+            {speaking ? `⏹ ${t('identity.stopBtn') || 'Stop Reading'}` : `▶ ${t('identity.listenBtn') || 'Listen to My Life Story'}`}
           </Text>
         </TouchableOpacity>
 

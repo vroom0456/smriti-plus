@@ -18,7 +18,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { colors, typography, spacing } from '../../theme/tokens';
+import { colors, typography, spacing, fontFamily } from '../../theme/tokens';
+import { ArrowLeft } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useBackNavigation } from '../../navigation/useBackNavigation';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { useAuthStore } from '../../state/authStore';
@@ -38,6 +41,8 @@ const ANIMATION_MODES = [
 ];
 
 export default function PersonalizationSettingsScreen() {
+  const navigation = useNavigation<any>();
+  const { goBackSafe, panHandlers } = useBackNavigation(navigation, { fallbackTab: 'Dashboard' });
   const { user } = useAuthStore();
   const [assistanceLevel, setAssistanceLevel] = useState<string>('standard');
   const [sessionLength, setSessionLength] = useState<number>(10);
@@ -112,13 +117,24 @@ export default function PersonalizationSettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Elder Adaptation Controls</Text>
-        <Text style={styles.subtitle}>
-          Human caregiver override to ensure the app always feels comfortable and stress-free.
-        </Text>
-      </View>
+    <View style={{ flex: 1 }} {...panHandlers}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={goBackSafe}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Dashboard"
+            activeOpacity={0.75}
+          >
+            <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
+            <Text style={styles.backText}>Dashboard</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Elder Adaptation Controls</Text>
+          <Text style={styles.subtitle}>
+            Human caregiver override to ensure the app always feels comfortable and stress-free.
+          </Text>
+        </View>
 
       {loading ? (
         <ActivityIndicator size="large" color={colors.teal} style={{ marginTop: 40 }} />
@@ -210,7 +226,8 @@ export default function PersonalizationSettingsScreen() {
           </TouchableOpacity>
         </>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -226,6 +243,18 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xl,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  backText: {
+    fontFamily: fontFamily.display,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textDark,
   },
   title: {
     fontSize: 22,

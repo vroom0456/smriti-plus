@@ -101,6 +101,95 @@ export function stripEmojisForSpeech(text: string): string {
     .trim();
 }
 
+/**
+ * Phonetic pronunciation dictionary to correct common TTS mispronunciations
+ * and force natural Indian and North Eastern regional accents.
+ */
+export const PHONETIC_ACCENT_CORRECTIONS: Record<string, Record<string, string>> = {
+  'en-IN': {
+    'Gamosa': 'Guh-mo-sa',
+    'gamosa': 'guh-mo-sa',
+    'Bihu': 'Bee-hoo',
+    'bihu': 'bee-hoo',
+    'Brahmaputra': 'Bruh-muh-poo-truh',
+    'brahmaputra': 'bruh-muh-poo-truh',
+    'Jorhat': 'Jor-haat',
+    'Tezpur': 'Ttez-poor',
+    'Majuli': 'Mah-joo-lee',
+    'Muga': 'Moo-ga',
+    'Kopou': 'Ko-po-oo',
+    'Mekhela': 'May-khe-la',
+    'Chador': 'Chah-dore',
+    'Borgeet': 'Bor-geet',
+    'SMRITI': 'Smri-tee',
+    'Smriti': 'Smri-tee',
+    'Deuta': 'Deh-oo-tah',
+    'Aita': 'Eye-tah',
+    'Namaste': 'Nuh-muh-stay',
+    'Pranam': 'Prah-naam',
+    'Metformin': 'Met-for-min',
+    'Amlodipine': 'Am-lo-di-peen',
+    'Paracetamol': 'Pa-ra-see-ta-mol',
+    'Atorvastatin': 'A-tor-va-sta-tin',
+  },
+  'en': {
+    'SMRITI+': 'Smri-tee Plus',
+    'SMRITI': 'Smri-tee',
+    'Smriti': 'Smri-tee',
+    'Gamosa': 'Guh-mo-sa',
+    'Bihu': 'Bee-hoo',
+    'Brahmaputra': 'Bruh-muh-poo-truh',
+  },
+  'as-IN': {
+    'SMRITI+': 'স্মৃতি প্লাস',
+    'SMRITI': 'স্মৃতি',
+    'Smriti': 'স্মৃতি',
+    'bp': 'বি পি',
+    'BP': 'বি পি',
+  },
+  'bn-IN': {
+    'SMRITI+': 'স্মৃতি প্লাস',
+    'SMRITI': 'স্মৃতি',
+    'Smriti': 'স্মৃতি',
+    'bp': 'বি পি',
+    'BP': 'বি পি',
+  },
+  'te-IN': {
+    'SMRITI+': 'స్మృతి ప్లస్',
+    'SMRITI': 'స్మృతి',
+    'Smriti': 'స్మృతి',
+    'bp': 'బీ పీ',
+    'BP': 'బీ పీ',
+  },
+  'hi-IN': {
+    'SMRITI+': 'स्मृति प्लस',
+    'SMRITI': 'स्मृति',
+    'Smriti': 'स्मृति',
+    'bp': 'बी पी',
+    'BP': 'बी पी',
+  },
+  'ta-IN': {
+    'SMRITI+': 'ஸ்மிருதி பிளஸ்',
+    'SMRITI': 'ஸ்மிருதி',
+    'Smriti': 'ஸ்மிருதி',
+    'bp': 'பி பி',
+    'BP': 'பி பி',
+  },
+};
+
+export function applyRegionalPhonetics(text: string, language: string): string {
+  if (!text) return '';
+  const langKey = language.includes('-') ? language : `${language}-IN`;
+  const dict = PHONETIC_ACCENT_CORRECTIONS[langKey] || PHONETIC_ACCENT_CORRECTIONS[language];
+  if (!dict) return text;
+
+  let result = text;
+  for (const [word, phonetic] of Object.entries(dict)) {
+    result = result.replace(new RegExp(`\\b${word}\\b`, 'g'), phonetic);
+  }
+  return result;
+}
+
 class UniversalSpeechSynthesizer implements SpeechSynthesizer {
   private isSpeaking = false;
 
@@ -122,7 +211,8 @@ class UniversalSpeechSynthesizer implements SpeechSynthesizer {
   async speak(text: string, language: string, options?: SpeechOptions): Promise<void> {
     await this.stop();
 
-    const cleanText = stripEmojisForSpeech(text);
+    const strippedText = stripEmojisForSpeech(text);
+    const cleanText = applyRegionalPhonetics(strippedText, language);
     if (!cleanText) {
       options?.onDone?.();
       return;

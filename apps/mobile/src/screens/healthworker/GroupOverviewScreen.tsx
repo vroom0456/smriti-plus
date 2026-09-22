@@ -163,6 +163,20 @@ export default function GroupOverviewScreen() {
         csv += `"${e.elder_id}","${e.name}",${e.engagement_score},${e.adherence_pct},${e.current_streak},"${e.last_active || 'N/A'}"\n`;
       });
 
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `smriti_health_worker_report_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        Alert.alert('CSV Downloaded', 'The health cohort report has been saved to your downloads folder.');
+        return;
+      }
+
       await Share.share({
         title: 'SMRITI+ Health Worker Report (CSV)',
         message: csv,

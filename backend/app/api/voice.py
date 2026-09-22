@@ -66,8 +66,12 @@ def parse_server_intent(transcript: str, language: str) -> Dict[str, Any]:
     text = transcript.lower()
 
     # 1. Reminders
-    if any(k in text for k in ["medicine", "pill", "dawa", "మందు", "দৰব", "மருந்து"]):
-        date = "tomorrow" if any(d in text for d in ["repu", "రేపు", "kal", "कल", "tomorrow"]) else "today"
+    if any(k in text for k in [
+        "medicine", "pill", "tablet", "dawa", "dawai", "goli",
+        "మందు", "మాత్రలు", "మాత్ర", "mandulu", "matralu",
+        "দৰব", "dorob", "ওষুধ", "oshudh", "மருந்து", "marunthu"
+    ]):
+        date = "tomorrow" if any(d in text for d in ["repu", "రేపు", "kal", "कल", "kaali", "tomorrow"]) else "today"
         time_match = re.search(r"(\d{1,2})\s*(am|pm|baje|o'clock|కి)?", text)
         time_val = f"{int(time_match.group(1)):02d}:00" if time_match else "08:00"
 
@@ -83,7 +87,10 @@ def parse_server_intent(transcript: str, language: str) -> Dict[str, Any]:
             "missing_slots": [],
         }
 
-    if any(k in text for k in ["water", "pani", "నీళ్లు", "पানী", "தண்ணீர்"]):
+    if any(k in text for k in [
+        "water", "pani", "నీళ్లు", "మంచినీళ్లు", "neellu",
+        "पানী", "পানী", "জল", "jol", "தண்ணீர்", "thannir", "thanni"
+    ]):
         return {
             "intent": "create_reminder",
             "category": "hydration",
@@ -97,8 +104,22 @@ def parse_server_intent(transcript: str, language: str) -> Dict[str, Any]:
         }
 
     # 2. Family Call
-    if any(k in text for k in ["call", "phone", "daughter", "son", "amma", "ravi", "ఫోన్", "फोन"]):
-        target = "Daughter" if any(t in text for t in ["daughter", "కూతురు", "बेटी"]) else "Caregiver"
+    if any(k in text for k in [
+        "call", "phone", "daughter", "son", "amma", "nanna", "deuta", "baba",
+        "papa", "mummy", "ravi", "priya", "ఫోన్", "फोन", "ফোন", "கூப்பிடு", "அழை"
+    ]):
+        target = "Daughter"
+        if any(t in text for t in ["daughter", "కూతురు", "बेटी", "জীয়ৰী", "মেয়ে", "மகள்", "priya"]):
+            target = "Daughter"
+        elif any(t in text for t in ["son", "కొడుకు", "बेटा", "ল'ৰা", "ছেলে", "மகன்", "debojit", "rahul"]):
+            target = "Son"
+        elif any(t in text for t in ["nanna", "papa", "deuta", "baba", "देउता", "बाबा", "அப்பா"]):
+            target = "Father"
+        elif any(t in text for t in ["amma", "mummy", "maa", "মা", "அம்மா"]):
+            target = "Mother"
+        else:
+            target = "Caregiver"
+
         return {
             "intent": "call_family",
             "target_person": target,
@@ -109,7 +130,9 @@ def parse_server_intent(transcript: str, language: str) -> Dict[str, Any]:
         }
 
     # 3. Game
-    if any(k in text for k in ["game", "play", "puzzle", "ఆట", "खेल"]):
+    if any(k in text for k in [
+        "game", "play", "puzzle", "ఆట", "ఆడు", "खेल", "खेला", "খেলা", "விளையாடு", "விளையாட்டு"
+    ]):
         return {
             "intent": "start_game",
             "confidence": 0.90,

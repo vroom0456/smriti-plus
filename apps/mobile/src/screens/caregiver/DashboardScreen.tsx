@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Platform,
   TouchableOpacity, TextInput, Modal, Alert,
 } from 'react-native';
-import { Gamepad2, CheckCircle2, AlertCircle, Flame, UserPlus, ShieldCheck, X, ArrowRight } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Gamepad2, CheckCircle2, AlertCircle, Flame, UserPlus, ShieldCheck, X, ArrowRight, Calendar, SlidersHorizontal, Image as ImageIcon, ChevronRight } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { StatCard, AlertBanner, RoleBadge, ReminderCard } from '../../components/UIComponents';
 import { useAuthStore } from '../../state/authStore';
@@ -24,6 +25,7 @@ interface DashboardData {
 }
 
 export default function CaregiverDashboardScreen() {
+  const navigation = useNavigation<any>();
   const user = useAuthStore((s) => s.user);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -232,6 +234,48 @@ export default function CaregiverDashboardScreen() {
         </View>
       </View>
 
+      {/* Quick Action Shortcuts for Caregiver */}
+      <View style={styles.quickActionsRow}>
+        <TouchableOpacity
+          style={[styles.quickActionItem, { backgroundColor: '#F0FDFA', borderColor: '#CCFBF1' }]}
+          onPress={() => navigation.navigate('Reminders')}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Manage patient routine and reminders"
+        >
+          <View style={[styles.quickActionIcon, { backgroundColor: '#CCFBF1' }]}>
+            <Calendar size={16} color={colors.teal} strokeWidth={2.4} />
+          </View>
+          <Text style={[styles.quickActionTitle, { color: '#0F766E' }]} numberOfLines={1}>Routines</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionItem, { backgroundColor: '#EFF6FF', borderColor: '#DBEAFE' }]}
+          onPress={() => navigation.navigate('Memories')}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Manage family memories and voice notes"
+        >
+          <View style={[styles.quickActionIcon, { backgroundColor: '#DBEAFE' }]}>
+            <ImageIcon size={16} color="#2563EB" strokeWidth={2.4} />
+          </View>
+          <Text style={[styles.quickActionTitle, { color: '#1D4ED8' }]} numberOfLines={1}>Memories</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionItem, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}
+          onPress={() => navigation.navigate('PersonalizationSettings')}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Elder adaptation and assistance controls"
+        >
+          <View style={[styles.quickActionIcon, { backgroundColor: '#FDE68A' }]}>
+            <SlidersHorizontal size={16} color="#D97706" strokeWidth={2.4} />
+          </View>
+          <Text style={[styles.quickActionTitle, { color: '#B45309' }]} numberOfLines={1}>Adaptations</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Stats Grid (2x2 Responsive Layout) */}
       <View style={styles.statsGrid}>
         <View style={styles.statCardHalf}>
@@ -337,15 +381,34 @@ export default function CaregiverDashboardScreen() {
 
       {/* Reminders */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Active Reminders</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Active Reminders</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Reminders')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Manage all reminders"
+          >
+            <Text style={{ color: colors.teal, fontWeight: '700', fontSize: 13 }}>
+              Manage All ➔
+            </Text>
+          </TouchableOpacity>
+        </View>
         {reminders.map((r: any) => (
-          <ReminderCard
+          <TouchableOpacity
             key={r.id}
-            title={r.title}
-            category={r.category}
-            scheduledTime={r.scheduled_time}
-            status={r.today_status || 'pending'}
-          />
+            onPress={() => navigation.navigate('Reminders')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`Reminder: ${r.title}. Tap to manage.`}
+          >
+            <ReminderCard
+              title={r.title}
+              category={r.category}
+              scheduledTime={r.scheduled_time}
+              status={r.today_status || 'pending'}
+            />
+          </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
@@ -381,6 +444,33 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontFamily: fontFamily.display, fontSize: 24, fontWeight: '800', color: colors.textDark, letterSpacing: 0 },
   elderName: { ...typography.standard.body, color: colors.muted, fontSize: 13, flex: 1 },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: spacing.lg,
+  },
+  quickActionItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  quickActionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

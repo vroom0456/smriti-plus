@@ -45,6 +45,7 @@ import MemoryManagerScreen from '../screens/caregiver/MemoryManagerScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
 import GroupOverviewScreen from '../screens/healthworker/GroupOverviewScreen';
 import PatientIdentityStoryScreen from '../screens/elderly/PatientIdentityStoryScreen';
+import PersonalizationSettingsScreen from '../screens/caregiver/PersonalizationSettingsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -294,6 +295,8 @@ export default function AppNavigator() {
             <Stack.Screen name="MemoryBox" component={MemoryBoxScreen} />
             <Stack.Screen name="MemoryManager" component={MemoryManagerScreen} />
             <Stack.Screen name="PatientIdentityStory" component={PatientIdentityStoryScreen} />
+            <Stack.Screen name="CaregiverHelp" component={FamilyCornerScreen} />
+            <Stack.Screen name="PersonalizationSettings" component={PersonalizationSettingsScreen} />
           </>
         )}
       </Stack.Navigator>

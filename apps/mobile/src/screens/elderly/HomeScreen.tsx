@@ -427,7 +427,7 @@ export default function ElderHomeScreen({ navigation }: any) {
           <View style={styles.helpRow}>
             {/* Call Family: Warm Amber */}
             <TouchableOpacity
-              onPress={() => navigation.navigate('CaregiverHelp')}
+              onPress={() => navigation.navigate('FamilyCorner')}
               style={[styles.quickHelpButton, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A', borderWidth: 1.5 }]}
               activeOpacity={0.8}
               accessibilityRole="button"

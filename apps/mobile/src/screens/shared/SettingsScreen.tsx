@@ -52,6 +52,8 @@ import {
   Download,
   Trash2,
   CheckCircle,
+  SlidersHorizontal,
+  Heart,
 } from 'lucide-react-native';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
 
@@ -389,6 +391,71 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </View>
+
+          {/* Caregiver Specific Settings */}
+          {user?.role === 'caregiver' && (
+            <TouchableOpacity
+              style={[styles.card, shadows.subtle, { marginTop: spacing.md }]}
+              onPress={() => navigation.navigate('PersonalizationSettings')}
+              activeOpacity={0.78}
+              accessibilityRole="button"
+              accessibilityLabel="Open Elder Adaptation Controls"
+            >
+              <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(217, 119, 6, 0.12)' }]}>
+                <SlidersHorizontal size={22} color="#D97706" strokeWidth={2.2} />
+              </View>
+              <View style={styles.cardMain}>
+                <Text style={styles.cardLabel}>Elder Adaptation Controls</Text>
+                <Text style={styles.cardSubText}>
+                  Override assistance level, difficulty, and calm animations
+                </Text>
+              </View>
+              <ChevronRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
+            </TouchableOpacity>
+          )}
+
+          {/* Elder Specific Quick Shortcuts */}
+          {user?.role === 'elderly' && (
+            <>
+              <TouchableOpacity
+                style={[styles.card, shadows.subtle, { marginTop: spacing.md }]}
+                onPress={() => navigation.navigate('PatientIdentityStory')}
+                activeOpacity={0.78}
+                accessibilityRole="button"
+                accessibilityLabel="Open Who Am I Life Story"
+              >
+                <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(29, 78, 216, 0.12)' }]}>
+                  <User size={22} color="#1D4ED8" strokeWidth={2.2} />
+                </View>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardLabel}>Who Am I? (My Life Story)</Text>
+                  <Text style={styles.cardSubText}>
+                    Biographical reassurance, family details, and comforting voice
+                  </Text>
+                </View>
+                <ChevronRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.card, shadows.subtle, { marginTop: spacing.md }]}
+                onPress={() => navigation.navigate('MemoryBox')}
+                activeOpacity={0.78}
+                accessibilityRole="button"
+                accessibilityLabel="Open Digital Memory Box"
+              >
+                <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(225, 29, 72, 0.12)' }]}>
+                  <Heart size={22} color="#E11D48" strokeWidth={2.2} />
+                </View>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardLabel}>Digital Memory Box</Text>
+                  <Text style={styles.cardSubText}>
+                    Cherished memories, music, celebrations, and places
+                  </Text>
+                </View>
+                <ChevronRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
+              </TouchableOpacity>
+            </>
+          )}
 
           {/* Sign Out Button */}
           <TouchableOpacity
