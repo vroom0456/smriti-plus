@@ -31,6 +31,7 @@ import { PrimaryButton } from '../../../components/UIComponents';
 import { offlineStore } from '../../../services/offlineStore';
 import { useAuthStore } from '../../../state/authStore';
 import { useBackNavigation } from '../../../navigation/useBackNavigation';
+import { useTranslation, getLanguage } from '../../../i18n';
 
 interface Props {
   gameId: string;
@@ -42,25 +43,57 @@ interface Props {
 
 type BreathPhase = 'inhale' | 'hold' | 'exhale';
 
-const PHASE_CONFIG: Record<BreathPhase, { duration: number; text: string; sub: string; scale: number; color: string }> = {
+const PHASE_TEXTS: Record<string, Record<BreathPhase, { text: string; sub: string }>> = {
+  te: {
+    inhale: { text: 'నెమ్మదిగా శ్వాస తీసుకోండి', sub: 'ముక్కు ద్వారా ప్రశాంతమైన శక్తిని లోపలికి పీల్చుకోండి...' },
+    hold: { text: 'కాసేపు అలాగే ఉంచండి', sub: 'గుండెలోని నిశ్శబ్దాన్ని అనుభవించండి...' },
+    exhale: { text: 'నెమ్మదిగా శ్వాస వదలండి', sub: 'నోటి ద్వారా అన్ని ఒత్తిళ్లను బయటకు వదిలేయండి...' },
+  },
+  hi: {
+    inhale: { text: 'धीरे-धीरे सांस अंदर लें', sub: 'नाक से शांत ऊर्जा अंदर महसूस करें...' },
+    hold: { text: 'सांस रोककर रखें', sub: 'अपने मन में शांति महसूस करें...' },
+    exhale: { text: 'धीरे से सांस छोड़ें', sub: 'मुंह से सारा तनाव बाहर निकाल दें...' },
+  },
+  as: {
+    inhale: { text: 'লাহে লাহে উশাহ লওক', sub: 'নাকেৰে প্ৰশান্ত শক্তি ভিতৰলৈ টানি লওক...' },
+    hold: { text: 'উশাহ ধৰি ৰাখক', sub: 'হৃদয়ৰ গভীৰ প্ৰশান্তি অনুভৱ কৰক...' },
+    exhale: { text: 'লাহেকৈ উশাহ এৰি দিয়ক', sub: 'মুখেৰে সকলো চিন্তা আঁতৰাই দিয়ক...' },
+  },
+  bn: {
+    inhale: { text: 'ধীরে ধীরে শ্বাস নিন', sub: 'নাক দিয়ে শান্ত শক্তি ভেতরে অনুভব করুন...' },
+    hold: { text: 'ধীরে ধরে রাখুন', sub: 'হৃদয়ের গভীরে স্থিরতা অনুভব করুন...' },
+    exhale: { text: 'ধীরে ধীরে শ্বাস ছাড়ুন', sub: 'মুখ দিয়ে সব চাপ ও ক্লান্তি দূর করুন...' },
+  },
+  ta: {
+    inhale: { text: 'மெதுவாக மூச்சை உள்ளிழுக்கவும்', sub: 'மூக்கின் வழியே அமைதியான ஆற்றலை உள்ளிழுக்கவும்...' },
+    hold: { text: 'அமைதியாக மூச்சடக்குங்கள்', sub: 'இதயத்தின் அமைதியை உணருங்கள்...' },
+    exhale: { text: 'மெதுவாக மூச்சை வெளியேற்றவும்', sub: 'வாய் வழியாக அனைத்து அழுத்தங்களையும் வெளியேற்றவும்...' },
+  },
+  bodo: {
+    inhale: { text: 'लासै लासै हासह\'', sub: 'गोजोन शक्तिखौ गोसोआव हाबहो...' },
+    hold: { text: 'थाथ\'हो', sub: 'गोसोनि गोजोनथिखौ मिथि...' },
+    exhale: { text: 'लासै लासै गारफिन', sub: 'खुगाजों गासै गोसोनि दावराव गार...' },
+  },
+  en: {
+    inhale: { text: 'Breathe In Slowly', sub: 'Draw in peaceful morning energy through your nose...' },
+    hold: { text: 'Hold Gently', sub: 'Feel the quiet stillness in your heart...' },
+    exhale: { text: 'Exhale Softly', sub: 'Let go of all tension through your mouth...' },
+  },
+};
+
+const PHASE_CONFIG: Record<BreathPhase, { duration: number; scale: number; color: string }> = {
   inhale: {
     duration: 4000,
-    text: 'Breathe In Slowly',
-    sub: 'Draw in peaceful morning energy through your nose...',
     scale: 1.35,
     color: colors.teal,
   },
   hold: {
     duration: 3000,
-    text: 'Hold Gently',
-    sub: 'Feel the quiet stillness in your heart...',
     scale: 1.35,
     color: colors.navy,
   },
   exhale: {
     duration: 4000,
-    text: 'Exhale Softly',
-    sub: 'Let go of all tension through your mouth...',
     scale: 0.9,
     color: colors.tealDeep,
   },
@@ -72,6 +105,8 @@ export default function BrahmaputraSerenityGame({
   onComplete,
   onBack,
 }: Props) {
+  const { t } = useTranslation();
+  const currentLang = getLanguage() || 'en';
   const user = useAuthStore((s) => s.user);
   const [phase, setPhase] = useState<BreathPhase>('inhale');
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
@@ -210,7 +245,7 @@ export default function BrahmaputraSerenityGame({
               activeOpacity={0.75}
             >
               <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-              <Text style={styles.backButtonTopText}>Back to Activities</Text>
+              <Text style={styles.backButtonTopText}>{t('games.backToActivities') || 'Back to Activities'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -218,30 +253,30 @@ export default function BrahmaputraSerenityGame({
             <Waves size={46} color={colors.teal} strokeWidth={2.2} />
           </View>
 
-          <Text style={styles.completeTitle}>Mind Refreshed & Centered</Text>
+          <Text style={styles.completeTitle}>{t('games.gameComplete') || 'Mind Refreshed & Centered'}</Text>
 
           <View style={[styles.difficultyBadge, styles.difficultyBadgeUp]}>
             <Text style={styles.difficultyBadgeText}>
-              🌸 Peaceful Serenity Achieved • Level {difficulty}
+              🌸 {t('games.level', { level: difficulty }) || `Level ${difficulty}`}
             </Text>
           </View>
 
           <Text style={styles.encouragement}>
-            Wonderful work! Taking these quiet moments supports healthy circulation, reduces worry, and clears your thoughts.
+            {t('games.encouragement.excellent') || 'Wonderful work! Taking these quiet moments supports healthy circulation, reduces worry, and clears your thoughts.'}
           </Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={styles.statNumber}>{Math.max(1, cyclesCompleted)}</Text>
-              <Text style={styles.statLabel}>Breath Cycles</Text>
+              <Text style={styles.statLabel}>Cycles</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statNumber}>{calmTouches}</Text>
-              <Text style={styles.statLabel}>Gentle Taps</Text>
+              <Text style={styles.statLabel}>Taps</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statNumber}>{60 - secondsRemaining}s</Text>
-              <Text style={styles.statLabel}>Relaxed Time</Text>
+              <Text style={styles.statLabel}>Time</Text>
             </View>
           </View>
 
@@ -265,7 +300,7 @@ export default function BrahmaputraSerenityGame({
               style={styles.actionBtnPlayNext}
             />
             <PrimaryButton
-              title="Back to Activities"
+              title={t('games.backToActivities') || 'Back to Activities'}
               onPress={onBack}
               variant="secondary"
               style={styles.actionBtnBack}
@@ -278,6 +313,7 @@ export default function BrahmaputraSerenityGame({
 
   // ── Active Gameplay State ──
   const activeCfg = PHASE_CONFIG[phase];
+  const activeText = (PHASE_TEXTS[currentLang] || PHASE_TEXTS['en'])[phase];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }} {...panHandlers}>
@@ -293,7 +329,7 @@ export default function BrahmaputraSerenityGame({
             activeOpacity={0.75}
           >
             <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-            <Text style={styles.backButtonTopText}>Exit Game</Text>
+            <Text style={styles.backButtonTopText}>{t('games.backToGames') || 'Exit Game'}</Text>
           </TouchableOpacity>
 
           <View style={styles.timerPill}>
@@ -302,7 +338,7 @@ export default function BrahmaputraSerenityGame({
           </View>
         </View>
 
-        <Text style={styles.title}>Brahmaputra Serenity</Text>
+        <Text style={styles.title}>{t('games.brahmaputra') || 'Brahmaputra Serenity'}</Text>
         <Text style={styles.subtitle}>
           Serene Heritage Mindfulness • Relax your shoulders & breathe
         </Text>
@@ -336,9 +372,9 @@ export default function BrahmaputraSerenityGame({
         {/* Prompt Card */}
         <View style={styles.promptCard}>
           <Text style={[styles.promptTitle, { color: activeCfg.color }]}>
-            {activeCfg.text}
+            {activeText.text}
           </Text>
-          <Text style={styles.promptSub}>{activeCfg.sub}</Text>
+          <Text style={styles.promptSub}>{activeText.sub}</Text>
         </View>
 
         {/* Gentle Ripple Touch Button: Ocean Azure */}

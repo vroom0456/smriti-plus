@@ -40,6 +40,7 @@ import { offlineStore } from '../../services/offlineStore';
 import { voiceService } from '../../services/voice';
 import { useAuthStore } from '../../state/authStore';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
+import { useTranslation } from '../../i18n';
 
 interface FamilyMember {
   id: string;
@@ -61,6 +62,7 @@ export default function FamilyCornerScreen() {
   const navigation = useNavigation<any>();
   const { goBackSafe, panHandlers } = useBackNavigation(navigation, { fallbackTab: 'Home' });
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   const [contacts, setContacts] = useState<FamilyMember[]>([]);
   const [voiceMessages, setVoiceMessages] = useState<FamilyVoiceNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,9 +204,9 @@ export default function FamilyCornerScreen() {
             accessibilityLabel="Go back"
           >
             <ArrowLeft size={16} color={colors.textDark} style={{ marginRight: 6 }} />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('family.back') || t('nav.back') || 'Back'}</Text>
           </TouchableOpacity>
-        <Text style={styles.title}>Family Corner</Text>
+        <Text style={styles.title}>{t('family.corner') || 'Family Corner'}</Text>
         <Text style={styles.subtitle}>
           Your loved ones are just one tap away.
         </Text>
@@ -249,7 +251,7 @@ export default function FamilyCornerScreen() {
       )}
 
       {/* Family Members List */}
-      <Text style={styles.sectionHeader}>Call Your Family</Text>
+      <Text style={styles.sectionHeader}>{t('family.callYourFamily') || 'Call Your Family'}</Text>
 
       {loading ? (
         <ActivityIndicator size="large" color={colors.teal} style={{ marginVertical: 30 }} />
@@ -281,14 +283,14 @@ export default function FamilyCornerScreen() {
               accessibilityLabel={`Call ${member.name}`}
             >
               <Phone size={18} color={colors.white} strokeWidth={2.5} style={{ marginRight: 8 }} />
-              <Text style={styles.callText} numberOfLines={1}>Call {member.name.split(' ')[0]}</Text>
+              <Text style={styles.callText} numberOfLines={1}>{t('family.call') || 'Call'} {member.name.split(' ')[0]}</Text>
             </TouchableOpacity>
           </View>
         ))
       )}
 
       {/* Emergency Assistance Shortcuts */}
-      <Text style={styles.sectionHeader}>Emergency & Medical Help</Text>
+      <Text style={styles.sectionHeader}>{t('family.emergencyHelp') || 'Emergency & Medical Help'}</Text>
 
       <TouchableOpacity
         style={styles.emergencyCard}
@@ -329,14 +331,14 @@ export default function FamilyCornerScreen() {
             General Physician
           </Text>
         </View>
-        <Text style={styles.callDoctorLabel}>CALL</Text>
+        <Text style={styles.callDoctorLabel}>{t('family.call') || 'CALL'}</Text>
       </TouchableOpacity>
 
       {/* Share Link Code for Caregiver & Health Expert Onboarding */}
       <View style={styles.linkCodeCard}>
         <View style={styles.linkCodeHeaderRow}>
           <ShieldCheck size={20} color={colors.teal} />
-          <Text style={styles.linkCodeLabel}>Patient Access Code</Text>
+          <Text style={styles.linkCodeLabel}>{t('family.patientCode') || 'Patient Access Code'}</Text>
         </View>
         <Text style={styles.linkCodeSub}>
           Share this unique code with your caregiver or health expert to grant them access to your health profile.

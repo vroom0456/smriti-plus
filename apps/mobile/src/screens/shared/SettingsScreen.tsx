@@ -65,7 +65,10 @@ interface LanguageOption {
 const ALL_LANGUAGES: LanguageOption[] = [
   { code: 'en', native: 'English', name: 'English (Indian)', region: 'National' },
   { code: 'te', native: 'తెలుగు', name: 'Telugu', region: 'National' },
+  { code: 'hi', native: 'हिन्दी', name: 'Hindi', region: 'National' },
   { code: 'as', native: 'অসমীয়া', name: 'Assamese', region: 'North Eastern (MDoNER)' },
+  { code: 'bn', native: 'বাংলা', name: 'Bengali', region: 'National' },
+  { code: 'ta', native: 'தமிழ்', name: 'Tamil', region: 'National' },
   { code: 'bodo', native: 'बर’', name: 'Bodo', region: 'North Eastern (MDoNER)' },
   { code: 'mni', native: 'মৈতৈলোন্', name: 'Manipuri / Meitei', region: 'North Eastern (MDoNER)' },
   { code: 'kha', native: 'Ka Ktien Khasi', name: 'Khasi', region: 'North Eastern (MDoNER)' },

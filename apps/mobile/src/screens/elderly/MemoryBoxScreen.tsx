@@ -26,6 +26,7 @@ import { offlineStore } from '../../services/offlineStore';
 import { voiceService } from '../../services/voice';
 import { useAuthStore } from '../../state/authStore';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
+import { useTranslation } from '../../i18n';
 import {
   Sparkles,
   Users,
@@ -62,6 +63,7 @@ const CATEGORIES = [
 ];
 
 export default function MemoryBoxScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { user } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -225,9 +227,9 @@ export default function MemoryBoxScreen() {
           activeOpacity={0.75}
         >
           <ArrowLeft size={16} color={colors.navy} />
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t('memories.back') || t('nav.back') || 'Back'}</Text>
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">My Memories</Text>
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t('memories.title') || 'My Memories'}</Text>
         <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
           Familiar places, dear family, and happy celebrations.
         </Text>
@@ -267,7 +269,7 @@ export default function MemoryBoxScreen() {
             <View style={styles.emptyIconCircle}>
               <Camera size={36} color={colors.muted} />
             </View>
-            <Text style={styles.emptyTitle}>No Memories Here Yet</Text>
+            <Text style={styles.emptyTitle}>{t('memories.empty') || 'No Memories Here Yet'}</Text>
             <Text style={styles.emptyText}>
               Ask your family to add photos or stories about your home and family.
             </Text>
@@ -300,7 +302,7 @@ export default function MemoryBoxScreen() {
 
                 <View style={styles.cardBottomRow}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Text style={styles.tapToOpen}>Tap to view & listen</Text>
+                    <Text style={styles.tapToOpen}>{t('memories.tapToOpen') || 'Tap to view & listen'}</Text>
                     <ArrowRight size={14} color={colors.teal} />
                   </View>
                   {item.is_favorite && <Heart size={18} color={colors.coral} fill={colors.coral} />}
@@ -371,7 +373,7 @@ export default function MemoryBoxScreen() {
                   accessibilityLabel="Close memory view"
                 >
                   <Check size={18} color={colors.navy} style={{ marginRight: 6 }} />
-                  <Text style={styles.closeButtonText}>Done Viewing</Text>
+                  <Text style={styles.closeButtonText}>{t('memories.doneViewing') || 'Done Viewing'}</Text>
                 </TouchableOpacity>
               </View>
             </View>

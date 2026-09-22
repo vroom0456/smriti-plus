@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { colors, typography, spacing } from '../../theme/tokens';
 import { PrimaryButton } from '../../components/UIComponents';
+import { useTranslation } from '../../i18n';
 
 interface ConsentScreenProps {
   onConsentAgreed: () => void;
@@ -24,16 +25,17 @@ interface ConsentScreenProps {
 }
 
 export default function ConsentScreen({ onConsentAgreed, onDecline }: ConsentScreenProps) {
+  const { t } = useTranslation();
   const [acknowledgedDisclaimer, setAcknowledgedDisclaimer] = useState(false);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Title */}
       <View style={styles.header}>
-        <Text style={styles.badge}>DATA PRIVACY & SAFETY</Text>
-        <Text style={styles.title}>Your Health & Privacy</Text>
+        <Text style={styles.badge}>{t('consent.badge') || 'DATA PRIVACY & SAFETY'}</Text>
+        <Text style={styles.title}>{t('consent.heading') || 'Your Health & Privacy'}</Text>
         <Text style={styles.subtitle}>
-          How SMRITI+ protects you and your personal information.
+          {t('consent.subtitle') || 'How SMRITI+ protects you and your personal information.'}
         </Text>
       </View>
 
@@ -41,56 +43,56 @@ export default function ConsentScreen({ onConsentAgreed, onDecline }: ConsentScr
       <View style={styles.alertCard}>
         <View style={styles.alertHeader}>
           <Text style={styles.alertEmoji}>⚕️</Text>
-          <Text style={styles.alertTitle}>Important Medical Notice</Text>
+          <Text style={styles.alertTitle}>{t('consent.medicalNotice') || 'Important Medical Notice'}</Text>
         </View>
         <Text style={styles.alertText}>
-          SMRITI+ supports cognitive engagement and daily assistance; it does not diagnose or treat dementia or any neurological condition.
+          {t('consent.medicalText') || 'SMRITI+ supports cognitive engagement and daily assistance; it does not diagnose or treat dementia or any neurological condition.'}
         </Text>
         <Text style={styles.alertSub}>
-          Always consult a qualified medical professional for medical advice, assessment, and treatment.
+          {t('consent.medicalSub') || 'Always consult a qualified medical professional for medical advice, assessment, and treatment.'}
         </Text>
       </View>
 
       {/* What we do & What we never do */}
       <View style={styles.privacyCard}>
-        <Text style={styles.sectionHeading}>What SMRITI+ Collects:</Text>
+        <Text style={styles.sectionHeading}>{t('consent.whatWeCollect') || 'What SMRITI+ Collects:'}</Text>
 
         <View style={styles.itemRow}>
           <Text style={styles.itemEmoji}>✓</Text>
           <Text style={styles.itemText}>
-            <Text style={styles.bold}>Game Accuracy & Timings:</Text> Used only to adjust puzzle difficulty to keep challenges enjoyable and stress-free.
+            <Text style={styles.bold}>{t('consent.gamePerformance') || 'Game Accuracy & Timings'}</Text>
           </Text>
         </View>
 
         <View style={styles.itemRow}>
           <Text style={styles.itemEmoji}>✓</Text>
           <Text style={styles.itemText}>
-            <Text style={styles.bold}>Reminder Confirmations:</Text> To notify your family or caregiver if critical medicines are missed.
+            <Text style={styles.bold}>{t('consent.reminderHistory') || 'Reminder Confirmations'}</Text>
           </Text>
         </View>
 
         <View style={styles.itemRow}>
           <Text style={styles.itemEmoji}>✓</Text>
           <Text style={styles.itemText}>
-            <Text style={styles.bold}>Local-First Storage:</Text> All your information stays safe on your device first and works without internet.
+            <Text style={styles.bold}>{t('consent.localFirst') || 'Local-First Storage:'}</Text> {t('consent.localFirstDesc') || 'All your information stays safe on your device first and works without internet.'}
           </Text>
         </View>
 
         <View style={styles.divider} />
 
-        <Text style={styles.sectionHeading}>What SMRITI+ Never Does:</Text>
+        <Text style={styles.sectionHeading}>{t('consent.whatWeNever') || 'What SMRITI+ Never Does:'}</Text>
 
         <View style={styles.itemRow}>
           <Text style={[styles.itemEmoji, { color: colors.coral }]}>✗</Text>
           <Text style={styles.itemText}>
-            <Text style={styles.bold}>No Audio Recording Storage:</Text> Spoken voice is processed immediately on device and never saved to cloud servers.
+            <Text style={styles.bold}>{t('consent.noAudio') || 'No Audio Recording Storage:'}</Text> {t('consent.noAudioDesc') || 'Spoken voice is processed immediately on device and never saved to cloud servers.'}
           </Text>
         </View>
 
         <View style={styles.itemRow}>
           <Text style={[styles.itemEmoji, { color: colors.coral }]}>✗</Text>
           <Text style={styles.itemText}>
-            <Text style={styles.bold}>Zero Data Selling:</Text> Your family's routines and health activities will never be shared with advertisers or third parties.
+            <Text style={styles.bold}>{t('consent.noSell') || 'Zero Data Selling:'}</Text> {t('consent.noSellDesc') || "Your family's routines and health activities will never be shared with advertisers or third parties."}
           </Text>
         </View>
       </View>
@@ -107,14 +109,14 @@ export default function ConsentScreen({ onConsentAgreed, onDecline }: ConsentScr
           {acknowledgedDisclaimer && <Text style={styles.checkCheck}>✓</Text>}
         </View>
         <Text style={styles.checkboxLabel}>
-          I understand that SMRITI+ is a cognitive support tool and not a medical diagnostic device.
+          {t('consent.checkboxLabel') || 'I understand that SMRITI+ is a cognitive support tool and not a medical diagnostic device.'}
         </Text>
       </TouchableOpacity>
 
       {/* Agreement Actions */}
       <View style={styles.actions}>
         <PrimaryButton
-          title="I Agree & Continue →"
+          title={t('auth.agreeAndContinue') || 'I Agree & Continue →'}
           onPress={onConsentAgreed}
           disabled={!acknowledgedDisclaimer}
         />
@@ -125,7 +127,7 @@ export default function ConsentScreen({ onConsentAgreed, onDecline }: ConsentScr
           accessibilityRole="button"
           accessibilityLabel="Back to login"
         >
-          <Text style={styles.declineText}>Back to Sign In</Text>
+          <Text style={styles.declineText}>{t('auth.backToSignIn') || 'Back to Sign In'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

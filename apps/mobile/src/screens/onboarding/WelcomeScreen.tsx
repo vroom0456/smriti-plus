@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { colors, typography, spacing, fontFamily, borderRadius, shadows } from '../../theme/tokens';
 import { PrimaryButton } from '../../components/UIComponents';
-import { setLanguage, SupportedLanguage } from '../../i18n';
+import { setLanguage, SupportedLanguage, useTranslation } from '../../i18n';
 import { voiceIntelligence } from '../../services/voiceIntelligence';
 import { Brain } from 'lucide-react-native';
 
@@ -26,6 +26,7 @@ interface WelcomeScreenProps {
 }
 
 export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
+  const { t } = useTranslation();
   const [selectedLang, setSelectedLang] = useState<string>('en');
   const [selectedRole, setSelectedRole] = useState<string>('elderly');
 
@@ -42,20 +43,20 @@ export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
   const roles = [
     {
       id: 'elderly',
-      title: 'For Myself',
-      desc: 'Simple screens, large text & voice guidance',
+      title: t('auth.forMyself') || 'For Myself',
+      desc: t('auth.myselfDesc') || 'Simple screens, large text & voice guidance',
       emoji: '👴',
     },
     {
       id: 'caregiver',
-      title: 'Family Caregiver',
-      desc: 'Reminders, adherence tracking & alerts',
+      title: t('auth.familyCaregiver') || 'Family Caregiver',
+      desc: t('auth.caregiverDesc') || 'Reminders, adherence tracking & alerts',
       emoji: '👩‍⚕️',
     },
     {
       id: 'health_worker',
-      title: 'Community Worker',
-      desc: 'Village cohort monitoring & reports',
+      title: t('auth.communityWorker') || 'Community Worker',
+      desc: t('auth.workerDesc') || 'Village cohort monitoring & reports',
       emoji: '📋',
     },
   ];
@@ -76,12 +77,12 @@ export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
           <Brain size={36} color={colors.primary} strokeWidth={2.2} />
         </View>
         <Text style={styles.brandTitle}>SMRITI+</Text>
-        <Text style={styles.brandTagline}>Remember. Engage. Connect.</Text>
+        <Text style={styles.brandTagline}>{t('app.tagline') || 'Remember. Engage. Connect.'}</Text>
       </View>
 
       {/* Language Selection */}
-      <Text style={styles.sectionTitle}>How would you like SMRITI+ to speak with you?</Text>
-      <Text style={styles.sectionSub}>Choose your preferred language:</Text>
+      <Text style={styles.sectionTitle}>{t('auth.chooseLanguage') || 'How would you like SMRITI+ to speak with you?'}</Text>
+      <Text style={styles.sectionSub}>{t('auth.chooseLanguageSub') || 'Choose your preferred language:'}</Text>
 
       <View style={styles.langGrid}>
         {languages.map((l) => (
@@ -105,7 +106,7 @@ export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
       </View>
 
       {/* Role Selection */}
-      <Text style={styles.sectionTitle}>Who is using this app?</Text>
+      <Text style={styles.sectionTitle}>{t('auth.whoIsUsing') || 'Who is using this app?'}</Text>
       <View style={styles.rolesList}>
         {roles.map((r) => (
           <TouchableOpacity
@@ -132,7 +133,7 @@ export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
       {/* Continue Button */}
       <View style={styles.actionContainer}>
         <PrimaryButton
-          title="Get Started"
+          title={t('auth.getStarted') || 'Get Started'}
           onPress={() => onProceed(selectedLang, selectedRole)}
         />
       </View>
@@ -140,7 +141,7 @@ export default function WelcomeScreen({ onProceed }: WelcomeScreenProps) {
       {/* Regulatory Disclaimer */}
       <View style={styles.disclaimerBox}>
         <Text style={styles.disclaimerText}>
-          SMRITI+ supports cognitive engagement and daily assistance; it does not diagnose or treat dementia.
+          {t('app.disclaimer') || 'SMRITI+ supports cognitive engagement and daily assistance; it does not diagnose or treat dementia.'}
         </Text>
       </View>
     </ScrollView>

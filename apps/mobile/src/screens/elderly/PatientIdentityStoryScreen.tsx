@@ -35,6 +35,7 @@ import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
+import { useTranslation } from '../../i18n';
 
 // ─── Default biographical data (shown until caregiver fills in real data) ─────
 const DEFAULT_IDENTITY = {
@@ -85,6 +86,7 @@ interface PatientIdentityStoryScreenProps {
 }
 
 export default function PatientIdentityStoryScreen({ navigation }: PatientIdentityStoryScreenProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s: any) => s.user);
   const [story, setStory] = useState<IdentityStory>(DEFAULT_IDENTITY);
   const [loading, setLoading] = useState(true);
@@ -167,7 +169,7 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
     return (
       <View style={styles.loadingContainer} {...panHandlers}>
         <ActivityIndicator size="large" color={colors.teal} />
-        <Text style={styles.loadingText}>Loading your story…</Text>
+        <Text style={styles.loadingText}>{t('identity.loading') || 'Loading your story…'}</Text>
       </View>
     );
   }
@@ -181,7 +183,7 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
         {/* Back */}
         <TouchableOpacity style={styles.backBtn} onPress={goBackSafe} accessibilityRole="button">
           <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} />
-          <Text style={styles.backBtnText}>Home</Text>
+          <Text style={styles.backBtnText}>{t('nav.back') || t('nav.home') || 'Home'}</Text>
         </TouchableOpacity>
 
         {/* ─── Identity Header ─────────────────────────────── */}
@@ -190,7 +192,7 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
             <Text style={styles.avatarEmoji}>👤</Text>
           </View>
           <View style={styles.identityHeaderText}>
-            <Text style={styles.helloText}>Hello,</Text>
+            <Text style={styles.helloText}>{t('identity.hello') || 'Hello,'}</Text>
             <Text style={styles.nameText}>{story.full_name}</Text>
             {story.preferred_name ? (
               <Text style={styles.preferredNameText}>
@@ -216,13 +218,13 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
         >
           <Volume2 size={22} color={colors.white} strokeWidth={2.5} />
           <Text style={styles.listenBtnText}>
-            {speaking ? '▶ Listening to Your Story…' : '▶ Listen to My Life Story'}
+            {speaking ? `▶ ${t('identity.listeningBtn') || 'Listening…'}` : `▶ ${t('identity.listenBtn') || 'Listen to My Life Story'}`}
           </Text>
         </TouchableOpacity>
 
         {/* ─── Parents ─────────────────────────────────────── */}
         {story.parents_names ? (
-          <SectionCard icon={<Heart size={22} color="#E11D48" strokeWidth={2.2} />} title="Your Parents" color="#FFF1F2">
+          <SectionCard icon={<Heart size={22} color="#E11D48" strokeWidth={2.2} />} title={t('identity.parents') || 'Your Parents'} color="#FFF1F2">
             <Text style={styles.cardBodyText}>{story.parents_names}</Text>
           </SectionCard>
         ) : null}
@@ -246,16 +248,16 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
 
         {/* ─── Education ───────────────────────────────────── */}
         {(story.schooling_location || story.college) ? (
-          <SectionCard icon={<GraduationCap size={22} color="#059669" strokeWidth={2.2} />} title="Your Education" color="#ECFDF5">
+          <SectionCard icon={<GraduationCap size={22} color="#059669" strokeWidth={2.2} />} title={t('identity.education') || 'Your Education'} color="#ECFDF5">
             {story.schooling_location ? (
               <>
-                <Text style={styles.cardLabel}>School</Text>
+                <Text style={styles.cardLabel}>{t('identity.school') || 'School'}</Text>
                 <Text style={styles.cardBodyText}>{story.schooling_location}</Text>
               </>
             ) : null}
             {story.college ? (
               <>
-                <Text style={[styles.cardLabel, { marginTop: 10 }]}>College</Text>
+                <Text style={[styles.cardLabel, { marginTop: 10 }]}>{t('identity.college') || 'College'}</Text>
                 <Text style={styles.cardBodyText}>{story.college}</Text>
               </>
             ) : null}
@@ -269,7 +271,7 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
 
         {/* ─── Childhood Friends ───────────────────────────── */}
         {story.childhood_friends ? (
-          <SectionCard icon={<Users size={22} color="#D97706" strokeWidth={2.2} />} title="Your Childhood Friends" color="#FFFBEB">
+          <SectionCard icon={<Users size={22} color="#D97706" strokeWidth={2.2} />} title={t('identity.friends') || 'Your Childhood Friends'} color="#FFFBEB">
             <Text style={styles.cardBodyText}>{story.childhood_friends}</Text>
           </SectionCard>
         ) : null}
@@ -288,7 +290,7 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
               <View style={[styles.sectionIconCircle, { backgroundColor: '#FED7AA' }]}>
                 <Users size={22} color="#C2410C" strokeWidth={2.2} />
               </View>
-              <Text style={styles.sectionCardTitle}>Your Children</Text>
+              <Text style={styles.sectionCardTitle}>{t('identity.children') || 'Your Children'}</Text>
             </View>
             {kids.map((kid, idx) => (
               <View key={idx} style={styles.kidCard}>
@@ -309,7 +311,7 @@ export default function PatientIdentityStoryScreen({ navigation }: PatientIdenti
             accessibilityLabel="Call a family member"
           >
             <Phone size={22} color={colors.white} strokeWidth={2.5} />
-            <Text style={styles.emergencyBtnText}>Call Family Member</Text>
+            <Text style={styles.emergencyBtnText}>{t('identity.callFamily') || 'Call Family Member'}</Text>
           </TouchableOpacity>
         )}
 
