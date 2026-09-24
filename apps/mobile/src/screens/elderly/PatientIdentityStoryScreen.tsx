@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.screenMargin,
     paddingTop: Platform.OS === 'ios' ? 58 : 38,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   },
   backBtn: {
     flexDirection: 'row',

@@ -54,14 +54,15 @@ const Stack = createNativeStackNavigator();
 
 const commonTabOptions = {
   headerShown: false,
-  tabBarActiveTintColor: colors.teal,
+  tabBarActiveTintColor: colors.primary,
   tabBarInactiveTintColor: colors.muted,
+  safeAreaInsets: { bottom: Platform.OS === 'ios' ? 24 : Platform.OS === 'android' ? 12 : 8 },
   tabBarStyle: {
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: colors.border,
     height: Platform.OS === 'ios' ? 88 : Platform.OS === 'android' ? 76 : 70,
-    paddingBottom: Platform.OS === 'ios' ? 28 : Platform.OS === 'android' ? 14 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 26 : Platform.OS === 'android' ? 14 : 10,
     paddingTop: 8,
     elevation: 10,
     shadowColor: '#000',

@@ -324,13 +324,21 @@ export default function ElderHomeScreen({ navigation }: any) {
           />
         </View>
 
-        {/* ── 3. TODAY'S PLAN: Clear Tabular Timeline ── */}
+        {/* ── 3. QUICK ACTIONS: Prominently Placed at the Top ── */}
+        <SMRITIQuickActions
+          onPlay={() => navigation.navigate('Games')}
+          onReminders={() => navigation.navigate('Reminders')}
+          onJournal={() => navigation.navigate('PatientIdentityStory')}
+          onFamily={() => navigation.navigate('FamilyCorner')}
+        />
+
+        {/* ── 4. TODAY'S PLAN: Simplified High-Contrast Schedule ── */}
         <SMRITITimeline
           items={timelineItems}
           onViewAll={() => navigation.navigate('Reminders')}
         />
 
-        {/* ── 4. CONTINUE: Recommended Cognitive Exercise ── */}
+        {/* ── 5. RECOMMENDED COGNITIVE EXERCISE ── */}
         <SMRITIActivityCard
           title={summary?.next_action?.game_name || t('games.matchingName') || 'Picture Memory'}
           category={t('home.memoryAndFocus') || 'Memory & Recognition'}
@@ -339,14 +347,6 @@ export default function ElderHomeScreen({ navigation }: any) {
           description={t('home.activityDescription') || 'A calm, enjoyable picture exercise designed to strengthen memory recognition.'}
           onStart={() => navigation.navigate('Games')}
           onExploreAll={() => navigation.navigate('Games')}
-        />
-
-        {/* ── 5. QUICK ACTIONS: Exactly 4 Clear Destinations ── */}
-        <SMRITIQuickActions
-          onPlay={() => navigation.navigate('Games')}
-          onReminders={() => navigation.navigate('Reminders')}
-          onJournal={() => navigation.navigate('PatientIdentityStory')}
-          onFamily={() => navigation.navigate('FamilyCorner')}
         />
       </ScrollView>
     </View>
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: 60,
+    paddingBottom: Platform.OS === 'ios' ? 120 : 104,
   },
   headerRow: {
     flexDirection: 'row',

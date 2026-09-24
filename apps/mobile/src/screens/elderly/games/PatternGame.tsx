@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform } from 'react-native';
 import { v4 as uuidv4 } from '../../../utils/uuid';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
 import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
@@ -15,8 +15,7 @@ import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
 import { ArrowLeft } from 'lucide-react-native';
 import { useBackNavigation } from '../../../navigation/useBackNavigation';
-
-const SHAPES = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⬛', '🔶', '💎', '🔺'];
+import { CULTURAL_GAME_ITEMS, CulturalItem } from '../../../services/culturalGameItems';
 
 interface PatternGameProps {
   gameId: string;
@@ -26,14 +25,15 @@ interface PatternGameProps {
   onBack: () => void;
 }
 
-function generatePattern(difficulty: number): { sequence: string[]; answer: string; choices: string[] } {
+function generatePattern(difficulty: number): { sequence: CulturalItem[]; answer: CulturalItem; choices: CulturalItem[] } {
   const patternLength = 3 + difficulty; // 4 to 8
-  const numShapes = Math.min(2 + difficulty, SHAPES.length);
-  const availableShapes = SHAPES.slice(0, numShapes);
+  const numItems = Math.min(2 + difficulty, CULTURAL_GAME_ITEMS.length);
+  const availableItems = CULTURAL_GAME_ITEMS.slice(0, numItems);
 
   // Generate a repeating pattern
-  const basePattern = availableShapes.slice(0, Math.min(2 + Math.floor(difficulty / 2), availableShapes.length));
-  const sequence: string[] = [];
+  const baseLen = Math.min(2 + Math.floor(difficulty / 2), availableItems.length);
+  const basePattern = availableItems.slice(0, baseLen);
+  const sequence: CulturalItem[] = [];
   for (let i = 0; i < patternLength; i++) {
     sequence.push(basePattern[i % basePattern.length]);
   }
@@ -41,12 +41,14 @@ function generatePattern(difficulty: number): { sequence: string[]; answer: stri
   const answer = basePattern[patternLength % basePattern.length];
 
   // Generate choices (include the answer)
-  const choiceSet = new Set([answer]);
-  while (choiceSet.size < Math.min(4, availableShapes.length)) {
-    choiceSet.add(availableShapes[Math.floor(Math.random() * availableShapes.length)]);
+  const choiceMap = new Map<string, CulturalItem>();
+  choiceMap.set(answer.id, answer);
+  while (choiceMap.size < Math.min(4, availableItems.length)) {
+    const item = availableItems[Math.floor(Math.random() * availableItems.length)];
+    choiceMap.set(item.id, item);
   }
 
-  return { sequence, answer, choices: Array.from(choiceSet).sort(() => Math.random() - 0.5) };
+  return { sequence, answer, choices: Array.from(choiceMap.values()).sort(() => Math.random() - 0.5) };
 }
 
 export default function PatternGame({ gameId, difficulty: initialDifficulty, targetTimeMs, onComplete, onBack }: PatternGameProps) {
@@ -98,12 +100,12 @@ export default function PatternGame({ gameId, difficulty: initialDifficulty, tar
     setStartTime(Date.now());
   };
 
-  const handleChoice = async (choice: string) => {
-    const isCorrect = choice === pattern.answer;
+  const handleChoice = async (choice: CulturalItem) => {
+    const isCorrect = choice.id === pattern.answer.id;
     const newScore = score + (isCorrect ? 1 : 0);
     const newTotal = total + 1;
 
-    setFeedback(isCorrect ? '✓ Correct!' : `✗ The answer was ${pattern.answer}`);
+    setFeedback(isCorrect ? '✓ Correct! Well done.' : `✗ The next item was ${pattern.answer.label}`);
     setScore(newScore);
     setTotal(newTotal);
 
@@ -287,13 +289,15 @@ export default function PatternGame({ gameId, difficulty: initialDifficulty, tar
 
         {/* Pattern sequence */}
         <View style={styles.sequenceRow}>
-          {pattern.sequence.map((shape, i) => (
+          {pattern.sequence.map((item, i) => (
             <View key={i} style={styles.sequenceItem}>
-              <Text style={styles.sequenceEmoji}>{shape}</Text>
+              <Image source={item.image} style={styles.sequencePhoto} resizeMode="cover" />
+              <Text style={styles.sequenceLabel} numberOfLines={1}>{item.label}</Text>
             </View>
           ))}
           <View style={[styles.sequenceItem, styles.missingItem]}>
             <Text style={styles.questionMark}>?</Text>
+            <Text style={styles.sequenceLabel}>Next?</Text>
           </View>
         </View>
 
@@ -308,7 +312,8 @@ export default function PatternGame({ gameId, difficulty: initialDifficulty, tar
         <View style={styles.choicesRow}>
           {pattern.choices.map((choice, i) => (
             <TouchableOpacity key={i} onPress={() => handleChoice(choice)} style={styles.choiceBtn} activeOpacity={0.7}>
-              <Text style={styles.choiceEmoji}>{choice}</Text>
+              <Image source={choice.image} style={styles.choicePhoto} resizeMode="cover" />
+              <Text style={styles.choiceLabel} numberOfLines={1}>{choice.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -387,12 +392,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sequenceItem: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
+    width: 74,
+    minHeight: 84,
+    borderRadius: 16,
     backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 4,
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
     ...shadows.card,
@@ -401,10 +407,20 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: colors.teal,
     borderStyle: 'dashed',
-    backgroundColor: 'rgba(0, 113, 227, 0.08)',
+    backgroundColor: 'rgba(217, 139, 108, 0.08)',
   },
-  sequenceEmoji: {
-    fontSize: 34,
+  sequencePhoto: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+  },
+  sequenceLabel: {
+    fontFamily: fontFamily.text,
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.textDark,
+    textAlign: 'center',
+    marginTop: 3,
   },
   questionMark: {
     fontSize: 32,
@@ -428,22 +444,34 @@ const styles = StyleSheet.create({
   choicesRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.lg,
+    flexWrap: 'wrap',
+    gap: spacing.md,
     marginBottom: spacing.xl,
   },
   choiceBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
+    width: 82,
+    minHeight: 94,
+    borderRadius: 18,
     backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 6,
     borderWidth: 2,
     borderColor: '#E2E8F0',
     ...shadows.elevated,
   },
-  choiceEmoji: {
-    fontSize: 40,
+  choicePhoto: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+  },
+  choiceLabel: {
+    fontFamily: fontFamily.text,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textDark,
+    textAlign: 'center',
+    marginTop: 4,
   },
   scoreText: {
     ...typography.elderly.caption,

@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
 import { v4 as uuidv4 } from '../../../utils/uuid';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
 import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
@@ -15,18 +15,26 @@ import { api } from '../../../services/api';
 import { offlineStore } from '../../../services/offlineStore';
 import { ArrowLeft } from 'lucide-react-native';
 import { useBackNavigation } from '../../../navigation/useBackNavigation';
+import { CULTURAL_GAME_ITEMS, CulturalItem } from '../../../services/culturalGameItems';
 
-const ODD_ONE_OUT_SETS = [
-  { majority: '🍎', odd: '🍊', label: 'Find the orange' },
-  { majority: '🔵', odd: '🟢', label: 'Find the green circle' },
-  { majority: '🌸', odd: '🌺', label: 'Find the different flower' },
-  { majority: '⭐', odd: '🌙', label: 'Find the moon' },
-  { majority: '🐦', odd: '🦅', label: 'Find the eagle' },
-  { majority: '🍵', odd: '☕', label: 'Find the coffee' },
-  { majority: '🏠', odd: '🏡', label: 'Find the house with garden' },
-  { majority: '🎋', odd: '🌿', label: 'Find the leaf' },
-  { majority: '🐟', odd: '🐠', label: 'Find the tropical fish' },
-  { majority: '🔴', odd: '🟠', label: 'Find the orange circle' },
+interface OddSet {
+  majority: CulturalItem;
+  odd: CulturalItem;
+  label: string;
+}
+
+const itemById = new Map(CULTURAL_GAME_ITEMS.map((item) => [item.id, item]));
+
+const CULTURAL_ODD_SETS: OddSet[] = [
+  { majority: itemById.get('tea_leaves')!, odd: itemById.get('river_fish')!, label: 'Find the River Fish' },
+  { majority: itemById.get('brass_diya')!, odd: itemById.get('clay_pot')!, label: 'Find the Clay Pot' },
+  { majority: itemById.get('marigold')!, odd: itemById.get('lotus_flower')!, label: 'Find the Lotus Flower' },
+  { majority: itemById.get('bamboo_basket')!, odd: itemById.get('gamosa')!, label: 'Find the Gamosa' },
+  { majority: itemById.get('red_apple')!, odd: itemById.get('tea_leaves')!, label: 'Find the Tea Leaves' },
+  { majority: itemById.get('clay_pot')!, odd: itemById.get('brass_diya')!, label: 'Find the Brass Diya' },
+  { majority: itemById.get('lotus_flower')!, odd: itemById.get('marigold')!, label: 'Find the Marigold' },
+  { majority: itemById.get('river_fish')!, odd: itemById.get('bamboo_basket')!, label: 'Find the Bamboo Basket' },
+  { majority: itemById.get('gamosa')!, odd: itemById.get('clay_pot')!, label: 'Find the Clay Pot' },
 ];
 
 const GRID_SIZE: Record<number, number> = { 1: 4, 2: 6, 3: 9, 4: 12, 5: 16 };
@@ -51,8 +59,8 @@ export default function AttentionGame({ gameId, difficulty: initialDifficulty, t
 
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
-  const [currentSet, setCurrentSet] = useState(ODD_ONE_OUT_SETS[0]);
-  const [grid, setGrid] = useState<{ emoji: string; isOdd: boolean }[]>([]);
+  const [currentSet, setCurrentSet] = useState<OddSet>(CULTURAL_ODD_SETS[0]);
+  const [grid, setGrid] = useState<{ item: CulturalItem; isOdd: boolean }[]>([]);
   const [oddIndex, setOddIndex] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [startTime, setStartTime] = useState(Date.now());
@@ -90,15 +98,15 @@ export default function AttentionGame({ gameId, difficulty: initialDifficulty, t
   };
 
   const generateRound = () => {
-    const setIndex = (round + Math.floor(Math.random() * ODD_ONE_OUT_SETS.length)) % ODD_ONE_OUT_SETS.length;
-    const set = ODD_ONE_OUT_SETS[setIndex];
+    const setIndex = (round + Math.floor(Math.random() * CULTURAL_ODD_SETS.length)) % CULTURAL_ODD_SETS.length;
+    const set = CULTURAL_ODD_SETS[setIndex];
     setCurrentSet(set);
 
     const oddPos = Math.floor(Math.random() * gridSize);
     setOddIndex(oddPos);
 
     const newGrid = Array.from({ length: gridSize }, (_, i) => ({
-      emoji: i === oddPos ? set.odd : set.majority,
+      item: i === oddPos ? set.odd : set.majority,
       isOdd: i === oddPos,
     }));
     setGrid(newGrid);
@@ -317,7 +325,8 @@ export default function AttentionGame({ gameId, difficulty: initialDifficulty, t
               activeOpacity={0.7}
               style={[styles.cell, { width: `${Math.floor(90 / cols)}%` }]}
             >
-              <Text style={styles.cellEmoji}>{cell.emoji}</Text>
+              <Image source={cell.item.image} style={styles.cellPhoto} resizeMode="cover" />
+              <Text style={styles.cellLabel} numberOfLines={1}>{cell.item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -407,19 +416,30 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cell: {
-    aspectRatio: 1,
-    borderRadius: 20,
+    aspectRatio: 0.9,
+    borderRadius: 16,
     backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     margin: spacing.xs,
-    minHeight: 76,
+    padding: 6,
+    minHeight: 82,
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
     ...shadows.card,
   },
-  cellEmoji: {
-    fontSize: 38,
+  cellPhoto: {
+    width: '84%',
+    height: '66%',
+    borderRadius: 10,
+  },
+  cellLabel: {
+    fontFamily: fontFamily.text,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textDark,
+    textAlign: 'center',
+    marginTop: 3,
   },
   scoreText: {
     ...typography.elderly.caption,

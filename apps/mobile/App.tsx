@@ -20,10 +20,25 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
+      html, body, #root {
+        height: 100%;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        background-color: #F7F1E5;
+      }
+      @supports (-webkit-touch-callout: none) {
+        html, body, #root {
+          height: -webkit-fill-available;
+        }
+      }
       * {
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        box-sizing: border-box;
       }
       button, input, textarea, select {
         font-family: inherit !important;

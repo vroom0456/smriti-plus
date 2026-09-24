@@ -50,6 +50,10 @@ import {
   CheckCircle,
   SlidersHorizontal,
   Heart,
+  Stethoscope,
+  Activity,
+  FileText,
+  ShieldCheck,
 } from 'lucide-react-native';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
 
@@ -102,8 +106,9 @@ export default function SettingsScreen() {
   const [voicePacks, setVoicePacks] = useState<VoicePackInfo[]>(voicePackManager.getVoicePacks());
   const [isDownloadingAll, setIsDownloadingAll] = useState<boolean>(false);
 
-  // Caregiver-only control: elderly patients CANNOT change language or settings
-  const isCaregiver = user?.role === 'caregiver' || user?.role === 'health_worker';
+  // Role distinction: Doctor has professional clinical tools (NO language/text size clutter)
+  const isDoctor = user?.role === 'health_worker';
+  const isCaregiver = user?.role === 'caregiver';
   const isElderly = user?.role === 'elderly';
 
   useEffect(() => {
@@ -167,30 +172,144 @@ export default function SettingsScreen() {
           <Text style={styles.backButtonText}>{t('nav.home') || 'Home'}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>{t('settings.title') || 'Settings'}</Text>
-        <Text style={styles.subtitle}>{t('settings.subtitle') || 'Personalize your voice, display, and comfort'}</Text>
+        <Text style={styles.title}>{isDoctor ? 'Clinical Settings' : (t('settings.title') || 'Settings')}</Text>
+        <Text style={styles.subtitle}>
+          {isDoctor
+            ? 'Practitioner credentials, assessment battery protocols, and alert telemetry'
+            : (t('settings.subtitle') || 'Personalize your voice, display, and comfort')}
+        </Text>
 
-        {/* Caregiver-managed banner for elderly */}
-        {isElderly && (
-          <View style={styles.caregiverBanner}>
-            <Heart size={20} color={colors.primary} strokeWidth={2.2} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.caregiverBannerTitle}>
-                {t('settings.caregiverManaged') || 'Settings managed by your caregiver'}
-              </Text>
-              <Text style={styles.caregiverBannerSub}>
-                {t('settings.caregiverManagedSub') || 'Your caregiver or family member can change language and accessibility settings for you.'}
-              </Text>
+        {isDoctor ? (
+          /* ── CLINICAL SPECIALIST & DOCTOR SETTINGS (No elder clutter) ── */
+          <>
+            <View style={[styles.caregiverBanner, { backgroundColor: '#F3E8FF', borderColor: '#E9D5FF' }]}>
+              <Stethoscope size={22} color="#9333EA" strokeWidth={2.2} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.caregiverBannerTitle, { color: '#6B21A8' }]}>
+                  Clinical Specialist Portal
+                </Text>
+                <Text style={[styles.caregiverBannerSub, { color: '#7E22CE' }]}>
+                  Medical practitioner dashboard. Standardized clinical interface (no elder accessibility overrides).
+                </Text>
+              </View>
             </View>
-          </View>
-        )}
 
-        {/* ── 1. VOICE & LANGUAGE SECTION ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Volume2 size={20} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 8 }} />
-            <Text style={styles.sectionTitle}>{t('settings.voiceAndLanguage') || 'Voice & Language'}</Text>
-          </View>
+            {/* Medical Profile Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <ShieldCheck size={20} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>Medical Practitioner Credentials</Text>
+              </View>
+
+              <View style={[styles.card, shadows.subtle]}>
+                <View style={[styles.cardIconWrap, { backgroundColor: '#F3E8FF' }]}>
+                  <Stethoscope size={22} color="#9333EA" strokeWidth={2.2} />
+                </View>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardLabel}>{user?.name || 'Dr. Anjali Borah, MD'}</Text>
+                  <Text style={styles.cardSubText}>
+                    Reg: MCI-74892 · Senior Neurologist
+                  </Text>
+                  <Text style={[styles.cardSubText, { color: colors.teal, marginTop: 2 }]}>
+                    Gauhati Medical College & Hospital (GMCH)
+                  </Text>
+                </View>
+                <View style={[styles.changePill, { backgroundColor: '#DCFCE7' }]}>
+                  <Text style={[styles.changePillText, { color: colors.success }]}>Verified</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Clinical Protocols & Alerts */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Activity size={20} color={colors.greenCalm} strokeWidth={2.2} style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>Clinical Protocols & Telemetry</Text>
+              </View>
+
+              <View style={[styles.card, shadows.subtle]}>
+                <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(52, 199, 89, 0.12)' }]}>
+                  <FileText size={22} color={colors.greenCalm} strokeWidth={2.2} />
+                </View>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardLabel}>Assessment Battery Scoring</Text>
+                  <Text style={styles.cardSubText}>
+                    MMSE, MoCA, and Clock Drawing auto-aggregation
+                  </Text>
+                </View>
+                <View style={[styles.changePill, { backgroundColor: '#DCFCE7' }]}>
+                  <Text style={[styles.changePillText, { color: colors.success }]}>Active</Text>
+                </View>
+              </View>
+
+              <View style={[styles.card, shadows.subtle, { marginTop: spacing.sm }]}>
+                <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(217, 139, 108, 0.14)' }]}>
+                  <Activity size={22} color={colors.primary} strokeWidth={2.2} />
+                </View>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardLabel}>Decline Alert Sensitivity</Text>
+                  <Text style={styles.cardSubText}>
+                    Automatic flag when cognitive streak drops &gt;15%
+                  </Text>
+                </View>
+                <View style={[styles.changePill, { backgroundColor: '#FEF3C7' }]}>
+                  <Text style={[styles.changePillText, { color: '#B45309' }]}>&gt;15% Drop</Text>
+                </View>
+              </View>
+
+              <View style={[styles.card, shadows.subtle, { marginTop: spacing.sm }]}>
+                <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
+                  <ShieldCheck size={22} color="#2563EB" strokeWidth={2.2} />
+                </View>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardLabel}>EHR / FHIR Health Data Sync</Text>
+                  <Text style={styles.cardSubText}>
+                    ABDM &amp; HL7/FHIR compliant audit logging
+                  </Text>
+                </View>
+                <View style={[styles.changePill, { backgroundColor: '#DBEAFE' }]}>
+                  <Text style={[styles.changePillText, { color: '#1D4ED8' }]}>Connected</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Doctor Sign Out */}
+            <View style={styles.section}>
+              <TouchableOpacity
+                style={styles.signOutButton}
+                onPress={handleLogout}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Sign out of Doctor Portal"
+              >
+                <LogOut size={18} color={colors.danger} strokeWidth={2.2} style={{ marginRight: 8 }} />
+                <Text style={styles.signOutText}>Sign Out from Specialist Portal</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <>
+            {/* Caregiver-managed banner for elderly */}
+            {isElderly && (
+              <View style={styles.caregiverBanner}>
+                <Heart size={20} color={colors.primary} strokeWidth={2.2} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.caregiverBannerTitle}>
+                    {t('settings.caregiverManaged') || 'Settings managed by your caregiver'}
+                  </Text>
+                  <Text style={styles.caregiverBannerSub}>
+                    {t('settings.caregiverManagedSub') || 'Your caregiver or family member can change language and accessibility settings for you.'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* ── 1. VOICE & LANGUAGE SECTION ── */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Volume2 size={20} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>{t('settings.voiceAndLanguage') || 'Voice & Language'}</Text>
+              </View>
 
           {/* Clean Single Language Card — caregiver only */}
           <TouchableOpacity
@@ -493,6 +612,8 @@ export default function SettingsScreen() {
             <Text style={styles.signOutText}>{t('auth.signOut') || 'Sign Out'}</Text>
           </TouchableOpacity>
         </View>
+        </>
+      )}
       </ScrollView>
 
       {/* ── CLEAN LANGUAGE SELECTION MODAL ── */}

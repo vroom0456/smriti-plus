@@ -13,6 +13,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Image,
   Platform,
 } from 'react-native';
 import { v4 as uuidv4 } from '../../../utils/uuid';
@@ -24,27 +25,12 @@ import { offlineStore } from '../../../services/offlineStore';
 import { defaultVoiceOrchestrator } from '../../../services/voice/VoiceOrchestrator';
 import { ArrowLeft, Eye } from 'lucide-react-native';
 import { useBackNavigation } from '../../../navigation/useBackNavigation';
-
-// NER-themed card items (culturally relevant)
-const CARD_ITEMS = [
-  { id: 'tea', emoji: '🍵', label: 'Tea' },
-  { id: 'lotus', emoji: '🪷', label: 'Lotus' },
-  { id: 'rice', emoji: '🍚', label: 'Rice' },
-  { id: 'mountain', emoji: '⛰️', label: 'Mountain' },
-  { id: 'river', emoji: '🏞️', label: 'River' },
-  { id: 'bamboo', emoji: '🎋', label: 'Bamboo' },
-  { id: 'drum', emoji: '🥁', label: 'Drum' },
-  { id: 'bird', emoji: '🐦', label: 'Bird' },
-  { id: 'flower', emoji: '🌺', label: 'Flower' },
-  { id: 'fish', emoji: '🐟', label: 'Fish' },
-  { id: 'sun', emoji: '☀️', label: 'Sun' },
-  { id: 'rain', emoji: '🌧️', label: 'Rain' },
-];
+import { CULTURAL_GAME_ITEMS } from '../../../services/culturalGameItems';
 
 interface Card {
   id: string;
   pairId: string;
-  emoji: string;
+  image: any;
   label: string;
   isFlipped: boolean;
   isMatched: boolean;
@@ -55,7 +41,7 @@ const DIFFICULTY_PAIRS: Record<number, number> = {
   2: 4,  // 8 cards (4x2)
   3: 6,  // 12 cards (4x3)
   4: 8,  // 16 cards (4x4)
-  5: 10, // 20 cards (5x4)
+  5: 9,  // 18 cards
 };
 
 interface MemoryMatchingGameProps {
@@ -134,7 +120,7 @@ export default function MemoryMatchingGame({
 
   // Generate cards
   useEffect(() => {
-    const shuffled = [...CARD_ITEMS]
+    const shuffled = [...CULTURAL_GAME_ITEMS]
       .sort(() => Math.random() - 0.5)
       .slice(0, numPairs);
 
@@ -142,8 +128,8 @@ export default function MemoryMatchingGame({
     shuffled.forEach((item) => {
       const pairId = uuidv4();
       cardPairs.push(
-        { id: uuidv4(), pairId, emoji: item.emoji, label: item.label, isFlipped: false, isMatched: false },
-        { id: uuidv4(), pairId, emoji: item.emoji, label: item.label, isFlipped: false, isMatched: false },
+        { id: uuidv4(), pairId, image: item.image, label: item.label, isFlipped: false, isMatched: false },
+        { id: uuidv4(), pairId, image: item.image, label: item.label, isFlipped: false, isMatched: false },
       );
     });
 
@@ -426,8 +412,8 @@ export default function MemoryMatchingGame({
             >
               {card.isFlipped || card.isMatched ? (
                 <View style={styles.cardContent}>
-                  <Text style={styles.cardEmoji}>{card.emoji}</Text>
-                  <Text style={styles.cardLabel}>{card.label}</Text>
+                  <Image source={card.image} style={styles.cardPhoto} resizeMode="cover" />
+                  <Text style={styles.cardLabel} numberOfLines={1}>{card.label}</Text>
                 </View>
               ) : (
                 <Text style={styles.cardBack}>?</Text>
@@ -539,16 +525,21 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
   },
-  cardEmoji: {
-    fontSize: 34,
+  cardPhoto: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    marginBottom: 4,
   },
   cardLabel: {
     ...typography.elderly.caption,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.textDark,
-    marginTop: 3,
+    marginTop: 2,
     textAlign: 'center',
   },
   cardBack: {

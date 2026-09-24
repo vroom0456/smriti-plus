@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: spacing.lg,
     paddingTop: 54,
-    paddingBottom: spacing.xxl,
+    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   },
   header: {
     marginBottom: spacing.lg,
