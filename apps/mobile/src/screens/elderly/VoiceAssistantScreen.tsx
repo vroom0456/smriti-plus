@@ -1,11 +1,17 @@
 /**
- * SMRITI+ — Voice Assistant Screen (Production)
+ * SMRITI+ — Voice Assistant Screen
  *
- * Cross-platform: Web Speech API on browsers, expo-speech TTS + text fallback on native.
- * 10 Indian regional languages, warm cream palette, full i18n.
+ * A warm, interactive, bilingual voice interface tuned for elderly users.
+ * Features:
+ *  - Animated multi-bar sound-wave visualizer
+ *  - Conversational chat bubble history with replay buttons
+ *  - Language-specific greeting, honorifics and quick-phrase chips
+ *  - 1-tap confirmation card for actions
+ *  - Persona/mood control panel (developer/judge panel)
+ *  - Proper regional voice via SpeechSynthesizer
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,21 +24,25 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import * as Speech from 'expo-speech';
-import { colors, spacing, borderRadius, fontFamily, shadows } from '../../theme/tokens';
-import { ArrowLeft, RotateCcw, Send, Mic, MicOff, Volume2 } from 'lucide-react-native';
+import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
+import { ArrowLeft, RotateCcw, Send, Mic } from 'lucide-react-native';
 import {
   voiceIntelligence,
   VoiceState,
   CanonicalIntent,
   adaptivePersonaEngine,
 } from '../../services/voiceIntelligence';
+import { PersonaType, HonorificType } from '../../services/adaptivePersonaEngine';
 import { languageRegistry } from '../../services/languageRegistry';
 import { offlineStore } from '../../services/offlineStore';
+import { VoiceTools, ToolResult } from '../../services/voiceTools';
+import { LanguageProfileManager } from '../../services/languageProfiles';
 import { defaultVoiceOrchestrator } from '../../services/voice/VoiceOrchestrator';
 import { useAuthStore } from '../../state/authStore';
 import { useTranslation, getLanguage } from '../../i18n';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ChatTurn {
   id: string;
@@ -43,14 +53,18 @@ interface ChatTurn {
   intentLabel?: string;
 }
 
+// ─── Language-specific content maps ──────────────────────────────────────────
+
 const LANG_GREETINGS: Record<string, string> = {
   te: 'నమస్కారం! నేను మీ స్మృతి వాయిస్ అసిస్టెంట్‌ని. ఈరోజు మీకు ఎలా సహాయపడగలను?',
   hi: 'नमस्ते! मैं आपकी स्मृति वॉयस असिस्टेंट हूँ। आज मैं आपकी क्या सहायता कर सकती हूँ?',
   as: 'নমস্কাৰ! মই আপোনাৰ স্মৃতি ভইচ এচিষ্টেণ্ট। আজি মই আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?',
   bn: 'নমস্কার! আমি আপনার স্মৃতি ভয়েস সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?',
   ta: 'வணக்கம்! நான் உங்கள் ஸ்மிருதி குரல் உதவியாளர். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?',
-  bodo: 'खुलुमबाय! आं नोंथांनि SMRITI राव हेफाजाबगिरि।',
-  en: 'Hello! I am your SMRITI+ voice assistant. How can I help you today?',
+  kn: 'ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಸ್ಮೃತಿ ಧ್ವನಿ ಸಹಾಯಕ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?',
+  ml: 'നമസ്കാരം! ഞാൻ നിങ്ങളുടെ സ്മൃതി വോയ്സ് അസിസ്റ്റന്റാണ്. ഇന്ന് ഞാൻ നിങ്ങളെ എങ്ങനെ സഹായിക്കട്ടെ?',
+  mr: 'नमस्कार! मी तुमची स्मृती व्हॉइस असिस्टंट आहे. आज मी तुम्हाला कशी मदत करू?',
+  en: 'Hello! I am your SMRITI voice assistant. How can I help you today?',
 };
 
 const LANG_LISTEN_PROMPT: Record<string, string> = {
@@ -59,126 +73,144 @@ const LANG_LISTEN_PROMPT: Record<string, string> = {
   as: 'মই শুনি আছোঁ।',
   bn: 'আমি শুনছি, বলুন।',
   ta: 'சொல்லுங்கள், நான் கேட்கிறேன்.',
-  bodo: 'आं खोनासं गासिनो, बुं।',
-  en: 'I am listening. Please speak or type below.',
+  kn: 'ಹೇಳಿ, ನಾನು ಕೇಳುತ್ತಿದ್ದೇನೆ.',
+  ml: 'പറയൂ, ഞാൻ കേൾക്കുന്നു.',
+  mr: 'सांगा, मी ऐकतो आहे.',
+  en: 'I am listening. Please speak.',
 };
 
-const LANG_STATE: Record<string, Record<VoiceState, string>> = {
-  te: { IDLE: 'నొక్కి మాట్లాడండి', LISTENING: 'వింటున్నాను...', PROCESSING: 'అర్థం చేసుకుంటున్నాను...', CONFIRMING: 'ధృవీకరించండి', SPEAKING: 'SMRITI+ మాట్లాడుతోంది...', ERROR: 'తిరిగి ప్రయత్నించండి', OFFLINE: 'నెట్‌వర్క్ లేదు' },
-  hi: { IDLE: 'टैप करें', LISTENING: 'सुन रहा हूँ...', PROCESSING: 'समझ रहा हूँ...', CONFIRMING: 'पुष्टि करें', SPEAKING: 'SMRITI+ बोल रहा है...', ERROR: 'दोबारा कोशिश करें', OFFLINE: 'नेटवर्क नहीं' },
-  as: { IDLE: 'টেপ কৰক', LISTENING: 'শুনি আছোঁ...', PROCESSING: 'বুজি পাইছোঁ...', CONFIRMING: 'নিশ্চিত কৰক', SPEAKING: 'SMRITI+ কথা কৈ আছে...', ERROR: 'পুনৰ চেষ্টা', OFFLINE: 'নেটৱৰ্ক নাই' },
-  bn: { IDLE: 'স্পর্শ করুন', LISTENING: 'শুনছি...', PROCESSING: 'বুঝছি...', CONFIRMING: 'নিশ্চিত করুন', SPEAKING: 'SMRITI+ বলছে...', ERROR: 'আবার চেষ্টা', OFFLINE: 'নেটওয়ার্ক নেই' },
-  ta: { IDLE: 'தட்டவும்', LISTENING: 'கேட்கிறேன்...', PROCESSING: 'புரிகிறது...', CONFIRMING: 'உறுதிப்படுத்தவும்', SPEAKING: 'SMRITI+ பேசுகிறது...', ERROR: 'மீண்டும் முயற்சி', OFFLINE: 'இணைப்பு இல்லை' },
-  bodo: { IDLE: 'रायलानो थु', LISTENING: 'खोनासं गासिनो...', PROCESSING: 'बुजि गासिनो...', CONFIRMING: 'थार खालाम', SPEAKING: 'SMRITI+ बुंगासिनो...', ERROR: 'फिन नाजा', OFFLINE: 'नेटवर्क गैया' },
-  en: { IDLE: 'Tap to Speak', LISTENING: 'Listening...', PROCESSING: 'Understanding...', CONFIRMING: 'Please Confirm', SPEAKING: 'SMRITI+ speaking...', ERROR: 'Please try again', OFFLINE: 'No network' },
+const LANG_STATE_LABELS: Record<string, Record<VoiceState, string>> = {
+  te: {
+    IDLE: 'నొక్కి మాట్లాడండి',
+    LISTENING: 'వింటున్నాను...',
+    PROCESSING: 'అర్థం చేసుకుంటున్నాను...',
+    CONFIRMING: 'దయచేసి ధృవీకరించండి',
+    SPEAKING: 'SMRITI+ మాట్లాడుతోంది...',
+    ERROR: 'తిరిగి ప్రయత్నించండి',
+    OFFLINE: 'నెట్‌వర్క్ లేదు',
+  },
+  hi: {
+    IDLE: 'बात करने के लिए टैप करें',
+    LISTENING: 'सुन रहा हूँ...',
+    PROCESSING: 'समझ रहा हूँ...',
+    CONFIRMING: 'कृपया पुष्टि करें',
+    SPEAKING: 'SMRITI+ बोल रहा है...',
+    ERROR: 'दोबारा कोशिश करें',
+    OFFLINE: 'नेटवर्क नहीं है',
+  },
+  as: {
+    IDLE: 'কথা ক\'বলৈ টেপ কৰক',
+    LISTENING: 'শুনি আছোঁ...',
+    PROCESSING: 'বুজি পাইছোঁ...',
+    CONFIRMING: 'নিশ্চিত কৰক',
+    SPEAKING: 'SMRITI+ কথা কৈ আছে...',
+    ERROR: 'পুনৰ চেষ্টা কৰক',
+    OFFLINE: 'নেটৱৰ্ক নাই',
+  },
+  en: {
+    IDLE: 'Tap to Speak',
+    LISTENING: 'Listening...',
+    PROCESSING: 'Understanding...',
+    CONFIRMING: 'Please Confirm',
+    SPEAKING: 'SMRITI+ speaking...',
+    ERROR: 'Please try again',
+    OFFLINE: 'No network',
+  },
 };
 
-const CHIPS: Record<string, Array<{ tag: string; phrase: string; spoken: string }>> = {
+// Quick phrase chips shown per language
+const QUICK_PHRASE_CHIPS: Record<string, Array<{ tag: string; phrase: string; spoken: string }>> = {
   te: [
-    { tag: '📋 షెడ్యూల్', phrase: 'ఈ రోజు షెడ్యూల్', spoken: 'నా ఈ రోజు షెడ్యూల్ ఏమిటి?' },
-    { tag: '💊 మందు', phrase: 'తర్వాతి మందు', spoken: 'నా తర్వాతి మందు ఎప్పుడు?' },
-    { tag: '🌬️ శ్వాస', phrase: 'శ్వాస వ్యాయామం', spoken: 'నాకు ప్రశాంత శ్వాస వ్యాయామం చెప్పు' },
-    { tag: '🧩 ఆట', phrase: 'మెదడు ఆట', spoken: 'ఒక మెదడు ఆట చెప్పు' },
-    { tag: '💧 నీళ్ళు', phrase: 'నీళ్ళు తాగానా?', spoken: 'ఈ రోజు నేను నీళ్ళు తాగానా?' },
-    { tag: '🖼️ జ్ఞాపకాలు', phrase: 'ఫ్యామిలీ జ్ఞాపకాలు', spoken: 'ఫ్యామిలీ జ్ఞాపకాలు చూపించు' },
+    { tag: '📋 షెడ్యూల్', phrase: 'ఈ రోజు షెడ్యూల్ ఏమిటి?', spoken: 'నా ఈ రోజు షెడ్యూల్ ఏమిటి?' },
+    { tag: '💊 తర్వాతి మందు', phrase: 'నా తర్వాతి మందు ఎప్పుడు?', spoken: 'నా తర్వాతి మందు ఎప్పుడు?' },
+    { tag: '🌬️ శ్వాస', phrase: 'నాకు ప్రశాంత శ్వాస వ్యాయామం చెప్పు', spoken: 'నాకు ప్రశాంత శ్వాస వ్యాయామం చెప్పు' },
+    { tag: '🧩 పొడుపు కథ', phrase: 'ఒక సరదా పొడుపు కథ చెప్పు', spoken: 'ఒక సరదా పొడుపు కథ చెప్పు' },
+    { tag: '💧 నీళ్ళు', phrase: 'ఈ రోజు నీళ్ళు తాగానా?', spoken: 'ఈ రోజు నేను నీళ్ళు తాగానా?' },
+    { tag: '🖼️ జ్ఞాపకాలు', phrase: 'ఫ్యామిలీ జ్ఞాపకాలు చూపించు', spoken: 'ఫ్యామిలీ జ్ఞాపకాలు చూపించు' },
+    { tag: '🎮 ఆట', phrase: 'ఒక మెదడు ఆట చెప్పు', spoken: 'ఒక మెదడు ఆట చెప్పు' },
+    { tag: '🛡️ రక్షణ', phrase: 'రెండు మాత్రలు వేసుకోవచ్చా?', spoken: 'రెండు మాత్రలు ఒకేసారి వేసుకోవచ్చా?' },
+    { tag: '📞 ఫ్యామిలీ', phrase: 'Amma ki call cheyyi', spoken: 'Amma ki call cheyyi' },
     { tag: '🔄 మళ్ళీ', phrase: 'మళ్ళీ చెప్పు', spoken: 'మళ్ళీ చెప్పు' },
+    { tag: '🛑 ఆపు', phrase: 'ఆపు', spoken: 'ఆపు' },
   ],
   hi: [
-    { tag: '📋 कार्यक्रम', phrase: 'आज का कार्यक्रम', spoken: 'मेरा आज का कार्यक्रम क्या है?' },
-    { tag: '💊 दवा', phrase: 'अगली दवाई', spoken: 'मेरी अगली दवाई कब है?' },
-    { tag: '🌬️ सांस', phrase: 'सांस की कसरत', spoken: 'मुझे शांति से सांस लेने की कसरत कराओ' },
-    { tag: '🧩 खेल', phrase: 'दिमागी खेल', spoken: 'दिमागी खेल बताओ' },
-    { tag: '💧 पानी', phrase: 'पानी पिया?', spoken: 'क्या मैंने आज पानी पिया?' },
-    { tag: '🖼️ यादें', phrase: 'परिवार की यादें', spoken: 'परिवार की यादें दिखाओ' },
+    { tag: '📋 कार्यक्रम', phrase: 'आज का कार्यक्रम क्या है?', spoken: 'मेरा आज का कार्यक्रम क्या है?' },
+    { tag: '💊 अगली दवा', phrase: 'मेरी अगली दवाई कब है?', spoken: 'मेरी अगली दवाई कब है?' },
+    { tag: '🌬️ सांस', phrase: 'शांति से सांस लेने की कसरत', spoken: 'मुझे शांति से सांस लेने की कसरत कराओ' },
+    { tag: '🧩 पहेली', phrase: 'एक मजेदार पहेली पूछो', spoken: 'एक मजेदार पहेली पूछो' },
+    { tag: '💧 पानी', phrase: 'क्या मैंने पानी पिया?', spoken: 'क्या मैंने आज पानी पिया?' },
+    { tag: '🖼️ यादें', phrase: 'परिवार की यादें दिखाओ', spoken: 'परिवार की यादें दिखाओ' },
+    { tag: '🎮 खेल', phrase: 'दिमागी खेल बताओ', spoken: 'दिमागी खेल बताओ' },
+    { tag: '🛡️ सुरक्षा', phrase: 'क्या दो गोली ले सकता हूँ?', spoken: 'क्या मैं दो गोली ले सकता हूँ?' },
+    { tag: '📞 परिवार', phrase: 'बेटे को call karwao', spoken: 'बेटे को फ़ोन करवाओ' },
     { tag: '🔄 दोहरा', phrase: 'फिर से बोलो', spoken: 'फिर से बोलो' },
+    { tag: '🛑 रुको', phrase: 'रुको', spoken: 'रुको' },
   ],
   as: [
-    { tag: '📋 কাৰ্যসূচী', phrase: 'আজি কি কাম', spoken: 'আজি মোৰ কি কি কাম আছে?' },
-    { tag: '💊 দৰব', phrase: 'পিছৰ দৰব', spoken: 'মোৰ পিছৰ দৰব কেতিয়া খাব লাগে?' },
-    { tag: '🌬️ উশাহ', phrase: 'উশাহ অভ্যাস', spoken: 'মোক শান্তিৰে উশাহ লোৱাৰ অভ্যাস কৰোৱা' },
-    { tag: '🧩 খেল', phrase: 'মগজুৰ খেল', spoken: 'এটা মগজুৰ খেল কোৱা' },
-    { tag: '💧 পানী', phrase: 'পানী খালোঁনে', spoken: 'মই আজি পানী খালোঁনে?' },
-    { tag: '🖼️ স্মৃতি', phrase: 'পৰিয়ালৰ স্মৃতি', spoken: 'পৰিয়ালৰ স্মৃতি দেখুওৱা' },
+    { tag: '📋 কাৰ্যসূচী', phrase: 'আজি মোৰ কি কি কাম আছে?', spoken: 'আজি মোৰ কি কি কাম আছে?' },
+    { tag: '💊 পিছৰ দৰব', phrase: 'মোৰ পিছৰ দৰব কেতিয়া?', spoken: 'মোৰ পিছৰ দৰব কেতিয়া খাব লাগে?' },
+    { tag: '🌬️ উশাহ', phrase: 'শান্তিৰে উশাহ লোৱা অভ্যাস কৰোৱা', spoken: 'মোক শান্তিৰে উশাহ লোৱাৰ অভ্যাস কৰোৱা' },
+    { tag: '🧩 সাঁথৰ', phrase: 'এটা ধেমেলীয়া সাঁথৰ সোধা', spoken: 'মোক এটা ধেমেলীয়া সাঁথৰ সোধা' },
+    { tag: '💧 পানী', phrase: 'মই আজি পানী খালোঁনে?', spoken: 'মই আজি পানী খালোঁনে?' },
+    { tag: '🖼️ স্মৃতি', phrase: 'পৰিয়ালৰ স্মৃতি দেখুওৱা', spoken: 'পৰিয়ালৰ স্মৃতি দেখুওৱা' },
+    { tag: '🎮 খেল', phrase: 'এটা মগজুৰ খেল কোৱা', spoken: 'এটা মগজুৰ খেল কোৱা' },
+    { tag: '🛡️ নিৰাপত্তা', phrase: 'দৰবৰ মাত্ৰা বঢ়াব পাৰোঁনে?', spoken: 'দৰবৰ মাত্ৰা বঢ়াব পাৰোঁনে?' },
+    { tag: '📞 পৰিয়াল', phrase: 'ছোৱালীক ফোন কৰোৱা', spoken: 'ছোৱালীক ফোন কৰোৱা' },
     { tag: '🔄 পুনৰ', phrase: 'পুনৰ কোৱা', spoken: 'পুনৰ কোৱা' },
+    { tag: '🛑 ৰখোৱা', phrase: 'ৰখোৱা', spoken: 'ৰখোৱা' },
   ],
   en: [
-    { tag: '📋 Schedule', phrase: 'My schedule today', spoken: 'What is my schedule today?' },
-    { tag: '💊 Medicine', phrase: 'Next medicine', spoken: 'When is my next medicine?' },
-    { tag: '🌬️ Breathe', phrase: 'Breathing exercise', spoken: 'Help me relax with a breathing exercise' },
-    { tag: '🧩 Game', phrase: 'Brain game', spoken: 'Recommend a brain game for me' },
-    { tag: '💧 Water', phrase: 'Drink water?', spoken: 'Did I drink water today?' },
-    { tag: '🖼️ Memories', phrase: 'Family memories', spoken: 'Show my family memories' },
-    { tag: '🔄 Repeat', phrase: 'Say again', spoken: 'Say that again' },
+    { tag: '📋 Schedule', phrase: 'What is my schedule today?', spoken: 'What is my schedule today?' },
+    { tag: '💊 Next Med', phrase: 'When is my next medicine?', spoken: 'When is my next medicine?' },
+    { tag: '🌬️ Breathe', phrase: 'Help me relax with breathing', spoken: 'Help me relax with a breathing exercise' },
+    { tag: '🧩 Riddle', phrase: 'Tell me a fun riddle', spoken: 'Tell me a fun riddle' },
+    { tag: '💧 Water', phrase: 'Did I drink water today?', spoken: 'Did I drink water today?' },
+    { tag: '🖼️ Memories', phrase: 'Show my family memories', spoken: 'Show my family memories' },
+    { tag: '🎮 Game', phrase: 'Recommend a brain game', spoken: 'Recommend a brain game for me' },
+    { tag: '🛡️ Safety', phrase: 'Can I take two pills instead of one?', spoken: 'Can I take two pills instead of one?' },
+    { tag: '📞 Family', phrase: 'Call daughter please', spoken: 'Please call my daughter' },
+    { tag: '🔄 Repeat', phrase: 'Say that again', spoken: 'Say that again' },
+    { tag: '🛑 Stop', phrase: 'Stop', spoken: 'Stop' },
   ],
 };
 
-const BCP47: Record<string, string> = {
-  te: 'te-IN', hi: 'hi-IN', as: 'as-IN', bn: 'bn-IN',
-  ta: 'ta-IN', bodo: 'as-IN', mni: 'bn-IN', kha: 'en-IN',
-  grt: 'en-IN', lus: 'en-IN', en: 'en-IN',
-};
+function getLangChips(lang: string) {
+  return QUICK_PHRASE_CHIPS[lang] || QUICK_PHRASE_CHIPS['en'];
+}
 
-function getChips(lang: string) { return CHIPS[lang] || CHIPS['en']; }
 function getStateLabel(lang: string, state: VoiceState): string {
-  return (LANG_STATE[lang] || LANG_STATE['en'])[state];
+  return (LANG_STATE_LABELS[lang] || LANG_STATE_LABELS['en'])[state];
 }
 
-async function speakNative(text: string, lang: string, rate = 0.85): Promise<void> {
-  const clean = text
-    .replace(/[\u{1F600}-\u{1FAFF}]/gu, '')
-    .replace(/[🙏✨💡🛡️⚡🎉❤️👍👋✓✕📋💊🌬️🧩💧🖼️🎮📞🔄🛑⚠️🔊▶]/g, '')
-    .replace(/\s+/g, ' ').trim();
-  if (!clean) return;
-
-  return new Promise<void>((resolve) => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
-      const utter = new SpeechSynthesisUtterance(clean);
-      utter.lang = BCP47[lang] || 'en-IN';
-      utter.rate = rate;
-      utter.pitch = 1.0;
-      const trySpeak = () => {
-        const voices = window.speechSynthesis.getVoices();
-        const best = voices.find(v => v.lang.startsWith(BCP47[lang]?.split('-')[0] || lang));
-        if (best) utter.voice = best;
-        utter.onend = () => resolve();
-        utter.onerror = () => resolve();
-        window.speechSynthesis.speak(utter);
-      };
-      if (window.speechSynthesis.getVoices().length === 0) {
-        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.onvoiceschanged = null; trySpeak(); };
-      } else { trySpeak(); }
-    } else {
-      Speech.speak(clean, { language: BCP47[lang] || 'en-IN', rate, pitch: 1.0, onDone: resolve, onError: () => resolve() });
-    }
-  });
-}
-
-async function stopNative(): Promise<void> {
-  try {
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    } else {
-      await Speech.stop();
-    }
-  } catch {}
-}
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function VoiceAssistantScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const { t } = useTranslation();
 
+  const onCustomBack = () => {
+    try {
+      voiceIntelligence.stopSpeech();
+    } catch {}
+    return false;
+  };
+
   const { goBackSafe, panHandlers } = useBackNavigation(navigation, {
-    onCustomBack: () => { try { stopNative(); } catch {} return false; },
+    onCustomBack,
     fallbackTab: 'Home',
   });
 
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE');
+  const [transcript, setTranscript] = useState('');
   const [currentIntent, setCurrentIntent] = useState<CanonicalIntent | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatTurn[]>([]);
+  const [activePersona, setActivePersona] = useState<PersonaType>('warm_companion');
+  const [activeHonorific, setActiveHonorific] = useState<HonorificType>('none');
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [inputPhrase, setInputPhrase] = useState('');
-  const [lastSpokenText, setLastSpokenText] = useState('');
 
+  // Wave animation values
   const waves = [
     useRef(new Animated.Value(0.3)).current,
     useRef(new Animated.Value(0.7)).current,
@@ -191,345 +223,1098 @@ export default function VoiceAssistantScreen() {
   const pulseMic = useRef(new Animated.Value(1)).current;
   const chatScrollRef = useRef<ScrollView>(null);
   const textInputRef = useRef<TextInput>(null);
-  const listenRef = useRef<any>(null);
-  const mountedRef = useRef(true);
+  const listenTimeoutRef = useRef<any>(null);
 
   const currentLang = getLanguage() || 'en';
   const langCap = languageRegistry.getCapability(currentLang);
 
-  const doSpeak = useCallback(async (text: string, lang: string, rate = 0.85) => {
-    if (!mountedRef.current) return;
-    setVoiceState('SPEAKING');
-    setLastSpokenText(text);
-    try { await speakNative(text, lang, rate); } finally {
-      if (mountedRef.current) setVoiceState('IDLE');
-    }
-  }, []);
-
+  // ── Initial greeting ──
   useEffect(() => {
-    mountedRef.current = true;
-    try { voiceIntelligence.updateContext({ currentScreen: 'voice', primaryLanguage: currentLang }); } catch {}
+    voiceIntelligence.updateContext({
+      currentScreen: 'voice',
+      primaryLanguage: currentLang,
+    });
+    adaptivePersonaEngine.setHonorific(activeHonorific);
+    syncPersona();
+
     const greeting = LANG_GREETINGS[currentLang] || LANG_GREETINGS['en'];
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setChatHistory([{ id: '1', sender: 'assistant', text: greeting, spokenAudioText: greeting, timestamp: now }]);
-    const t = setTimeout(() => { if (mountedRef.current) doSpeak(greeting, currentLang); }, 700);
-    return () => { mountedRef.current = false; clearTimeout(t); clearTimeout(listenRef.current); stopNative(); };
-  }, [currentLang, doSpeak]);
+    const turn: ChatTurn = {
+      id: '1',
+      sender: 'assistant',
+      text: greeting,
+      spokenAudioText: greeting.replace(/\n/g, ' '),
+      timestamp: 'Just now',
+    };
+    setChatHistory([turn]);
+
+    // Auto-speak greeting on load
+    setTimeout(() => {
+      voiceIntelligence.speak(turn.spokenAudioText!, currentLang);
+    }, 600);
+  }, [currentLang]);
 
   useEffect(() => {
-    try {
-      defaultVoiceOrchestrator.setLanguage(currentLang);
-      defaultVoiceOrchestrator.setCurrentScreen('voice');
-      defaultVoiceOrchestrator.registerActionHandlers({
-        startGame: () => { navigation.navigate('Games'); return true; },
-        openReminders: () => navigation.navigate('Reminders'),
-        navigate: (s: string) => navigation.navigate(s),
-      });
-    } catch {}
+    defaultVoiceOrchestrator.setLanguage(currentLang);
+    defaultVoiceOrchestrator.setCurrentScreen('voice');
+    defaultVoiceOrchestrator.registerActionHandlers({
+      startGame: (gameId?: string, difficulty?: number) => {
+        navigation.navigate('Games');
+        return true;
+      },
+      openReminders: () => {
+        navigation.navigate('Reminders');
+      },
+      openProgress: () => {
+        navigation.navigate('Reminders');
+      },
+      navigate: (screen: string) => {
+        navigation.navigate(screen);
+      },
+    });
   }, [currentLang, navigation]);
 
+  const syncPersona = () => {
+    const p = adaptivePersonaEngine.getProfile();
+    setActivePersona(p.currentPersona);
+  };
+
+  // ── Wave animation ──
   useEffect(() => {
     let anims: Animated.CompositeAnimation[] = [];
     if (voiceState === 'LISTENING' || voiceState === 'SPEAKING') {
-      const dur = [420, 360, 500, 330, 480, 390, 445];
-      const mn = [0.15, 0.25, 0.10, 0.35, 0.20, 0.28, 0.12];
-      const mx = [1.0, 0.85, 1.0, 0.8, 0.95, 0.88, 0.92];
-      anims = waves.map((w, i) => Animated.loop(Animated.sequence([
-        Animated.timing(w, { toValue: mx[i], duration: dur[i], useNativeDriver: false }),
-        Animated.timing(w, { toValue: mn[i], duration: dur[i], useNativeDriver: false }),
-      ])));
-      anims.forEach(a => a.start());
-      Animated.loop(Animated.sequence([
-        Animated.timing(pulseMic, { toValue: 1.12, duration: 750, useNativeDriver: false }),
-        Animated.timing(pulseMic, { toValue: 1.0, duration: 750, useNativeDriver: false }),
-      ])).start();
+      const durations = [420, 360, 500, 330, 480, 390, 445];
+      const mins = [0.15, 0.25, 0.10, 0.35, 0.20, 0.28, 0.12];
+      const maxs = [1.0,  0.85, 1.0,  0.8,  0.95, 0.88, 0.92];
+      anims = waves.map((w, i) =>
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(w, { toValue: maxs[i], duration: durations[i], useNativeDriver: false }),
+            Animated.timing(w, { toValue: mins[i], duration: durations[i], useNativeDriver: false }),
+          ])
+        )
+      );
+      anims.forEach((a) => a.start());
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseMic, { toValue: 1.12, duration: 750, useNativeDriver: false }),
+          Animated.timing(pulseMic, { toValue: 1.0, duration: 750, useNativeDriver: false }),
+        ])
+      ).start();
     } else {
-      [0.3, 0.5, 0.4, 0.6, 0.35, 0.5, 0.4].forEach((v, i) => waves[i].setValue(v));
+      const defaults = [0.3, 0.5, 0.4, 0.6, 0.35, 0.5, 0.4];
+      waves.forEach((w, i) => w.setValue(defaults[i]));
       pulseMic.setValue(1);
     }
-    return () => anims.forEach(a => a.stop());
+    return () => anims.forEach((a) => a.stop());
   }, [voiceState]);
 
+  // ── Auto-scroll chat ──
   useEffect(() => {
-    setTimeout(() => chatScrollRef.current?.scrollToEnd({ animated: true }), 120);
+    setTimeout(() => chatScrollRef.current?.scrollToEnd({ animated: true }), 100);
   }, [chatHistory]);
 
-  const processPhrase = useCallback(async (phrase: string) => {
-    if (!phrase.trim()) return;
-    clearTimeout(listenRef.current);
-    setVoiceState('PROCESSING');
-    setInputPhrase('');
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const userTurn: ChatTurn = { id: Date.now().toString(), sender: 'user', text: phrase, timestamp: now };
-    setChatHistory(p => [...p, userTurn]);
-
-    if (/^(stop|ఆపు|रुको|ৰখোৱা|pause|cancel)$/i.test(phrase.trim())) {
-      await stopNative(); setVoiceState('IDLE'); return;
-    }
-    if (/^(repeat|again|say that again|మళ్ళీ|फिर से|পুনৰ|மீண்டும்)$/i.test(phrase.trim())) {
-      if (lastSpokenText) await doSpeak(lastSpokenText, currentLang); return;
-    }
-
-    try {
-      const orchResult = await defaultVoiceOrchestrator.processUserSpeech(phrase);
-      if (orchResult && orchResult.intent !== 'UNKNOWN') {
-        const at: ChatTurn = {
-          id: (Date.now()+1).toString(), sender: 'assistant',
-          text: orchResult.spokenResponse, spokenAudioText: orchResult.spokenResponse,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          intentLabel: orchResult.intent.replace(/_/g, ' '),
-        };
-        setChatHistory(p => [...p, at]);
-        if (orchResult.requiresConfirmation) { setVoiceState('CONFIRMING'); await speakNative(orchResult.spokenResponse, currentLang); }
-        else { await doSpeak(orchResult.spokenResponse, currentLang); }
-        return;
-      }
-    } catch {}
-
-    try {
-      const ex = await voiceIntelligence.executeVoiceCommand(phrase, user?.id || 'demo-elder-id');
-      if (ex.canonicalIntent) setCurrentIntent(ex.canonicalIntent);
-      const at: ChatTurn = {
-        id: (Date.now()+1).toString(), sender: 'assistant',
-        text: ex.responseText, spokenAudioText: ex.responseText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        intentLabel: ex.canonicalIntent?.intent || 'Companion',
-      };
-      setChatHistory(p => [...p, at]);
-      if (ex.confirmationRequired) { setVoiceState('CONFIRMING'); await speakNative(ex.responseText, currentLang); }
-      else { await doSpeak(ex.responseText, currentLang); }
-    } catch {
-      const fb = LANG_GREETINGS[currentLang] || "I'm here! Could you please repeat that?";
-      const at: ChatTurn = { id: (Date.now()+1).toString(), sender: 'assistant', text: fb, spokenAudioText: fb, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), intentLabel: 'Companion' };
-      setChatHistory(p => [...p, at]);
-      await doSpeak(fb, currentLang);
-    }
-  }, [currentLang, lastSpokenText, doSpeak, user?.id]);
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleMicPress = async () => {
-    if (voiceState === 'SPEAKING') { await stopNative(); setVoiceState('IDLE'); return; }
-    if (voiceState === 'LISTENING') { clearTimeout(listenRef.current); setVoiceState('IDLE'); return; }
+    if (voiceState === 'SPEAKING') {
+      await voiceIntelligence.stopSpeech();
+      setVoiceState('IDLE');
+      return;
+    }
+    if (voiceState === 'LISTENING') {
+      if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
+      setVoiceState('IDLE');
+      return;
+    }
+
     setVoiceState('LISTENING');
+    setTranscript('');
+    setCurrentIntent(null);
+
     const prompt = LANG_LISTEN_PROMPT[currentLang] || LANG_LISTEN_PROMPT['en'];
 
+    if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
+
+    // Real Web Speech API recognition (Browser)
+    let recognitionStarted = false;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SR) {
         try {
-          await speakNative(prompt, currentLang);
-          const rec = new SR();
-          rec.lang = BCP47[currentLang] || 'en-IN';
-          rec.continuous = false; rec.interimResults = false;
-          rec.onresult = (e: any) => { const t = e.results[0][0]?.transcript; if (t) processPhrase(t); };
-          rec.onerror = () => { setVoiceState('IDLE'); textInputRef.current?.focus(); };
-          rec.onend = () => { if (mountedRef.current) setVoiceState(p => p === 'LISTENING' ? 'IDLE' : p); };
-          rec.start();
-          listenRef.current = setTimeout(() => { if (mountedRef.current) setVoiceState(p => p === 'LISTENING' ? 'IDLE' : p); }, 8000);
+          await voiceIntelligence.speak(prompt, currentLang);
+          const recognition = new SR();
+          recognition.lang = langCap.bcp47;
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.onresult = (evt: any) => {
+            const t = evt.results[0][0]?.transcript;
+            if (t) processPhrase(t);
+          };
+          recognition.onerror = () => {
+            setVoiceState('IDLE');
+            textInputRef.current?.focus();
+          };
+          recognition.onend = () => {
+            setVoiceState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
+          };
+          recognition.start();
+          recognitionStarted = true;
+          listenTimeoutRef.current = setTimeout(() => {
+            setVoiceState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
+          }, 8000);
           return;
         } catch {}
       }
     }
-    await speakNative(prompt, currentLang);
-    textInputRef.current?.focus();
-    listenRef.current = setTimeout(() => { if (mountedRef.current) setVoiceState(p => p === 'LISTENING' ? 'IDLE' : p); }, 10000);
+
+    if (!recognitionStarted) {
+      await voiceIntelligence.speak(prompt, currentLang);
+      textInputRef.current?.focus();
+      listenTimeoutRef.current = setTimeout(() => {
+        setVoiceState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
+      }, 6000);
+    }
+  };
+
+  const processPhrase = async (phrase: string) => {
+    if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
+    setVoiceState('PROCESSING');
+    setTranscript(phrase);
+
+    const userTurn: ChatTurn = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: phrase,
+      timestamp: 'Just now',
+    };
+    setChatHistory((prev) => [...prev, userTurn]);
+
+    // Track behavioral signals
+    if (/కష్టం|difficult|mushkil|ਔਖਾ/i.test(phrase)) {
+      adaptivePersonaEngine.recordBehavioralSignal('struggle');
+    } else if (/tired|అలసట|thak|আৰাম/i.test(phrase)) {
+      adaptivePersonaEngine.recordBehavioralSignal('fatigue');
+    } else if (/మళ్ళీ|repeat|phir|পুনৰ/i.test(phrase)) {
+      adaptivePersonaEngine.recordBehavioralSignal('repeat');
+    }
+    syncPersona();
+
+    // 1. Direct barge-in stop (Section 14)
+    if (/^(stop|ఆపు|रुको|ৰখোৱা|pause|cancel)$/i.test(phrase.trim())) {
+      await voiceIntelligence.stopSpeech();
+      setVoiceState('IDLE');
+      return;
+    }
+
+    // 2. Direct repeat (Section 15)
+    if (/^(repeat|again|say that again|మళ్ళీ చెప్పు|फिर से बोलो|পুনৰ কোৱা)$/i.test(phrase.trim())) {
+      setVoiceState('SPEAKING');
+      await voiceIntelligence.repeatLastResponse();
+      setTimeout(() => setVoiceState('IDLE'), 2800);
+      return;
+    }
+
+    // 3. Master Voice Orchestrator Pipeline (Context, Multi-turn, In-Game, Plan)
+    const orchResult = await defaultVoiceOrchestrator.processUserSpeech(phrase);
+    if (orchResult && orchResult.intent !== 'UNKNOWN') {
+      const assistantTurn: ChatTurn = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: orchResult.spokenResponse,
+        spokenAudioText: orchResult.spokenResponse,
+        timestamp: 'Just now',
+        intentLabel: orchResult.intent.replace(/_/g, ' '),
+      };
+      setChatHistory((prev) => [...prev, assistantTurn]);
+      if (orchResult.requiresConfirmation) {
+        setVoiceState('CONFIRMING');
+      } else {
+        setVoiceState('SPEAKING');
+        setTimeout(() => setVoiceState('IDLE'), 3500);
+      }
+      return;
+    }
+
+    // 4. Voice Intelligence Router (Tools & Medical Safety Boundaries)
+    const execResult = await voiceIntelligence.executeVoiceCommand(phrase, user?.id || 'demo-elder-id');
+
+    if (execResult.isSafetyRefusal) {
+      const assistantTurn: ChatTurn = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: `🛡️ Medical Safety Boundary:\n${execResult.responseText}`,
+        spokenAudioText: execResult.responseText,
+        timestamp: 'Just now',
+        intentLabel: 'Medical Safety',
+      };
+      setChatHistory((prev) => [...prev, assistantTurn]);
+      setVoiceState('SPEAKING');
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
+      setTimeout(() => setVoiceState('IDLE'), 3500);
+      return;
+    }
+
+    if (execResult.toolResult) {
+      const assistantTurn: ChatTurn = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: `⚡ ${execResult.toolResult.tool.replace(/_/g, ' ').toUpperCase()}:\n${execResult.responseText}`,
+        spokenAudioText: execResult.responseText,
+        timestamp: 'Just now',
+        intentLabel: execResult.toolResult.tool.replace(/_/g, ' '),
+      };
+      setChatHistory((prev) => [...prev, assistantTurn]);
+      setVoiceState('SPEAKING');
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
+      setTimeout(() => setVoiceState('IDLE'), 3500);
+      return;
+    }
+
+    // 4. Conversational / Transactional Response from Voice Intelligence
+    if (execResult.canonicalIntent) {
+      setCurrentIntent(execResult.canonicalIntent);
+    }
+
+    const assistantTurn: ChatTurn = {
+      id: (Date.now() + 1).toString(),
+      sender: 'assistant',
+      text: execResult.responseText,
+      spokenAudioText: execResult.responseText,
+      timestamp: 'Just now',
+      intentLabel: execResult.canonicalIntent && execResult.canonicalIntent.intent !== 'unknown' 
+        ? execResult.canonicalIntent.intent 
+        : 'Companion',
+    };
+    setChatHistory((prev) => [...prev, assistantTurn]);
+
+    if (execResult.confirmationRequired) {
+      setVoiceState('CONFIRMING');
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
+    } else {
+      setVoiceState('SPEAKING');
+      await voiceIntelligence.speak(execResult.responseText, currentLang);
+      setTimeout(() => setVoiceState('IDLE'), 3000);
+    }
+  };
+
+  const handleStopSpeech = async () => {
+    await voiceIntelligence.stopSpeech();
+    setVoiceState('IDLE');
+  };
+
+  const handleRepeatSpeech = async () => {
+    setVoiceState('SPEAKING');
+    await voiceIntelligence.repeatLastResponse();
+    setTimeout(() => setVoiceState('IDLE'), 2800);
+  };
+
+  const handleSlowerSpeech = async () => {
+    const currentProfile = adaptivePersonaEngine.getProfile();
+    const newSpeed = Math.max(0.65, currentProfile.speechSpeed - 0.1);
+    adaptivePersonaEngine.setSpeechSpeed(newSpeed);
+    syncPersona();
+    setVoiceState('SPEAKING');
+    await voiceIntelligence.repeatLastResponse();
+    setTimeout(() => setVoiceState('IDLE'), 3200);
   };
 
   const handleConfirmAction = async () => {
     if (!currentIntent) return;
-    if (currentIntent.intent === 'start_game') { setVoiceState('IDLE'); navigation.navigate('Games'); return; }
-    if (currentIntent.intent === 'call_family') { setVoiceState('IDLE'); navigation.navigate('FamilyCorner'); return; }
-    const msgs: Record<string, string> = { te: 'అద్భుతం! విజయవంతంగా నమోదు చేశాను!', hi: 'बहुत अच्छा! सुरक्षित कर लिया।', as: "বহুত ভাল! সংৰক্ষিত হ'ল।", en: 'Done! Saved safely.' };
-    const msg = msgs[currentLang] || msgs['en'];
-    const at: ChatTurn = { id: Date.now().toString(), sender: 'assistant', text: msg, spokenAudioText: msg, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    setChatHistory(p => [...p, at]);
-    setCurrentIntent(null);
-    await doSpeak(msg, currentLang);
+    adaptivePersonaEngine.recordBehavioralSignal('success');
+    syncPersona();
+
+    if (currentIntent.intent === 'create_reminder' && user?.id) {
+      await offlineStore.createLocalReminder({
+        elder_id: user.id,
+        title: currentIntent.category === 'hydration' ? 'Drink Water' : 'Take Medicine',
+        category: currentIntent.category || 'medication',
+        scheduled_time: currentIntent.time || '08:00',
+        recurrence_pattern: currentIntent.recurrence || 'daily',
+      });
+    } else if (currentIntent.intent === 'log_reminder' && user?.id) {
+      await offlineStore.recordReminderAction({
+        reminder_id: 'voice-routine-action',
+        elder_id: user.id,
+        scheduled_for: new Date().toISOString(),
+        action: 'completed',
+        response_time_seconds: 3,
+        confirmed_via: 'voice',
+      });
+    } else if (currentIntent.intent === 'start_game') {
+      setVoiceState('IDLE');
+      navigation.navigate('Games');
+      return;
+    } else if (currentIntent.intent === 'call_family') {
+      setVoiceState('IDLE');
+      navigation.navigate('FamilyCorner');
+      return;
+    }
+
+    const confirmMsg: Record<string, string> = {
+      te: '✅ అద్భుతం! విజయవంతంగా నమోదు చేశాను!',
+      hi: '✅ बहुत अच्छा! सुरक्षित कर लिया गया।',
+      as: '✅ বহুত ভাল! সংৰক্ষিত হ\'ল।',
+      en: '✅ Done! Saved safely for you.',
+    };
+    const msg = confirmMsg[currentLang] || confirmMsg['en'];
+    const confirmTurn: ChatTurn = {
+      id: Date.now().toString(),
+      sender: 'assistant',
+      text: msg,
+      spokenAudioText: msg,
+      timestamp: 'Just now',
+    };
+    setChatHistory((prev) => [...prev, confirmTurn]);
+    setVoiceState('SPEAKING');
+    await voiceIntelligence.speak(msg, currentLang);
+    setTimeout(() => setVoiceState('IDLE'), 2800);
   };
 
-  const waveColor = voiceState === 'LISTENING' ? colors.danger : voiceState === 'SPEAKING' ? colors.secondary : colors.primary;
-  const micBgColor: Record<VoiceState, string> = {
-    IDLE: colors.primary, LISTENING: colors.danger, PROCESSING: colors.warning,
-    CONFIRMING: colors.warning, SPEAKING: colors.secondary, ERROR: colors.danger, OFFLINE: colors.muted,
+  const handleCancelAction = async () => {
+    await voiceIntelligence.stopSpeech();
+    setVoiceState('IDLE');
+    setTranscript('');
+    setCurrentIntent(null);
   };
+
+  const handleReplay = async (turn: ChatTurn) => {
+    if (turn.spokenAudioText) {
+      setVoiceState('SPEAKING');
+      await voiceIntelligence.speak(turn.spokenAudioText, currentLang);
+      setVoiceState('IDLE');
+    }
+  };
+
+  const personaProfile = adaptivePersonaEngine.getProfile();
+
+  // ─── UI helpers ────────────────────────────────────────────────────────────
+
+  const personaIcon = {
+    ultra_gentle: '🌿',
+    warm_companion: '☀️',
+    encouraging_coach: '🌟',
+    calm_evening: '🌙',
+  }[activePersona] || '☀️';
+
+  const micIcon = {
+    IDLE: '🎤',
+    LISTENING: '🛑',
+    PROCESSING: '⏳',
+    CONFIRMING: '❓',
+    SPEAKING: '🔊',
+    ERROR: '⚠️',
+    OFFLINE: '📶',
+  }[voiceState];
+
+  const micBgColor = {
+    IDLE: colors.teal,
+    LISTENING: '#DC2626',
+    PROCESSING: colors.gold,
+    CONFIRMING: '#B45309',
+    SPEAKING: colors.systemBlue,
+    ERROR: '#DC2626',
+    OFFLINE: colors.muted,
+  }[voiceState] || colors.teal;
+
+  const waveColor = voiceState === 'LISTENING'
+    ? '#DC2626'
+    : voiceState === 'SPEAKING'
+    ? colors.systemBlue
+    : colors.teal;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.screen} {...panHandlers}>
-      {/* Header */}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.screen}
+      {...panHandlers}
+    >
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={goBackSafe} accessibilityRole="button" activeOpacity={0.75}>
-          <ArrowLeft size={18} color={colors.primary} />
-          <Text style={styles.backBtnText}>{t('nav.back') || 'Back'}</Text>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={goBackSafe}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          activeOpacity={0.75}
+        >
+          <ArrowLeft size={16} color={colors.teal} />
+          <Text style={styles.backBtnText}>Back</Text>
         </TouchableOpacity>
+
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{t('voice.headerTitle') || 'SMRITI+ Voice'}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>SMRITI+ Voice</Text>
           <View style={styles.langPill}>
-            <Text style={styles.langPillText}>{langCap.nativeName}</Text>
+            <Text style={styles.langPillText} numberOfLines={1}>{langCap.nativeName}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.repeatBtn} onPress={() => { if (lastSpokenText) doSpeak(lastSpokenText, currentLang); }} activeOpacity={0.75}>
-          <RotateCcw size={18} color={colors.primary} />
+
+        <TouchableOpacity
+          style={styles.repeatBtn}
+          onPress={() => voiceIntelligence.repeatLastResponse()}
+          accessibilityRole="button"
+          accessibilityLabel="Repeat last response"
+          activeOpacity={0.75}
+        >
+          <RotateCcw size={18} color={colors.teal} />
         </TouchableOpacity>
       </View>
 
-      {/* Visualizer */}
-      <View style={styles.vizSection}>
-        <View style={styles.waveRow}>
+      {/* ── Compact Visualizer & State Banner ────────────────────────────── */}
+      <View style={styles.compactVisualizerSection}>
+        <View style={styles.compactWaveRow}>
           {waves.map((w, i) => (
-            <Animated.View key={i} style={[styles.waveBar, { transform: [{ scaleY: w }], backgroundColor: waveColor, height: i === 3 ? 28 : 20, opacity: voiceState === 'IDLE' ? 0.3 : 0.9 }]} />
+            <Animated.View
+              key={i}
+              style={[
+                styles.waveBar,
+                {
+                  transform: [{ scaleY: w }],
+                  backgroundColor: waveColor,
+                  height: i === 3 ? 24 : 18,
+                  opacity: voiceState === 'IDLE' ? 0.4 : 1,
+                },
+              ]}
+            />
           ))}
         </View>
-        <Text style={[styles.stateLabel, { color: voiceState === 'LISTENING' ? colors.danger : colors.primaryDark }]}>
-          {getStateLabel(currentLang, voiceState)}
-        </Text>
+        <Text style={styles.compactStateLabel}>{getStateLabel(currentLang, voiceState)}</Text>
+
+        {/* Floating Active Speech Controls */}
         {voiceState === 'SPEAKING' && (
-          <View style={styles.speechControls}>
-            <TouchableOpacity style={styles.stopBtn} onPress={async () => { await stopNative(); setVoiceState('IDLE'); }} activeOpacity={0.8}>
-              <MicOff size={14} color={colors.danger} />
-              <Text style={styles.stopBtnText}>{t('voice.stop') || 'Stop'}</Text>
+          <View style={styles.speakingControlBar}>
+            <TouchableOpacity style={styles.speakingBtnStop} onPress={handleStopSpeech}>
+              <Text style={styles.speakingBtnStopText}>🛑 Stop</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.ctrlBtn} onPress={() => { if (lastSpokenText) doSpeak(lastSpokenText, currentLang); }} activeOpacity={0.8}>
-              <RotateCcw size={14} color={colors.primaryDark} />
-              <Text style={styles.ctrlBtnText}>{t('voice.repeat') || 'Repeat'}</Text>
+            <TouchableOpacity style={styles.speakingBtn} onPress={handleRepeatSpeech}>
+              <Text style={styles.speakingBtnText}>🔁 Repeat</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.ctrlBtn} onPress={() => { if (lastSpokenText) doSpeak(lastSpokenText, currentLang, 0.65); }} activeOpacity={0.8}>
-              <Volume2 size={14} color={colors.primaryDark} />
-              <Text style={styles.ctrlBtnText}>{t('voice.slower') || 'Slower'}</Text>
+            <TouchableOpacity style={styles.speakingBtn} onPress={handleSlowerSpeech}>
+              <Text style={styles.speakingBtnText}>🐢 Slower</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
 
-      {Platform.OS !== 'web' && voiceState === 'IDLE' && (
-        <View style={styles.hintBar}>
-          <Text style={styles.hintText}>💡 {t('voice.typeHint') || 'Type below or tap a quick phrase — voice playback works on all devices'}</Text>
-        </View>
-      )}
-
-      {/* Chat */}
-      <ScrollView ref={chatScrollRef} style={styles.chat} contentContainerStyle={styles.chatContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      {/* ── Conversational Chat History (flex: 1) ─────────────────────────── */}
+      <ScrollView
+        ref={chatScrollRef}
+        style={styles.chatScroll}
+        contentContainerStyle={styles.chatScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Confirmation Card if active */}
         {voiceState === 'CONFIRMING' && currentIntent && (
           <View style={styles.confirmCard}>
-            <Text style={styles.confirmLabel}>{t('voice.confirmAction') || '⚡ CONFIRM ACTION'}</Text>
+            <Text style={styles.confirmLabel}>⚡ CONFIRM ACTION</Text>
             <Text style={styles.confirmPrompt}>{currentIntent.confirmationPrompt}</Text>
             <View style={styles.confirmActions}>
-              <TouchableOpacity style={styles.confirmYes} onPress={handleConfirmAction} activeOpacity={0.8}>
-                <Text style={styles.confirmYesText}>✓ {t('voice.yes') || 'Yes, Do This'}</Text>
+              <TouchableOpacity style={styles.confirmYes} onPress={handleConfirmAction}>
+                <Text style={styles.confirmYesText}>✓ Yes, Do This</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmNo} onPress={async () => { await stopNative(); setVoiceState('IDLE'); setCurrentIntent(null); }} activeOpacity={0.8}>
-                <Text style={styles.confirmNoText}>✕ {t('voice.cancel') || 'Cancel'}</Text>
+              <TouchableOpacity style={styles.confirmNo} onPress={handleCancelAction}>
+                <Text style={styles.confirmNoText}>✕ Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {chatHistory.map(turn => (
-          <View key={turn.id} style={[styles.bubble, turn.sender === 'user' ? styles.userBubble : styles.assistantBubble]}>
+        {chatHistory.map((turn) => (
+          <View
+            key={turn.id}
+            style={[
+              styles.bubble,
+              turn.sender === 'user' ? styles.userBubble : styles.assistantBubble,
+            ]}
+          >
             <View style={styles.bubbleHeader}>
-              <Text style={[styles.senderLabel, turn.sender === 'assistant' && { color: colors.primaryDark }]}>
-                {turn.sender === 'user' ? (user?.name || t('voice.you') || 'You') : 'SMRITI+'}
+              <Text style={[styles.senderLabel, turn.sender === 'assistant' && { color: colors.teal }]}>
+                {turn.sender === 'user' ? (user?.name || 'You') : 'SMRITI+'}
               </Text>
-              {turn.intentLabel && turn.intentLabel !== 'Companion' && (
-                <View style={styles.intentPill}><Text style={styles.intentPillText}>{turn.intentLabel.replace(/_/g, ' ')}</Text></View>
+              {turn.intentLabel && (
+                <View style={styles.intentPill}>
+                  <Text style={styles.intentPillText}>{turn.intentLabel.replace(/_/g, ' ')}</Text>
+                </View>
               )}
               {turn.spokenAudioText && turn.sender === 'assistant' && (
-                <TouchableOpacity style={styles.replayBtn} onPress={() => { if (turn.spokenAudioText) doSpeak(turn.spokenAudioText, currentLang); }}>
-                  <Volume2 size={14} color={colors.primaryDark} />
+                <TouchableOpacity
+                  style={styles.replayBtn}
+                  onPress={() => handleReplay(turn)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Replay audio"
+                >
+                  <Text style={styles.replayBtnText}>▶</Text>
                 </TouchableOpacity>
               )}
             </View>
-            <Text style={[styles.bubbleText, turn.sender === 'user' && styles.userBubbleText]}>{turn.text}</Text>
-            <Text style={styles.tsText}>{turn.timestamp}</Text>
+            <Text style={[styles.bubbleText, turn.sender === 'user' && styles.userBubbleText]}>
+              {turn.text}
+            </Text>
           </View>
         ))}
       </ScrollView>
 
-      {/* Quick Chips */}
-      <View style={styles.chipsWrap}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContent} keyboardShouldPersistTaps="handled">
-          {getChips(currentLang).map((chip, i) => (
-            <TouchableOpacity key={i} style={styles.chip} onPress={() => processPhrase(chip.spoken)} activeOpacity={0.75}>
-              <Text style={styles.chipTag}>{chip.tag}</Text>
-              <Text style={styles.chipPhrase}>{chip.phrase}</Text>
+      {/* ── Single-Row Horizontal Quick Action Chips ──────────────────────── */}
+      <View style={styles.chipsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsScrollContent}
+        >
+          {getLangChips(currentLang).map((chip, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.chipPill}
+              onPress={() => processPhrase(chip.spoken)}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.chipPillText}>{chip.tag} · "{chip.phrase}"</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
-        <Animated.View style={[styles.micRing, { backgroundColor: (micBgColor[voiceState] || colors.primary) + '22', transform: [{ scale: pulseMic }] }]}>
-          <TouchableOpacity style={[styles.micBtn, { backgroundColor: micBgColor[voiceState] || colors.primary }]} onPress={handleMicPress} activeOpacity={0.82} accessibilityRole="button" accessibilityLabel={t('voice.speak') || 'Speak to SMRITI+'}>
-            {voiceState === 'LISTENING' ? <MicOff size={22} color="#FFF" strokeWidth={2.4} /> : <Mic size={22} color="#FFF" strokeWidth={2.4} />}
+      {/* ── Bottom Interactive Voice & Text Bar (Mobile Optimized) ────────── */}
+      <View style={styles.bottomControlBar}>
+        <Animated.View
+          style={[
+            styles.bottomMicRing,
+            { backgroundColor: micBgColor + '25', transform: [{ scale: pulseMic }] },
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.bottomMicBtn, { backgroundColor: micBgColor }]}
+            onPress={handleMicPress}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Speak to SMRITI+"
+          >
+            <Mic size={22} color="#FFFFFF" strokeWidth={2.4} />
           </TouchableOpacity>
         </Animated.View>
+
         <TextInput
           ref={textInputRef}
-          style={styles.textInput}
+          style={styles.textInputBar}
           value={inputPhrase}
           onChangeText={setInputPhrase}
-          placeholder={voiceState === 'LISTENING' ? (t('voice.listeningPlaceholder') || 'Listening… type to send') : (t('voice.typePlaceholder') || 'Type your message…')}
+          placeholder={voiceState === 'LISTENING' ? 'Listening... Speak or tap send' : 'Type or tap quick phrase...'}
           placeholderTextColor={colors.muted}
-          onSubmitEditing={() => { if (inputPhrase.trim()) processPhrase(inputPhrase.trim()); }}
+          onSubmitEditing={() => {
+            if (inputPhrase.trim()) {
+              processPhrase(inputPhrase.trim());
+              setInputPhrase('');
+            }
+          }}
           returnKeyType="send"
         />
-        <TouchableOpacity style={[styles.sendBtn, !inputPhrase.trim() && { opacity: 0.4 }]} disabled={!inputPhrase.trim()} onPress={() => { if (inputPhrase.trim()) processPhrase(inputPhrase.trim()); }} accessibilityRole="button">
-          <Send size={18} color="#FFF" strokeWidth={2.4} />
+
+        <TouchableOpacity
+          style={[styles.sendBtn, !inputPhrase.trim() && { opacity: 0.4 }]}
+          disabled={!inputPhrase.trim()}
+          onPress={() => {
+            if (inputPhrase.trim()) {
+              processPhrase(inputPhrase.trim());
+              setInputPhrase('');
+            }
+          }}
+        >
+          <Send size={18} color="#FFFFFF" strokeWidth={2.4} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingTop: Platform.OS === 'ios' ? 56 : 36, paddingBottom: spacing.sm, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
-  backBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, backgroundColor: colors.primaryLight, borderRadius: 100, minHeight: 44, gap: 6 },
-  backBtnText: { fontFamily: fontFamily.display, fontSize: 15, fontWeight: '700', color: colors.primary },
-  headerCenter: { alignItems: 'center', flex: 1, paddingHorizontal: 8 },
-  headerTitle: { fontFamily: fontFamily.display, fontSize: 20, fontWeight: '800', color: colors.textDark, letterSpacing: -0.3 },
-  langPill: { marginTop: 3, backgroundColor: colors.primaryMuted, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 100 },
-  langPillText: { fontFamily: fontFamily.display, fontSize: 13, fontWeight: '700', color: colors.primaryDark },
-  repeatBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  vizSection: { alignItems: 'center', backgroundColor: colors.surface, paddingVertical: 12, paddingHorizontal: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  waveRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, height: 32 },
-  waveBar: { width: 6, borderRadius: 3 },
-  stateLabel: { fontFamily: fontFamily.display, fontSize: 14, fontWeight: '700', marginTop: 6, letterSpacing: 0.1 },
-  speechControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 10 },
-  stopBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.dangerBg, borderWidth: 1.5, borderColor: colors.danger, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 100, minHeight: 44 },
-  stopBtnText: { fontFamily: fontFamily.display, fontSize: 14, fontWeight: '800', color: colors.danger },
-  ctrlBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 100, minHeight: 44 },
-  ctrlBtnText: { fontFamily: fontFamily.display, fontSize: 14, fontWeight: '700', color: colors.textDark },
-  hintBar: { backgroundColor: colors.accentGoldBg, paddingHorizontal: spacing.md, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
-  hintText: { fontFamily: fontFamily.text, fontSize: 13, color: colors.accentGoldDark, textAlign: 'center' },
-  chat: { flex: 1, backgroundColor: colors.background },
-  chatContent: { padding: spacing.md, paddingBottom: spacing.sm, gap: spacing.sm },
-  confirmCard: { backgroundColor: colors.accentGoldBg, borderRadius: 16, padding: spacing.lg, borderWidth: 2, borderColor: colors.accentGold, marginBottom: spacing.sm },
-  confirmLabel: { fontFamily: fontFamily.display, fontSize: 13, fontWeight: '800', color: colors.accentGoldDark, letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-  confirmPrompt: { fontFamily: fontFamily.text, fontSize: 18, lineHeight: 28, color: colors.textDark, marginBottom: spacing.md },
-  confirmActions: { gap: spacing.sm },
-  confirmYes: { backgroundColor: colors.success, paddingVertical: 16, borderRadius: 12, alignItems: 'center', minHeight: 56, justifyContent: 'center' },
-  confirmYesText: { fontFamily: fontFamily.display, fontSize: 20, fontWeight: '800', color: '#FFF' },
-  confirmNo: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, paddingVertical: 14, borderRadius: 12, alignItems: 'center', minHeight: 52, justifyContent: 'center' },
-  confirmNoText: { fontFamily: fontFamily.display, fontSize: 18, fontWeight: '700', color: colors.textSecondary },
-  bubble: { borderRadius: 20, padding: spacing.md, maxWidth: '88%' },
-  userBubble: { alignSelf: 'flex-end', backgroundColor: colors.primary, borderBottomRightRadius: 4 },
-  assistantBubble: { alignSelf: 'flex-start', backgroundColor: colors.surface, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: colors.border },
-  bubbleHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  senderLabel: { fontFamily: fontFamily.display, fontSize: 14, fontWeight: '700', color: colors.primary, flex: 1 },
-  intentPill: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 100 },
-  intentPillText: { fontFamily: fontFamily.display, fontSize: 11, fontWeight: '800', color: colors.primaryDark, textTransform: 'uppercase', letterSpacing: 0.4 },
-  replayBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primaryMuted, alignItems: 'center', justifyContent: 'center' },
-  bubbleText: { fontFamily: fontFamily.text, fontSize: 17, lineHeight: 26, color: colors.textDark, fontWeight: '500' },
-  userBubbleText: { color: '#FFF', fontWeight: '600' },
-  tsText: { fontFamily: fontFamily.text, fontSize: 11, color: colors.muted, marginTop: 4, alignSelf: 'flex-end' },
-  chipsWrap: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 10 },
-  chipsContent: { paddingHorizontal: spacing.md, gap: 10, alignItems: 'center' },
-  chip: { backgroundColor: colors.primaryLight, borderWidth: 1.5, borderColor: colors.primaryMuted, borderRadius: 100, paddingHorizontal: 14, paddingVertical: 10, minHeight: 46, justifyContent: 'center', alignItems: 'center' },
-  chipTag: { fontFamily: fontFamily.display, fontSize: 13, fontWeight: '700', color: colors.primaryDark },
-  chipPhrase: { fontFamily: fontFamily.text, fontSize: 11, color: colors.primary, marginTop: 2 },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: spacing.md, paddingTop: 10, paddingBottom: Platform.OS === 'android' ? 20 : Platform.OS === 'ios' ? 28 : 12, gap: 10 },
-  micRing: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  micBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  textInput: { flex: 1, height: 48, backgroundColor: colors.surfaceSecondary, borderRadius: 100, paddingHorizontal: 16, fontFamily: fontFamily.text, fontSize: 16, color: colors.textDark, borderWidth: 1.5, borderColor: colors.border },
-  sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: Platform.OS === 'ios' ? 56 : 36,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: '#F1F5F9',
+    borderRadius: borderRadius.pill,
+    minHeight: 40,
+    justifyContent: 'center',
+    gap: 6,
+  },
+  backBtnText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.teal,
+  },
+  headerCenter: {
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.navy,
+    letterSpacing: 0,
+  },
+  langPill: {
+    marginTop: 3,
+    backgroundColor: colors.tealBg,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+  },
+  langPillText: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.teal,
+  },
+  repeatBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  // Persona banner
+  personaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+  },
+  personaEmoji: {
+    fontSize: 28,
+  },
+  personaTone: {
+    fontFamily: fontFamily.display,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.navy,
+  },
+  personaMeta: {
+    fontFamily: fontFamily.text,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
+  // Compact Visualizer (Mobile optimized, no excessive height)
+  compactVisualizerSection: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+    ...shadows.subtle,
+  },
+  compactWaveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 26,
+  },
+  compactStateLabel: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.tealDeep,
+    marginTop: 4,
+    letterSpacing: 0.1,
+  },
+  waveBar: {
+    width: 6,
+    borderRadius: 3,
+  },
+  speakingControlBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  speakingBtnStop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEE2E2',
+    borderWidth: 2,
+    borderColor: '#EF4444',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: borderRadius.pill,
+    minHeight: 46,
+    ...shadows.subtle,
+  },
+  speakingBtnStopText: {
+    fontFamily: fontFamily.display,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#DC2626',
+  },
+  speakingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: borderRadius.pill,
+    minHeight: 46,
+    ...shadows.subtle,
+  },
+  speakingBtnText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.navy,
+  },
+  transcriptBubble: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.tealBg,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    maxWidth: '85%',
+    borderWidth: 1,
+    borderColor: colors.glassTealBorder,
+  },
+  transcriptText: {
+    fontFamily: fontFamily.text,
+    fontSize: 16,
+    color: colors.tealDeep,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+
+  // Chat Scrollable area (Fills middle viewport, scrolls naturally without layout sliding)
+  chatScroll: {
+    flex: 1,
+  },
+  chatScrollContent: {
+    padding: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+
+  // Confirmation card
+  confirmCard: {
+    backgroundColor: '#FEFCE8',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 2,
+    borderColor: '#D97706',
+    ...shadows.elevated,
+  },
+  confirmLabel: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#92400E',
+    letterSpacing: 0,
+    marginBottom: 6,
+  },
+  confirmPrompt: {
+    ...typography.elderly.body,
+    color: colors.navy,
+    marginBottom: spacing.lg,
+    lineHeight: 28,
+  },
+  confirmActions: {
+    gap: spacing.sm,
+  },
+  confirmYes: {
+    backgroundColor: colors.success,
+    paddingVertical: 16,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    minHeight: 56,
+    justifyContent: 'center',
+    ...shadows.subtle,
+  },
+  confirmYesText: {
+    fontFamily: fontFamily.display,
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  confirmNo: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingVertical: 14,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    minHeight: 52,
+    justifyContent: 'center',
+  },
+  confirmNoText: {
+    fontFamily: fontFamily.display,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+
+  // Chat
+  chatSection: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textDark,
+    letterSpacing: 0,
+    marginBottom: spacing.xs,
+  },
+  bubble: {
+    borderRadius: 20,
+    padding: spacing.md + 2,
+    maxWidth: '88%',
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: colors.teal,
+    borderBottomRightRadius: 4,
+    borderWidth: 0,
+  },
+  assistantBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surface,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  bubbleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  senderLabel: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.teal,
+    flex: 1,
+  },
+  intentPill: {
+    backgroundColor: colors.tealBg,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+  },
+  intentPillText: {
+    fontFamily: fontFamily.display,
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.teal,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  replayBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.tealBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  replayBtnText: {
+    fontSize: 14,
+    color: colors.teal,
+    fontWeight: '700',
+  },
+  bubbleText: {
+    fontFamily: fontFamily.text,
+    fontSize: 18,
+    lineHeight: 26,
+    color: colors.textDark,
+    fontWeight: '500',
+    letterSpacing: 0,
+  },
+  userBubbleText: {
+    color: colors.white,
+    fontWeight: '600',
+  },
+
+  // Horizontal Quick phrase chips (Single row swipe, zero excess scroll)
+  chipsWrapper: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    paddingVertical: 10,
+  },
+  chipsScrollContent: {
+    paddingHorizontal: spacing.md,
+    gap: 10,
+    alignItems: 'center',
+  },
+  chipPill: {
+    backgroundColor: colors.tealBg,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 113, 227, 0.25)',
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 46,
+    justifyContent: 'center',
+    ...shadows.subtle,
+  },
+  chipPillText: {
+    fontFamily: fontFamily.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.tealDeep,
+    letterSpacing: 0,
+  },
+
+  // Interactive Bottom Bar (Mobile Navigation Safe & Production Ready)
+  bottomControlBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    paddingHorizontal: spacing.md,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'android' ? 24 : Platform.OS === 'ios' ? 24 : 12,
+    gap: 10,
+    ...shadows.elevated,
+  },
+  bottomMicRing: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomMicBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glowTeal,
+  },
+  textInputBar: {
+    flex: 1,
+    height: 46,
+    backgroundColor: '#F1F5F9',
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: 16,
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    color: colors.textDark,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glowTeal,
+  },
+
+  // Debug panel
+  debugSection: {
+    marginTop: spacing.xs,
+  },
+  debugToggle: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: 'rgba(10,22,40,0.05)',
+    borderRadius: borderRadius.md,
+  },
+  debugToggleText: {
+    fontFamily: fontFamily.display,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.muted,
+  },
+  debugBody: {
+    backgroundColor: colors.navy,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  debugHeading: {
+    fontFamily: fontFamily.display,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.tealLight,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  pill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  pillActive: {
+    backgroundColor: colors.teal,
+  },
+  pillText: {
+    fontFamily: fontFamily.display,
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
+  },
+  pillTextActive: {
+    color: colors.white,
+    fontWeight: '800',
+  },
+  telemetry: {
+    marginTop: 14,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.12)',
+  },
+  teleLine: {
+    fontFamily: fontFamily.mono,
+    fontSize: 12,
+    color: '#94A3B8',
+    marginBottom: 3,
+  },
 });

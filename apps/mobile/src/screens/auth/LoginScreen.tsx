@@ -40,6 +40,7 @@ import {
 import { colors, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { PrimaryButton } from '../../components/UIComponents';
 import { useAuthStore, UserRole } from '../../state/authStore';
+import { useTranslation } from '../../i18n';
 
 const ALLOWED_LANGUAGES = [
   { id: 'en', native: 'English', en: 'English', group: 'Primary Languages' },
@@ -54,6 +55,7 @@ const ALLOWED_LANGUAGES = [
 ];
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [authAction, setAuthAction] = useState<'signin' | 'signup'>('signin');
   const [loginMode, setLoginMode] = useState<'email' | 'phone' | 'code'>('email');
 
@@ -164,7 +166,7 @@ export default function LoginScreen() {
             <Brain size={24} color={colors.teal} strokeWidth={2.4} />
           </View>
           <Text style={styles.logoTitle}>SMRITI+</Text>
-          <Text style={styles.tagline}>Cognitive Care & Support</Text>
+          <Text style={styles.tagline}>{t('app.tagline') || 'Cognitive Care & Support'}</Text>
         </View>
 
         {/* Primary Segmented Control (Sign In vs Create Account) */}
@@ -180,7 +182,7 @@ export default function LoginScreen() {
             }}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Switch to Sign In"
+            accessibilityLabel={t('auth.signIn') || 'Sign In'}
           >
             <Text
               style={[
@@ -188,7 +190,7 @@ export default function LoginScreen() {
                 authAction === 'signin' && styles.segmentTextActive,
               ]}
             >
-              Sign In
+              {t('auth.signIn') || 'Sign In'}
             </Text>
           </TouchableOpacity>
 
@@ -203,7 +205,7 @@ export default function LoginScreen() {
             }}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Switch to Create Account"
+            accessibilityLabel={t('auth.createAccount') || 'Create Account'}
           >
             <Text
               style={[
@@ -211,7 +213,7 @@ export default function LoginScreen() {
                 authAction === 'signup' && styles.segmentTextActive,
               ]}
             >
-              Create Account
+              {t('auth.createAccount') || 'Create Account'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -219,9 +221,9 @@ export default function LoginScreen() {
         {/* ── SIGN IN FORM ── */}
         {authAction === 'signin' ? (
           <View style={styles.formCard}>
-            <Text style={styles.formHeading}>Welcome Back</Text>
+            <Text style={styles.formHeading}>{t('auth.signIn') || 'Welcome Back'}</Text>
             <Text style={styles.formSubheading}>
-              Select your sign-in method to continue.
+              {t('auth.chooseLanguageSub') || 'Select your sign-in method to continue.'}
             </Text>
 
             {/* Sub-Segmented Control (Email / Phone / Patient Code) */}
@@ -244,7 +246,7 @@ export default function LoginScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  Email / PIN
+                  {t('auth.emailLogin') || 'Email / PIN'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -265,7 +267,7 @@ export default function LoginScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  Mobile OTP
+                  {t('auth.phone') || 'Mobile OTP'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -286,7 +288,7 @@ export default function LoginScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  Patient Code
+                  {t('auth.codeLogin') || 'Patient Code'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -296,11 +298,11 @@ export default function LoginScreen() {
               <View style={styles.codeLoginBox}>
                 <View style={styles.codeLoginHeaderRow}>
                   <KeyRound size={16} color={colors.teal} />
-                  <Text style={styles.codeLoginTitle}>Direct Patient Code Access</Text>
+                  <Text style={styles.codeLoginTitle}>{t('auth.codeLogin') || 'Direct Patient Code Access'}</Text>
                 </View>
 
                 {/* Role Switcher for Code Login */}
-                <Text style={styles.codeRoleLabel}>I am signing in as:</Text>
+                <Text style={styles.codeRoleLabel}>{t('auth.selectRole') || 'I am signing in as:'}</Text>
                 <View style={styles.codeRoleSelector}>
                   <TouchableOpacity
                     style={[
@@ -317,7 +319,7 @@ export default function LoginScreen() {
                         codeRole === 'elderly' && styles.codeRoleTextActive,
                       ]}
                     >
-                      Patient (Elder)
+                      {t('auth.forMyself') || 'Patient (Elder)'}
                     </Text>
                   </TouchableOpacity>
 
@@ -336,7 +338,7 @@ export default function LoginScreen() {
                         codeRole === 'caregiver' && styles.codeRoleTextActive,
                       ]}
                     >
-                      Caregiver / Family
+                      {t('auth.familyCaregiver') || 'Caregiver / Family'}
                     </Text>
                   </TouchableOpacity>
                 </View>

@@ -232,26 +232,26 @@ export default function ElderHomeScreen({ navigation }: any) {
     {
       id: 'routine-1',
       time: '09:00',
-      title: 'Morning routine & water',
+      title: t('home.morningRoutine') || 'Morning routine & water',
       category: 'routine',
       status: 'completed',
     },
     {
       id: 'plan-1',
       time: '10:00',
-      title: summary?.next_action?.game_name || 'Picture Memory',
-      subtitle: '5-minute memory training',
+      title: summary?.next_action?.game_name ? (t(`games.${summary.next_action.game_id}`) || summary.next_action.game_name) : (t('games.matchingName') || 'Picture Memory'),
+      subtitle: t('home.memoryTraining') || '5-minute memory training',
       category: 'memory',
       status: 'active',
       onPress: () => navigation.navigate('Games'),
       onAction: () => navigation.navigate('Games'),
-      actionTitle: 'Start Activity',
+      actionTitle: t('home.startActivityBtn') || 'Start Activity',
     },
     {
       id: 'plan-2',
       time: '12:30',
-      title: summary?.next_reminder?.title || 'Blood Pressure Medicine',
-      subtitle: 'Take with warm water',
+      title: summary?.next_reminder?.title || t('home.afternoonMedicine') || 'Blood Pressure Medicine',
+      subtitle: t('home.takeWithWater') || 'Take with warm water',
       category: 'medicine',
       status: 'upcoming',
       onPress: () => navigation.navigate('Reminders'),
@@ -259,8 +259,8 @@ export default function ElderHomeScreen({ navigation }: any) {
     {
       id: 'plan-3',
       time: '18:00',
-      title: 'Call Ananya',
-      subtitle: 'Evening family check-in',
+      title: t('home.familyCall') || 'Call Loved Ones',
+      subtitle: t('home.catchUpFamily') || 'Evening family check-in',
       category: 'family',
       status: 'upcoming',
       onPress: () => navigation.navigate('FamilyCorner'),
@@ -332,11 +332,11 @@ export default function ElderHomeScreen({ navigation }: any) {
 
         {/* ── 4. CONTINUE: Recommended Cognitive Exercise ── */}
         <SMRITIActivityCard
-          title={summary?.next_action?.game_name || 'Picture Memory'}
-          category="Memory & Recognition"
+          title={summary?.next_action?.game_name || t('games.matchingName') || 'Picture Memory'}
+          category={t('home.memoryAndFocus') || 'Memory & Recognition'}
           durationMinutes={5}
           level={summary?.next_action?.difficulty || 2}
-          description="A calm, enjoyable picture exercise designed to strengthen memory recognition."
+          description={t('home.activityDescription') || 'A calm, enjoyable picture exercise designed to strengthen memory recognition.'}
           onStart={() => navigation.navigate('Games')}
           onExploreAll={() => navigation.navigate('Games')}
         />

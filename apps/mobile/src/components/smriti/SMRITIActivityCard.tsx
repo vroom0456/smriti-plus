@@ -23,6 +23,7 @@ import {
 } from 'lucide-react-native';
 import { colors, fontFamily, spacing } from '../../theme/tokens';
 import { SMRITIButton } from './SMRITIComponents';
+import { useTranslation } from '../../i18n';
 
 interface SMRITIActivityCardProps {
   title: string;
@@ -36,43 +37,47 @@ interface SMRITIActivityCardProps {
 
 export function SMRITIActivityCard({
   title,
-  category = 'Memory & Focus',
+  category,
   durationMinutes = 5,
   level = 2,
-  description = 'A gentle activity to keep your memory sharp and peaceful.',
+  description,
   onStart,
   onExploreAll,
 }: SMRITIActivityCardProps) {
+  const { t } = useTranslation();
+  const displayCategory = category || t('home.memoryAndFocus') || 'Memory & Focus';
+  const displayDescription = description || t('home.activityDescription') || 'A gentle activity to keep your memory sharp and peaceful.';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionHeading}>CONTINUE ACTIVITY</Text>
+      <Text style={styles.sectionHeading}>{t('home.continueActivity') || 'CONTINUE ACTIVITY'}</Text>
 
       <View style={styles.card}>
         {/* Badges Row */}
         <View style={styles.badgeRow}>
           <View style={styles.categoryBadge}>
             <Brain size={15} color={colors.primary} strokeWidth={2.4} style={{ marginRight: 6 }} />
-            <Text style={styles.categoryBadgeText}>{category}</Text>
+            <Text style={styles.categoryBadgeText}>{displayCategory}</Text>
           </View>
 
           <View style={styles.timeBadge}>
             <Clock size={14} color={colors.textSecondary} strokeWidth={2.2} style={{ marginRight: 4 }} />
-            <Text style={styles.timeBadgeText}>{durationMinutes} mins</Text>
+            <Text style={styles.timeBadgeText}>{durationMinutes} {t('home.mins') || 'mins'}</Text>
           </View>
 
           <View style={styles.levelBadge}>
             <Sparkles size={14} color="#D97706" strokeWidth={2.4} style={{ marginRight: 4 }} />
-            <Text style={styles.levelBadgeText}>Level {level}</Text>
+            <Text style={styles.levelBadgeText}>{t('home.level', { level }) || `Level ${level}`}</Text>
           </View>
         </View>
 
         {/* Title & Description */}
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+        <Text style={styles.description}>{displayDescription}</Text>
 
         {/* Big Action Button */}
         <SMRITIButton
-          title="Start Activity ➔"
+          title={t('home.startActivityBtn') || 'Start Activity ➔'}
           onPress={onStart}
           variant="primary"
           size="large"
@@ -88,7 +93,7 @@ export function SMRITIActivityCard({
             accessibilityRole="button"
             accessibilityLabel="Explore all mind activities"
           >
-            <Text style={styles.exploreLinkText}>Explore all activities</Text>
+            <Text style={styles.exploreLinkText}>{t('home.exploreAllActivities') || 'Explore all activities'}</Text>
             <ChevronRight size={17} color={colors.primary} strokeWidth={2.4} />
           </TouchableOpacity>
         ) : null}

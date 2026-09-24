@@ -26,6 +26,7 @@ import {
   HeartHandshake,
 } from 'lucide-react-native';
 import { colors, fontFamily, spacing } from '../../theme/tokens';
+import { useTranslation } from '../../i18n';
 
 interface QuickActionItem {
   id: string;
@@ -51,11 +52,12 @@ export function SMRITIQuickActions({
   onJournal,
   onFamily,
 }: SMRITIQuickActionsProps) {
+  const { t } = useTranslation();
   const actions: QuickActionItem[] = [
     {
       id: 'play',
-      title: 'Play',
-      subtitle: 'Mind games',
+      title: t('home.play') || 'Play',
+      subtitle: t('home.mindGames') || 'Mind games',
       icon: <Gamepad2 size={26} color="#0284C7" strokeWidth={2.4} />,
       bgColor: '#F0F9FF',
       borderColor: '#BAE6FD',
@@ -64,8 +66,8 @@ export function SMRITIQuickActions({
     },
     {
       id: 'reminders',
-      title: 'Reminders',
-      subtitle: 'Meds & water',
+      title: t('home.reminders') || 'Reminders',
+      subtitle: t('home.medsWater') || 'Meds & water',
       icon: <Bell size={26} color="#D97706" strokeWidth={2.4} />,
       bgColor: '#FFFBEB',
       borderColor: '#FDE68A',
@@ -74,8 +76,8 @@ export function SMRITIQuickActions({
     },
     {
       id: 'journal',
-      title: 'Journal',
-      subtitle: 'Save memories',
+      title: t('home.journal') || 'Journal',
+      subtitle: t('home.saveMemories') || 'Save memories',
       icon: <BookOpen size={26} color="#0D9488" strokeWidth={2.4} />,
       bgColor: '#F0FDFA',
       borderColor: '#99F6E4',
@@ -84,8 +86,8 @@ export function SMRITIQuickActions({
     },
     {
       id: 'family',
-      title: 'Family',
-      subtitle: 'Call loved ones',
+      title: t('home.family') || 'Family',
+      subtitle: t('home.callLovedOnes') || 'Call loved ones',
       icon: <HeartHandshake size={26} color="#E11D48" strokeWidth={2.4} />,
       bgColor: '#FFF1F2',
       borderColor: '#FECDD3',
@@ -96,7 +98,7 @@ export function SMRITIQuickActions({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionHeading}>QUICK ACTIONS</Text>
+      <Text style={styles.sectionHeading}>{t('home.quickActions') || 'QUICK ACTIONS'}</Text>
       <View style={styles.grid}>
         {actions.map((act) => (
           <TouchableOpacity

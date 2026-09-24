@@ -36,18 +36,18 @@ export type SupportedLanguage =
   | 'ta'
   | 'bn';
 
-export const translations: Record<SupportedLanguage, typeof en> = {
+export const translations: Record<SupportedLanguage, any> = {
   en,
-  te: te as unknown as typeof en,
-  as: assamese as unknown as typeof en,
-  bodo: bodo as unknown as typeof en,
-  mni: assamese as unknown as typeof en,
-  kha: en as unknown as typeof en,
-  grt: en as unknown as typeof en,
-  lus: en as unknown as typeof en,
-  hi: hi as unknown as typeof en,
-  ta: ta as unknown as typeof en,
-  bn: bn as unknown as typeof en,
+  te,
+  as: assamese,
+  bodo,
+  mni: assamese,
+  kha: en,
+  grt: en,
+  lus: en,
+  hi,
+  ta,
+  bn,
 };
 
 let currentLang: SupportedLanguage = 'en';

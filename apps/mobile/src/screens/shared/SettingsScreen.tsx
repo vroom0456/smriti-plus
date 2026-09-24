@@ -98,6 +98,7 @@ export default function SettingsScreen() {
 
   const [showLangModal, setShowLangModal] = useState<boolean>(false);
   const [showVoicePacksModal, setShowVoicePacksModal] = useState<boolean>(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
   const [voicePacks, setVoicePacks] = useState<VoicePackInfo[]>(voicePackManager.getVoicePacks());
   const [isDownloadingAll, setIsDownloadingAll] = useState<boolean>(false);
 
@@ -139,10 +140,12 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: logout },
-    ]);
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmSignOut = async () => {
+    setShowLogoutConfirm(false);
+    await logout();
   };
 
   return (
@@ -186,7 +189,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Volume2 size={20} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 8 }} />
-            <Text style={styles.sectionTitle}>Voice & Language</Text>
+            <Text style={styles.sectionTitle}>{t('settings.voiceAndLanguage') || 'Voice & Language'}</Text>
           </View>
 
           {/* Clean Single Language Card — caregiver only */}
@@ -232,9 +235,9 @@ export default function SettingsScreen() {
             </View>
             <View style={styles.cardMain}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.cardLabel}>Offline Voice Packs</Text>
+                <Text style={styles.cardLabel}>{t('settings.offlineVoicePacks') || 'Offline Voice Packs'}</Text>
                 <View style={styles.badgeNER}>
-                  <Text style={styles.badgeNERText}>MDoNER Ready</Text>
+                  <Text style={styles.badgeNERText}>{t('settings.mdonerReady') || 'MDoNER Ready'}</Text>
                 </View>
               </View>
               <Text style={styles.cardSubText}>
@@ -242,20 +245,20 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <View style={styles.changePill}>
-              <Text style={styles.changePillText}>Download</Text>
+              <Text style={styles.changePillText}>{t('settings.download') || 'Download'}</Text>
               <ChevronRight size={16} color={colors.primary} strokeWidth={2.2} />
             </View>
           </TouchableOpacity>
 
           {/* Speaking Pace Pills */}
           <View style={[styles.card, { flexDirection: 'column', alignItems: 'stretch' }, shadows.subtle]}>
-            <Text style={styles.cardLabel}>Speaking Pace</Text>
-            <Text style={styles.cardSubText}>Adjust how fast SMRITI speaks to you</Text>
+            <Text style={styles.cardLabel}>{t('settings.speakingPace') || 'Speaking Pace'}</Text>
+            <Text style={styles.cardSubText}>{t('settings.speakingPaceSub') || 'Adjust how fast SMRITI speaks to you'}</Text>
             <View style={styles.pillsRow}>
               {[
-                { rate: 0.75, label: 'Slow (0.75x)' },
-                { rate: 0.85, label: 'Comfortable (0.85x)' },
-                { rate: 1.0, label: 'Standard (1.0x)' },
+                { rate: 0.75, label: t('settings.slowPace') || 'Slow (0.75x)' },
+                { rate: 0.85, label: t('settings.comfortPace') || 'Comfortable (0.85x)' },
+                { rate: 1.0, label: t('settings.standardPace') || 'Standard (1.0x)' },
               ].map((item) => {
                 const isActive = voiceSpeed === item.rate;
                 return (
@@ -313,18 +316,18 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Eye size={20} color={colors.greenCalm} strokeWidth={2.2} style={{ marginRight: 8 }} />
-            <Text style={styles.sectionTitle}>Display & Readability</Text>
+            <Text style={styles.sectionTitle}>{t('settings.displayAndReadability') || 'Display & Readability'}</Text>
           </View>
 
           {/* Text Size Pills */}
           <View style={[styles.card, { flexDirection: 'column', alignItems: 'stretch' }, shadows.subtle]}>
-            <Text style={styles.cardLabel}>Text Size</Text>
-            <Text style={styles.cardSubText}>Choose comfortable readability</Text>
+            <Text style={styles.cardLabel}>{t('settings.textSize') || 'Text Size'}</Text>
+            <Text style={styles.cardSubText}>{t('settings.textSizeSub') || 'Choose comfortable readability'}</Text>
             <View style={styles.pillsRow}>
               {[
-                { id: 'normal', label: 'Normal' },
-                { id: 'large', label: 'Large (A+)' },
-                { id: 'xlarge', label: 'Extra Large (A++)' },
+                { id: 'normal', label: t('settings.normal') || 'Normal' },
+                { id: 'large', label: `${t('settings.large') || 'Large'} (A+)` },
+                { id: 'xlarge', label: `${t('settings.extraLarge') || 'Extra Large'} (A++)` },
               ].map((item) => {
                 const isActive = textSize === item.id;
                 return (
@@ -380,9 +383,9 @@ export default function SettingsScreen() {
           {/* High Contrast Toggle */}
           <View style={[styles.toggleRow, shadows.subtle]}>
             <View style={{ flex: 1, paddingRight: spacing.md }}>
-              <Text style={styles.toggleTitle}>High Contrast</Text>
+              <Text style={styles.toggleTitle}>{t('settings.highContrast') || 'High Contrast Display'}</Text>
               <Text style={styles.toggleSub}>
-                Darker text and bolder borders for enhanced visual clarity
+                {t('settings.highContrastSub') || 'Darker text and bolder borders for enhanced visual clarity'}
               </Text>
             </View>
             <Switch
@@ -398,7 +401,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <User size={20} color={colors.textDark} strokeWidth={2.2} style={{ marginRight: 8 }} />
-            <Text style={styles.sectionTitle}>Account & Caregiver</Text>
+            <Text style={styles.sectionTitle}>{t('settings.caregiverFamilySync') || 'Account & Caregiver'}</Text>
           </View>
 
           <View style={[styles.card, shadows.subtle]}>
@@ -449,9 +452,9 @@ export default function SettingsScreen() {
                   <User size={22} color="#1D4ED8" strokeWidth={2.2} />
                 </View>
                 <View style={styles.cardMain}>
-                  <Text style={styles.cardLabel}>Who Am I? (My Life Story)</Text>
+                  <Text style={styles.cardLabel}>{t('identity.comfortTitle') || 'Who Am I? (My Life Story)'}</Text>
                   <Text style={styles.cardSubText}>
-                    Biographical reassurance, family details, and comforting voice
+                    {t('home.whoAmISub') || 'Biographical reassurance, family details, and comforting voice'}
                   </Text>
                 </View>
                 <ChevronRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
@@ -468,9 +471,9 @@ export default function SettingsScreen() {
                   <Heart size={22} color="#E11D48" strokeWidth={2.2} />
                 </View>
                 <View style={styles.cardMain}>
-                  <Text style={styles.cardLabel}>Digital Memory Box</Text>
+                  <Text style={styles.cardLabel}>{t('memories.title') || 'Digital Memory Box'}</Text>
                   <Text style={styles.cardSubText}>
-                    Cherished memories, music, celebrations, and places
+                    {t('memories.tapToOpen') || 'Cherished memories, music, celebrations, and places'}
                   </Text>
                 </View>
                 <ChevronRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
@@ -484,10 +487,10 @@ export default function SettingsScreen() {
             onPress={handleLogout}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Sign out of account"
+            accessibilityLabel={t('auth.signOut') || 'Sign out of account'}
           >
             <LogOut size={18} color={colors.danger} strokeWidth={2.2} style={{ marginRight: 8 }} />
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <Text style={styles.signOutText}>{t('auth.signOut') || 'Sign Out'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -672,6 +675,101 @@ export default function SettingsScreen() {
                 );
               })}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── SIGN OUT CONFIRMATION MODAL ── */}
+      <Modal
+        visible={showLogoutConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutConfirm(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { maxWidth: 380, padding: 24 }]}>
+            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                }}
+              >
+                <LogOut size={28} color={colors.danger} strokeWidth={2.4} />
+              </View>
+              <Text style={[styles.modalTitle, { textAlign: 'center' }]}>
+                {t('auth.signOut') || 'Sign Out'}
+              </Text>
+              <Text
+                style={[
+                  styles.cardSubText,
+                  { textAlign: 'center', marginTop: 8, fontSize: 16, lineHeight: 22 },
+                ]}
+              >
+                {t('auth.signOutConfirm') || 'Are you sure you want to sign out?'}
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+              <TouchableOpacity
+                style={[
+                  styles.closeBtn,
+                  {
+                    flex: 1,
+                    paddingVertical: 14,
+                    backgroundColor: colors.borderLight,
+                    borderRadius: borderRadius.md,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+                onPress={() => setShowLogoutConfirm(false)}
+                activeOpacity={0.75}
+              >
+                <Text
+                  style={{
+                    fontFamily: fontFamily.display,
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: colors.textDark,
+                  }}
+                >
+                  {t('common.cancel') || 'Cancel'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.closeBtn,
+                  {
+                    flex: 1,
+                    paddingVertical: 14,
+                    backgroundColor: colors.danger,
+                    borderRadius: borderRadius.md,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+                onPress={confirmSignOut}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={{
+                    fontFamily: fontFamily.display,
+                    fontSize: 16,
+                    fontWeight: '700',
+                    color: '#FFFFFF',
+                  }}
+                >
+                  {t('auth.signOut') || 'Sign Out'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

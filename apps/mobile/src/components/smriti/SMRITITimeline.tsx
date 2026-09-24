@@ -26,6 +26,7 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import { colors, fontFamily, spacing } from '../../theme/tokens';
+import { useTranslation } from '../../i18n';
 
 export interface TimelineItem {
   id: string;
@@ -45,6 +46,8 @@ interface SMRITITimelineProps {
 }
 
 export function SMRITITimeline({ items, onViewAll }: SMRITITimelineProps) {
+  const { t } = useTranslation();
+
   const getCategoryIcon = (category: TimelineItem['category'], status: TimelineItem['status']) => {
     const isDone = status === 'completed';
     const color = isDone
@@ -71,7 +74,7 @@ export function SMRITITimeline({ items, onViewAll }: SMRITITimelineProps) {
       <View style={styles.headerRow}>
         <View style={styles.titleWrap}>
           <Clock size={18} color={colors.primary} strokeWidth={2.4} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>TODAY'S PLAN</Text>
+          <Text style={styles.sectionTitle}>{t('home.todaysPlan') || "TODAY'S PLAN"}</Text>
         </View>
         {onViewAll ? (
           <TouchableOpacity
@@ -80,7 +83,7 @@ export function SMRITITimeline({ items, onViewAll }: SMRITITimelineProps) {
             accessibilityRole="button"
             accessibilityLabel="View full schedule"
           >
-            <Text style={styles.viewAllText}>See all</Text>
+            <Text style={styles.viewAllText}>{t('home.seeAll') || 'See all'}</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -178,7 +181,7 @@ export function SMRITITimeline({ items, onViewAll }: SMRITITimelineProps) {
                         isActive && styles.statusBadgeTextActive,
                       ]}
                     >
-                      {isDone ? 'Completed' : isActive ? 'Up next' : 'Upcoming'}
+                      {isDone ? (t('home.done') || 'Completed') : isActive ? (t('home.upNext') || 'Up next') : (t('home.upcoming') || 'Upcoming')}
                     </Text>
                   </View>
                 </View>

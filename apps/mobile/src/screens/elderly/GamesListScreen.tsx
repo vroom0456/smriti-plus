@@ -271,11 +271,11 @@ const CATEGORY_THEMES: Record<string, { iconColor: string; bgColor: string }> = 
           style={styles.backButton}
           onPress={goBackSafe}
           accessibilityRole="button"
-          accessibilityLabel="Back to Home"
+          accessibilityLabel={t('common.home') || 'Back to Home'}
           activeOpacity={0.75}
         >
           <ArrowLeft size={20} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
-          <Text style={styles.backText}>Home</Text>
+          <Text style={styles.backText}>{t('common.home') || 'Home'}</Text>
         </TouchableOpacity>
 
         <Text style={styles.title}>{t('games.title') || 'Mind Activities'}</Text>
@@ -289,9 +289,9 @@ const CATEGORY_THEMES: Record<string, { iconColor: string; bgColor: string }> = 
             <Sparkles size={24} color="#FFFFFF" strokeWidth={2.4} />
           </View>
           <View style={styles.streakInfo}>
-            <Text style={styles.streakTitle}>Keep Your Mind Glowing</Text>
+            <Text style={styles.streakTitle}>{t('games.keepMindGlowing') || 'Keep Your Mind Glowing'}</Text>
             <Text style={styles.streakSub}>
-              Complete at least 1 gentle activity daily to maintain your streak!
+              {t('games.dailyStreakSub') || 'Complete at least 1 gentle activity daily to maintain your streak!'}
             </Text>
           </View>
         </View>
@@ -299,13 +299,43 @@ const CATEGORY_THEMES: Record<string, { iconColor: string; bgColor: string }> = 
         <View style={styles.gamesList}>
           {games.map((game) => {
             const theme = CATEGORY_THEMES[game.category] || { iconColor: colors.primary, bgColor: '#EFF6FF' };
+            const localizedName =
+              game.category === 'memory_matching'
+                ? t('games.matchingName')
+                : game.category === 'memory_recall'
+                ? t('games.recallName')
+                : game.category === 'attention'
+                ? t('games.attentionName')
+                : game.category === 'pattern_recognition'
+                ? t('games.patternName')
+                : game.category === 'relaxation'
+                ? t('games.serenityName')
+                : game.category === 'heritage_trivia'
+                ? t('games.triviaName')
+                : game.name;
+
+            const localizedDesc =
+              game.category === 'memory_matching'
+                ? t('games.matchingDesc')
+                : game.category === 'memory_recall'
+                ? t('games.recallDesc')
+                : game.category === 'attention'
+                ? t('games.attentionDesc')
+                : game.category === 'pattern_recognition'
+                ? t('games.patternDesc')
+                : game.category === 'relaxation'
+                ? t('games.serenityDesc')
+                : game.category === 'heritage_trivia'
+                ? t('games.triviaDesc')
+                : game.description;
+
             return (
               <TouchableOpacity
                 key={game.id}
                 onPress={() => startGame(game)}
                 activeOpacity={0.78}
                 accessibilityRole="button"
-                accessibilityLabel={`Start ${game.name}: ${game.description || 'Memory exercise'}`}
+                accessibilityLabel={`Start ${localizedName || game.name}: ${localizedDesc || game.description || 'Memory exercise'}`}
                 style={[styles.activityItem, shadows.card]}
               >
                 <View style={[styles.activityIconWrap, { backgroundColor: theme.bgColor }]}>
@@ -314,10 +344,10 @@ const CATEGORY_THEMES: Record<string, { iconColor: string; bgColor: string }> = 
 
                 <View style={styles.activityInfo}>
                   <Text style={styles.activityName} numberOfLines={1}>
-                    {game.name}
+                    {localizedName || game.name}
                   </Text>
                   <Text style={styles.activityDesc} numberOfLines={2}>
-                    {game.description || 'Engaging cognitive activity tailored for today'}
+                    {localizedDesc || game.description || 'Engaging cognitive activity tailored for today'}
                   </Text>
                 </View>
 
@@ -332,7 +362,7 @@ const CATEGORY_THEMES: Record<string, { iconColor: string; bgColor: string }> = 
         {/* Calming Senior Reassurance Footer from Stitch */}
         <View style={styles.seniorReassuranceFooter}>
           <Text style={styles.seniorReassuranceText}>
-            🌸 Take all the time you need. There are no timers, errors, or stress at SMRITI+.
+            {t('games.seniorReassurance') || '🌸 Take all the time you need. There are no timers, errors, or stress at SMRITI+.'}
           </Text>
         </View>
       </ScrollView>

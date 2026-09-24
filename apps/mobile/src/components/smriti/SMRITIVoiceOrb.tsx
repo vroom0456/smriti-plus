@@ -28,6 +28,7 @@ import {
   ArrowRight,
 } from 'lucide-react-native';
 import { colors, fontFamily, spacing } from '../../theme/tokens';
+import { useTranslation } from '../../i18n';
 
 export type VoiceState = 'idle' | 'listening' | 'thinking' | 'speaking';
 
@@ -107,25 +108,27 @@ export function SMRITIVoiceOrb({
     }
   }, [state, pulseAnim, rippleAnim]);
 
+  const { t } = useTranslation();
+
   const stateLabels: Record<VoiceState, { title: string; subtitle: string; color: string }> = {
     idle: {
-      title: 'Talk to SMRITI',
-      subtitle: 'Ask about your day, memories, or tell me how you feel',
+      title: t('home.tapToSpeak') || 'Talk to SMRITI',
+      subtitle: t('home.tapMicAnytime') || 'Ask about your day, memories, or tell me how you feel',
       color: colors.primary,
     },
     listening: {
-      title: "I'm listening…",
-      subtitle: 'Speak in Telugu, Assamese, Hindi, or English',
+      title: t('home.listeningToYou') || "I'm listening…",
+      subtitle: t('home.speakInNative') || 'Speak in your native language',
       color: '#0E7490', // Calm Teal
     },
     thinking: {
-      title: 'Just a moment…',
-      subtitle: 'SMRITI is thinking',
+      title: t('home.justAMoment') || 'Just a moment…',
+      subtitle: t('home.smritiThinking') || 'SMRITI is thinking',
       color: '#7C3AED', // Gentle Purple
     },
     speaking: {
-      title: 'SMRITI is speaking',
-      subtitle: 'Listen calmly or tap stop anytime',
+      title: t('home.smritiSpeaking') || 'SMRITI is speaking',
+      subtitle: t('home.listenCalmly') || 'Listen calmly or tap stop anytime',
       color: '#059669', // Emerald Green
     },
   };
@@ -199,7 +202,7 @@ export function SMRITIVoiceOrb({
       {/* Live transcript or conversational response */}
       {state === 'listening' && transcript ? (
         <View style={styles.liveSpeechBox}>
-          <Text style={styles.transcriptPrefix}>You said:</Text>
+          <Text style={styles.transcriptPrefix}>{t('home.youSaid') || 'You said:'}</Text>
           <Text style={styles.transcriptText}>"{transcript}"</Text>
         </View>
       ) : null}
@@ -236,7 +239,7 @@ export function SMRITIVoiceOrb({
                 accessibilityLabel="Stop speech"
               >
                 <Square size={16} color="#DC2626" fill="#DC2626" style={{ marginRight: 6 }} />
-                <Text style={[styles.voiceControlText, { color: '#DC2626' }]}>Stop</Text>
+                <Text style={[styles.voiceControlText, { color: '#DC2626' }]}>{t('home.stop') || 'Stop'}</Text>
               </TouchableOpacity>
             ) : null}
 
@@ -248,7 +251,7 @@ export function SMRITIVoiceOrb({
                 accessibilityLabel="Repeat that again"
               >
                 <RotateCcw size={16} color={colors.textDark} style={{ marginRight: 6 }} />
-                <Text style={styles.voiceControlText}>Repeat</Text>
+                <Text style={styles.voiceControlText}>{t('home.repeat') || 'Repeat'}</Text>
               </TouchableOpacity>
             ) : null}
 
@@ -260,7 +263,7 @@ export function SMRITIVoiceOrb({
                 accessibilityLabel="Speak slower"
               >
                 <Volume2 size={16} color={colors.textDark} style={{ marginRight: 6 }} />
-                <Text style={styles.voiceControlText}>Speak slower</Text>
+                <Text style={styles.voiceControlText}>{t('home.speakSlower') || 'Speak slower'}</Text>
               </TouchableOpacity>
             ) : null}
           </View>
