@@ -29,7 +29,6 @@ import {
   UserCheck,
   Users,
   Stethoscope,
-  ChevronRight,
   User,
   Globe,
   ChevronDown,
@@ -37,9 +36,8 @@ import {
   X,
   KeyRound,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react-native';
-import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
+import { colors, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { PrimaryButton } from '../../components/UIComponents';
 import { useAuthStore, UserRole } from '../../state/authStore';
 
@@ -802,7 +800,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   subSegmentTextActive: {
-    color: colors.teal,
+    color: colors.primary,
     fontWeight: '700',
   },
 
@@ -865,24 +863,24 @@ const styles = StyleSheet.create({
 
   // Code Login Specific
   codeLoginBox: {
-    backgroundColor: '#F0FDFA',
+    backgroundColor: colors.primaryLight,
     borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#CCFBF1',
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: colors.primaryMuted,
     marginBottom: 4,
   },
   codeLoginHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   codeLoginTitle: {
     fontFamily: fontFamily.display,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
-    color: colors.teal,
+    color: colors.primaryDark,
   },
   codeRoleLabel: {
     fontFamily: fontFamily.display,

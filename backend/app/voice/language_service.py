@@ -11,7 +11,7 @@ Provides:
 """
 
 import re
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple, Any
 from app.voice.schemas import LanguageCapability
 
 

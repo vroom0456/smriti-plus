@@ -20,10 +20,9 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { ArrowLeft, Sparkles, Trophy, CheckCircle2, ChevronRight, Flower2 } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2, Flower2 } from 'lucide-react-native';
 import {
   colors,
-  typography,
   spacing,
   borderRadius,
   shadows,

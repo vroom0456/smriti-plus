@@ -9,16 +9,14 @@ Implements Sections 74–85, 96, 99:
 - Privacy-first voice telemetry (no raw audio stored)
 """
 
-from uuid import UUID
-from datetime import datetime, timezone
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.models import AuditLog, User
+from app.db.models import AuditLog
 from app.core.auth import get_current_user, CurrentUser, verify_elder_access
 from app.api.schemas import (
     VoiceIntentParseRequest,
@@ -281,3 +279,46 @@ def log_voice_telemetry(
     db.commit()
 
     return VoiceTelemetryResponse(status="recorded")
+
+
+@router.post("/companion-chat")
+def companion_chat(
+    req: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Conversational cognitive companion endpoint with dementia communication rules,
+    safety gating, and tool-calling recommendations.
+    """
+    elder_id = req.get("elder_id", current_user.user_id)
+    verify_elder_access(elder_id, current_user, db)
+
+    from app.voice.companion import ConversationalCompanion, CompanionChatRequest
+
+    chat_req = CompanionChatRequest(
+        elder_id=elder_id,
+        message=req.get("message", ""),
+        language=req.get("language", "te-IN"),
+        elder_name=req.get("elder_name"),
+        daughter_name=req.get("daughter_name", "Ananya"),
+    )
+
+    resp = ConversationalCompanion.process_turn(chat_req)
+
+    # Audit log
+    audit = AuditLog(
+        actor_id=current_user.user_id,
+        action="companion_dialogue_turn",
+        target_id=elder_id,
+        details={
+            "detected_intent": resp.detected_intent,
+            "is_emergency": resp.is_emergency,
+            "language": resp.language,
+        },
+    )
+    db.add(audit)
+    db.commit()
+
+    return resp.model_dump()
+

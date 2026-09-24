@@ -6,16 +6,22 @@ GET /caregiver/{id}/dashboard — engagement stats, adherence, alerts, trends
 
 from uuid import UUID
 from datetime import datetime, timezone, date, timedelta
+import secrets
+import hashlib
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import desc
 
 from app.db.database import get_db
 from app.db.models import (
-    User, ElderlyProfile, GameSession, Reminder, ReminderLog, DifficultyState, Game,
+    User, ElderlyProfile, GameSession, Reminder, ReminderLog,
 )
-from app.core.auth import get_current_user, CurrentUser, require_role
+from app.core.auth import (
+    hash_password,
+    get_current_user,
+    CurrentUser, require_role,
+)
 from app.api.schemas import (
     CaregiverDashboardResponse, DashboardStats, DashboardTrendPoint,
     DashboardAlert, UserResponse, GameSessionResponse, ReminderResponse,
@@ -217,6 +223,76 @@ def update_elder_care_stage(
         "stage_label": stage_names.get(profile.care_stage, f"Stage {profile.care_stage}"),
         "message": f"Care configuration updated to {stage_names.get(profile.care_stage)}. Authorized caregiver in control.",
     }
+
+
+@router.patch("/caregiver/{caregiver_id}/elders/{elder_id}/language")
+def update_elder_language(
+    caregiver_id: UUID,
+    elder_id: UUID,
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role("caregiver")),
+):
+    """
+    Caregiver changes the elder's app language (cascades to all screens).
+    Only caregivers can modify this — elderly users cannot change their own language.
+    """
+    if current_user.user_id != caregiver_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    elder = db.query(User).filter(User.id == elder_id).first()
+    if not elder:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Elder not found")
+
+    # Verify caregiver-elder link
+    profile = db.query(ElderlyProfile).filter(
+        ElderlyProfile.user_id == elder_id,
+        ElderlyProfile.caregiver_id == caregiver_id,
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not linked to this elder")
+
+    lang = payload.get("language", "en")
+    elder.language = lang
+    db.commit()
+
+    return {
+        "status": "success",
+        "elder_id": str(elder_id),
+        "language": lang,
+        "message": f"Elder's language updated to '{lang}' by caregiver.",
+    }
+
+
+@router.get("/elders/{elder_id}/link-code")
+def get_or_generate_link_code(
+    elder_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    Returns the elder's current link code, or generates a new one.
+    Caregiver or the elder themselves can request this.
+    """
+    profile = db.query(ElderlyProfile).filter(ElderlyProfile.user_id == elder_id).first()
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+
+    # Generate a fresh code
+    raw_code = "SMR-" + secrets.token_hex(3).upper()[:3]
+    code_hash = hashlib.sha256(raw_code.encode()).hexdigest()
+    profile.caregiver_link_code_hash = code_hash
+    profile.caregiver_link_code_expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+    db.commit()
+
+    return {
+        "link_code": raw_code,
+        "expires_in_days": 30,
+        "message": "Share this code with your caregiver or family member.",
+    }
+
+
+
 
 
 def _calculate_streak(db: Session, elder_id: UUID) -> int:

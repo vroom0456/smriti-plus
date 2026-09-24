@@ -20,7 +20,7 @@ import {
   Platform,
 } from 'react-native';
 import { v4 as uuidv4 } from '../../../utils/uuid';
-import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
+import { colors, spacing, borderRadius, shadows, fontFamily } from '../../../theme/tokens';
 import { PrimaryButton, ProgressRing } from '../../../components/UIComponents';
 import { useAuthStore } from '../../../state/authStore';
 import { api } from '../../../services/api';

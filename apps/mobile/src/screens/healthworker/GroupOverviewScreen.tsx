@@ -24,7 +24,7 @@ import {
   Modal,
 } from 'react-native';
 import { Download, AlertTriangle, User, Flame, UserPlus, ShieldCheck, X, ArrowRight } from 'lucide-react-native';
-import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
+import { colors, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../state/authStore';
 

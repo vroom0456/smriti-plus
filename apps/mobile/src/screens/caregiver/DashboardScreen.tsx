@@ -4,7 +4,7 @@ import {
   TouchableOpacity, TextInput, Modal, Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Gamepad2, CheckCircle2, AlertCircle, Flame, UserPlus, ShieldCheck, X, ArrowRight, Calendar, SlidersHorizontal, Image as ImageIcon, ChevronRight } from 'lucide-react-native';
+import { Gamepad2, CheckCircle2, AlertCircle, Flame, UserPlus, ShieldCheck, X, ArrowRight, Calendar, SlidersHorizontal, Image as ImageIcon } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { StatCard, AlertBanner, RoleBadge, ReminderCard } from '../../components/UIComponents';
 import { useAuthStore } from '../../state/authStore';

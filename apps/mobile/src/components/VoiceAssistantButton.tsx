@@ -16,12 +16,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Platform,
   ViewStyle,
 } from 'react-native';
 import { colors, typography, spacing, fontFamily } from '../theme/tokens';
 import { useVoiceAssistant } from '../services/voice/VoiceContext';
-import { VoiceState } from '../services/voice/VoiceStateMachine';
 
 interface VoiceAssistantButtonProps {
   onOpenFallback?: () => void;

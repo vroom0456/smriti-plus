@@ -13,10 +13,10 @@ import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text, View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 import { useAuthStore, UserRole } from '../state/authStore';
-import { colors, typography, spacing, fontFamily } from '../theme/tokens';
+import { colors, fontFamily } from '../theme/tokens';
 import { useTranslation, SupportedLanguage } from '../i18n';
 
 import {
@@ -27,6 +27,8 @@ import {
   LayoutDashboard,
   Image as ImageIcon,
   ClipboardList,
+  BookOpen,
+  HeartHandshake,
 } from 'lucide-react-native';
 
 // Screens
@@ -80,7 +82,7 @@ const commonTabOptions = {
   tabBarHideOnKeyboard: true,
 };
 
-// ── Elderly Tab Navigator ──
+// ── Elderly Tab Navigator (4 Core Destinations) ──
 function ElderlyTabs() {
   const { t } = useTranslation();
   return (
@@ -99,9 +101,29 @@ function ElderlyTabs() {
         name="Games"
         component={GamesListScreen}
         options={{
-          tabBarLabel: t('nav.games') || 'Games',
+          tabBarLabel: 'Activities',
           tabBarIcon: ({ color, focused }) => (
             <Gamepad2 size={24} color={color} strokeWidth={focused ? 2.5 : 1.9} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Journal"
+        component={PatientIdentityStoryScreen}
+        options={{
+          tabBarLabel: 'Journal',
+          tabBarIcon: ({ color, focused }) => (
+            <BookOpen size={24} color={color} strokeWidth={focused ? 2.5 : 1.9} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Family"
+        component={FamilyCornerScreen}
+        options={{
+          tabBarLabel: 'Family',
+          tabBarIcon: ({ color, focused }) => (
+            <HeartHandshake size={24} color={color} strokeWidth={focused ? 2.5 : 1.9} />
           ),
         }}
       />
@@ -109,20 +131,16 @@ function ElderlyTabs() {
         name="Reminders"
         component={RemindersScreen}
         options={{
-          tabBarLabel: t('nav.reminders') || 'Reminders',
-          tabBarIcon: ({ color, focused }) => (
-            <Bell size={24} color={color} strokeWidth={focused ? 2.5 : 1.9} />
-          ),
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          tabBarLabel: t('nav.settings') || 'Settings',
-          tabBarIcon: ({ color, focused }) => (
-            <Settings size={24} color={color} strokeWidth={focused ? 2.5 : 1.9} />
-          ),
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
       <Tab.Screen
@@ -136,6 +154,14 @@ function ElderlyTabs() {
       <Tab.Screen
         name="FamilyCorner"
         component={FamilyCornerScreen}
+        options={{
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+      <Tab.Screen
+        name="PatientIdentityStory"
+        component={PatientIdentityStoryScreen}
         options={{
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },

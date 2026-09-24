@@ -17,7 +17,7 @@ from sqlalchemy import desc
 
 from app.db.database import get_db
 from app.db.models import User, ElderlyProfile, GameSession, Reminder, ReminderLog, AuditLog
-from app.core.auth import get_current_user, CurrentUser, require_role
+from app.core.auth import CurrentUser, require_role
 from app.api.schemas import HealthWorkerGroupStats, ElderSummary, LinkPatientRequest, LinkPatientResponse
 
 router = APIRouter(tags=["Health Worker"])

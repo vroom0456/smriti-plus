@@ -222,7 +222,15 @@
     "requestDeletion": "Request data deletion",
     "about": "About SMRITI+",
     "version": "Version {{version}}",
-    "devDebug": "Dev Debug Panel"
+    "devDebug": "Dev Debug Panel",
+    "subtitle": "Personalize your voice, display, and comfort",
+    "caregiverManaged": "Settings managed by your caregiver",
+    "caregiverManagedSub": "Your caregiver can change language and settings for you.",
+    "change": "Change",
+    "voiceGuidance": "Voice Guidance",
+    "voiceGuidanceSub": "Speak reminders and screen directions aloud",
+    "privateMode": "Private Mode",
+    "privateModeSub": "Mask medicine details aloud when in public"
   },
   "family": {
     "title": "Family / Help",
@@ -244,7 +252,18 @@
     "iHeard": "I heard: {{text}} — is that right?",
     "listening": "Listening...",
     "thinking": "Thinking...",
-    "back": "Back"
+    "back": "Back",
+    "stop": "Stop",
+    "repeat": "Repeat",
+    "slower": "Slower",
+    "typeHint": "Type below or tap a quick phrase",
+    "you": "You",
+    "yes": "Yes, Do This",
+    "cancel": "Cancel",
+    "confirmAction": "CONFIRM ACTION",
+    "speak": "Speak to SMRITI+",
+    "listeningPlaceholder": "Listening… type to send",
+    "typePlaceholder": "Type your message…"
   },
   "memories": {
     "title": "My Memories",

@@ -10,7 +10,7 @@ Implements Sections 25, 26, 41, 71 & Phase 2 Requirements:
 from uuid import UUID
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db

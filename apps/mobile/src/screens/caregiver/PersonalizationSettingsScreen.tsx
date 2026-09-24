@@ -18,7 +18,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { colors, typography, spacing, fontFamily } from '../../theme/tokens';
+import { colors, spacing, fontFamily } from '../../theme/tokens';
 import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useBackNavigation } from '../../navigation/useBackNavigation';

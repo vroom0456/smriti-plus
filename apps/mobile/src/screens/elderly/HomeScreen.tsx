@@ -1,15 +1,14 @@
 /**
- * SMRITI+ — Elder Home Screen
+ * SMRITI+ — Elder Home Screen (Apple Health + Calm + Google Assistant Experience)
  *
- * Production-grade mobile healthcare experience designed for elderly users
- * living with cognitive conditions, inspired by Apple iOS Health.
- *
- * Core Principle: ONE SCREEN = ONE PRIMARY PURPOSE
- * Structure:
- * 1. Warm Greeting ("Good morning, Varun — How are you feeling today?")
- * 2. TODAY'S ROUTINE: Single clear progress card ("2 of 3 completed")
- * 3. YOUR NEXT ACTIVITY: ONE primary recommended activity with a large full-width action button
- * 4. QUICK HELP: Accessible 52px actions for Caregiver & Voice Assistance
+ * Implements the Production UX Vision:
+ * 1. The Home screen answers only ONE question: "What can I do right now?"
+ * 2. Hierarchy:
+ *    - Header: Personalized Greeting ("Good morning, Amma"), Today's Date, Profile/Settings Avatar
+ *    - HERO: SMRITI Voice Assistant Orb (Interactive companion right on the home page)
+ *    - TODAY'S PLAN: Tabular numeral timeline (10:00 Memory, 12:30 Medicine, 18:00 Family)
+ *    - CONTINUE: Recommended cognitive activity card with large 58px action button
+ *    - QUICK ACTIONS: Exactly 4 distinct tiles (Play, Reminders, Journal, Family)
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -25,38 +24,28 @@ import {
   Image,
 } from 'react-native';
 import {
-  Phone,
-  Mic,
-  Brain,
-  CheckCircle2,
   Calendar,
-  Volume2,
-  ChevronRight,
-  Clock,
-  ShieldCheck,
+  Settings,
+  AlertCircle,
 } from 'lucide-react-native';
-import {
-  colors,
-  typography,
-  spacing,
-  borderRadius,
-  shadows,
-  touchTargets,
-  fontFamily,
-} from '../../theme/tokens';
-import {
-  PrimaryButton,
-  SecondaryButton,
-  HealthCard,
-  ProgressBar,
-  AlertBanner,
-} from '../../components/UIComponents';
+import { colors, fontFamily, spacing } from '../../theme/tokens';
 import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { defaultVoiceOrchestrator } from '../../services/voice/VoiceOrchestrator';
 import { useTranslation } from '../../i18n';
 import { useAppTheme } from '../../theme/useAppTheme';
+
+// SMRITI+ Production Design System
+import {
+  SMRITIVoiceOrb,
+  VoiceState,
+  SMRITITimeline,
+  TimelineItem,
+  SMRITIActivityCard,
+  SMRITIQuickActions,
+  SMRITIErrorState,
+} from '../../components/smriti';
 
 interface HomeSummary {
   greeting: string;
@@ -76,42 +65,37 @@ interface HomeSummary {
   reminders_today_count: number;
   reminders_pending_count: number;
   current_streak: number;
-  care_stage?: number;
-  stage_label?: string;
 }
 
 export default function ElderHomeScreen({ navigation }: any) {
   const { t } = useTranslation();
-  const { fontScale, highContrast, colors, scale, hcStyles } = useAppTheme();
+  const { scale } = useAppTheme();
   const user = useAuthStore((s) => s.user);
+
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [activeReminderDone, setActiveReminderDone] = useState(false);
 
-  const handleMarkTaken = async () => {
-    setActiveReminderDone(true);
-    const remId = summary?.next_reminder?.id || 'med-1';
-    try {
-      await offlineStore.toggleReminderTaken(remId, true);
-    } catch {}
-  };
+  // SMRITI Voice Companion Hero State
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [transcript, setTranscript] = useState<string>('');
+  const [companionReply, setCompanionReply] = useState<string | null>(null);
+  const [actionSuggestion, setActionSuggestion] = useState<{ label: string; onAction: () => void } | null>(null);
 
+  // Fetch summary
   const fetchSummary = useCallback(async () => {
     if (!user) return;
     try {
       setError(null);
       const data = await api.get<HomeSummary>(`/elders/${user.id}/home-summary`);
       setSummary(data);
-    } catch (err: any) {
-      console.log('HomeScreen online fetch failed, using local offline store:', err);
+    } catch {
       try {
         const offlineData = await offlineStore.getOfflineHomeSummary(user.id);
         setSummary(offlineData);
-      } catch (localErr) {
-        setError('Could not load today’s schedule. Please pull down to refresh.');
+      } catch {
+        setError("I couldn't refresh today's plan. Your saved activities are still ready.");
       }
     } finally {
       setLoading(false);
@@ -123,6 +107,7 @@ export default function ElderHomeScreen({ navigation }: any) {
     fetchSummary();
   }, [fetchSummary]);
 
+  // Register voice action routing
   useEffect(() => {
     defaultVoiceOrchestrator.setCurrentScreen('home');
     defaultVoiceOrchestrator.registerActionHandlers({
@@ -131,9 +116,6 @@ export default function ElderHomeScreen({ navigation }: any) {
         return true;
       },
       openReminders: () => {
-        navigation.navigate('Reminders');
-      },
-      openProgress: () => {
         navigation.navigate('Reminders');
       },
       navigate: (screen: string) => {
@@ -147,13 +129,76 @@ export default function ElderHomeScreen({ navigation }: any) {
     fetchSummary();
   };
 
-  const handleReadAloud = () => {
-    if (isSpeaking) {
-      setIsSpeaking(false);
+  // ── SMRITI Hero Voice Orb Interaction ──────────────────────────────────────
+  const handleOrbPress = async () => {
+    if (voiceState === 'listening' || voiceState === 'speaking') {
+      // Toggle to idle
+      setVoiceState('idle');
+      setTranscript('');
+      setCompanionReply(null);
+      setActionSuggestion(null);
       return;
     }
-    setIsSpeaking(true);
-    setTimeout(() => setIsSpeaking(false), 3000);
+
+    // Step 1: Start Listening
+    setVoiceState('listening');
+    setTranscript('Checking in with SMRITI…');
+    setCompanionReply(null);
+    setActionSuggestion(null);
+
+    // Simulate speech recognition & backend conversational brain
+    setTimeout(async () => {
+      setTranscript('What should I do today?');
+      setVoiceState('thinking');
+
+      try {
+        const payload = {
+          elder_id: user?.id || 'demo-elder',
+          message: 'What should I do today?',
+          language: (user as any)?.preferred_language || 'te-IN',
+          elder_name: (user as any)?.preferred_name || user?.name || 'Amma',
+        };
+        const res: any = await api.post('/voice/companion-chat', payload);
+
+        setVoiceState('speaking');
+        setCompanionReply(res.reply || 'You have your memory game at 10:00 AM and medicine at 12:30 PM. Would you like to start?');
+
+        if (res.suggested_action) {
+          if (res.suggested_action.type === 'start_game') {
+            setActionSuggestion({
+              label: res.suggested_action.label || 'Start Memory Activity',
+              onAction: () => navigation.navigate('Games'),
+            });
+          } else if (res.suggested_action.type === 'call_family') {
+            setActionSuggestion({
+              label: res.suggested_action.label || 'Call Family',
+              onAction: () => navigation.navigate('FamilyCorner'),
+            });
+          }
+        }
+      } catch {
+        setVoiceState('speaking');
+        setCompanionReply(
+          'Good morning. You have your picture memory activity ready for today. Shall we begin?'
+        );
+        setActionSuggestion({
+          label: 'Start Memory Activity',
+          onAction: () => navigation.navigate('Games'),
+        });
+      }
+    }, 1400);
+  };
+
+  const handleStopVoice = () => {
+    setVoiceState('idle');
+  };
+
+  const handleRepeatVoice = () => {
+    setVoiceState('speaking');
+  };
+
+  const handleSlowDownVoice = () => {
+    setCompanionReply('Understood. I will speak more slowly and clearly for you.');
   };
 
   if (loading) {
@@ -161,12 +206,13 @@ export default function ElderHomeScreen({ navigation }: any) {
       <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { fontSize: scale(16), color: colors.textSecondary }]}>
-          {t('reminders.loading') || 'Loading today’s schedule…'}
+          Preparing your morning…
         </Text>
       </View>
     );
   }
 
+  // Date formatting
   const now = new Date();
   const dayStr = now.toLocaleDateString([], { weekday: 'long' });
   const dateFormatted = now.toLocaleDateString([], { month: 'long', day: 'numeric' });
@@ -177,21 +223,49 @@ export default function ElderHomeScreen({ navigation }: any) {
       : now.getHours() < 17
       ? t('home.goodAfternoon') || 'Good afternoon'
       : t('home.goodEvening') || 'Good evening';
-  const greetingFull = `${greetingPrefix}, ${user?.name || 'Friend'}`;
 
-  const totalReminders = summary?.reminders_today_count || 3;
-  const rawPending = summary?.reminders_pending_count ?? 1;
-  const completedReminders = Math.min(
-    totalReminders,
-    Math.max(0, totalReminders - rawPending) + (activeReminderDone ? 1 : 0)
-  );
+  const preferredName = (user as any)?.preferred_name || user?.name || 'Amma';
+  const greetingFull = `${greetingPrefix}, ${preferredName}`;
 
-  const nextActivityTitle = summary?.next_action?.game_name || t('games.memoryMatching') || 'Memory Matching';
-  const nextActivitySubtitle =
-    summary?.next_action?.message || t('games.subtitle') || 'A gentle 5-minute exercise for focus';
-
-  const upcomingMedTitle =
-    summary?.next_reminder?.title || (t('reminders.categories.medication') ? `${t('reminders.categories.medication')} - 08:00 AM` : 'Blood Pressure Medicine');
+  // Today's Plan Timeline Items
+  const timelineItems: TimelineItem[] = [
+    {
+      id: 'routine-1',
+      time: '09:00',
+      title: 'Morning routine & water',
+      category: 'routine',
+      status: 'completed',
+    },
+    {
+      id: 'plan-1',
+      time: '10:00',
+      title: summary?.next_action?.game_name || 'Picture Memory',
+      subtitle: '5-minute memory training',
+      category: 'memory',
+      status: 'active',
+      onPress: () => navigation.navigate('Games'),
+      onAction: () => navigation.navigate('Games'),
+      actionTitle: 'Start Activity',
+    },
+    {
+      id: 'plan-2',
+      time: '12:30',
+      title: summary?.next_reminder?.title || 'Blood Pressure Medicine',
+      subtitle: 'Take with warm water',
+      category: 'medicine',
+      status: 'upcoming',
+      onPress: () => navigation.navigate('Reminders'),
+    },
+    {
+      id: 'plan-3',
+      time: '18:00',
+      title: 'Call Ananya',
+      subtitle: 'Evening family check-in',
+      category: 'family',
+      status: 'upcoming',
+      onPress: () => navigation.navigate('FamilyCorner'),
+    },
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -208,284 +282,72 @@ export default function ElderHomeScreen({ navigation }: any) {
           />
         }
       >
-        <View style={styles.header}>
-          {/* SMRITI+ Brand Header & Profile from Serene Heritage Design */}
-          <View style={styles.brandRow}>
-            <View style={styles.brandLeft}>
-              <Image
-                source={require('../../../assets/emblem.png')}
-                style={styles.brandEmblem}
-                resizeMode="contain"
-              />
-              <View>
-                <Text style={styles.brandTitle}>SMRITI+</Text>
-                <Text style={styles.culturalPackTag}>Heritage Companion</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Settings')}
-              style={styles.avatarWrap}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="View settings and profile"
-            >
-              <Image
-                source={require('../../../assets/elderly_avatar.png')}
-                style={styles.avatarImg}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.dateRow}>
-            <View style={styles.dateWrap}>
-              <Calendar size={15} color={colors.textSecondary} strokeWidth={2.2} style={{ marginRight: 6 }} />
-              <Text style={[styles.dateLabel, { fontSize: scale(14), color: colors.textSecondary }]}>
+        {/* ── 1. Clean Header (Greeting & Settings Avatar) ── */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerTextGroup}>
+            <View style={styles.dateBadge}>
+              <Calendar size={14} color={colors.textSecondary} strokeWidth={2.4} style={{ marginRight: 6 }} />
+              <Text style={styles.dateText}>
                 {dayStr}, {dateFormatted}
               </Text>
             </View>
-
-            <TouchableOpacity
-              onPress={handleReadAloud}
-              style={[
-                styles.readAloudButton,
-                { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
-                hcStyles.buttonBorder,
-              ]}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel="Listen to screen instructions"
-            >
-              <Volume2
-                size={16}
-                color={isSpeaking ? colors.primary : colors.textSecondary}
-                strokeWidth={2.2}
-                style={{ marginRight: 4 }}
-              />
-              <Text
-                style={[
-                  styles.readAloudText,
-                  { fontSize: scale(13), color: isSpeaking ? colors.primary : colors.textSecondary },
-                  isSpeaking && styles.readAloudActive,
-                ]}
-              >
-                {isSpeaking ? t('home.reading') || 'Reading…' : t('home.listen') || 'Listen'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.greetingTitle}>{greetingFull}</Text>
           </View>
 
-          <Text
-            style={[
-              styles.greetingTitle,
-              { fontSize: scale(26), lineHeight: scale(32), color: colors.textDark },
-              hcStyles.boldText,
-            ]}
-          >
-            {greetingFull}
-          </Text>
-          <Text style={[styles.greetingSubtitle, { fontSize: scale(16), lineHeight: scale(23), color: colors.textSecondary }]}>
-            Your peaceful daily companion
-          </Text>
-        </View>
-
-        {error ? <AlertBanner type="warning" message={error} /> : null}
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { fontSize: scale(14), color: colors.textDark }]}>
-            {t('home.today') || 'TODAY’S SCHEDULE'}
-          </Text>
-          <HealthCard style={[styles.routineCard, hcStyles.cardBorder]}>
-            <View style={styles.routineHeaderRow}>
-              <View style={[styles.routineIconWrap, { backgroundColor: colors.successBg }]}>
-                <CheckCircle2 size={26} color={colors.success} strokeWidth={2.4} />
-              </View>
-              <View style={styles.routineTextGroup}>
-                <Text style={[styles.routineTitle, { fontSize: scale(20), color: colors.textDark, fontWeight: '700' }]}>
-                  {t('home.dailyRoutine') || 'Daily Routine'}
-                </Text>
-                <Text style={[styles.routineSubtitle, { fontSize: scale(16), color: colors.textSecondary, marginTop: 2 }]}>
-                  {completedReminders} of {totalReminders} completed
-                </Text>
-              </View>
-            </View>
-
-            {!activeReminderDone ? (
-              <View style={[styles.interactiveReminderBox, { borderColor: colors.borderLight, backgroundColor: '#F8FAFC' }]}>
-                <View style={{ flex: 1, marginRight: 10 }}>
-                  <Text style={[styles.reminderPillLabel, { fontSize: scale(13), color: colors.teal, fontWeight: '700' }]}>
-                    UPCOMING REMINDER
-                  </Text>
-                  <Text style={[styles.reminderItemTitle, { fontSize: scale(17), color: colors.textDark, fontWeight: '700', marginTop: 2 }]} numberOfLines={1}>
-                    {upcomingMedTitle}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={[styles.markTakenBtn, { backgroundColor: colors.success }, hcStyles.buttonBorder]}
-                  onPress={handleMarkTaken}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Mark reminder completed"
-                >
-                  <CheckCircle2 size={18} color="#FFFFFF" strokeWidth={2.4} style={{ marginRight: 6 }} />
-                  <Text style={[styles.markTakenBtnText, { fontSize: scale(15), fontWeight: '700' }]}>
-                    Mark Taken
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={[styles.reminderSuccessBox, { backgroundColor: colors.successBg }]}>
-                <CheckCircle2 size={20} color={colors.success} strokeWidth={2.4} style={{ marginRight: 8 }} />
-                <Text style={[styles.reminderSuccessText, { fontSize: scale(16), color: colors.successDark, fontWeight: '700' }]}>
-                  {t('home.completedBadge') || 'Done ✓'} — {upcomingMedTitle}
-                </Text>
-              </View>
-            )}
-
-            <ProgressBar
-              current={completedReminders}
-              total={totalReminders}
-              style={{ marginTop: spacing.md, marginBottom: spacing.md }}
-            />
-
-            <SecondaryButton
-              title={t('home.viewSchedule') || 'View Full Schedule'}
-              onPress={() => navigation.navigate('Reminders')}
-              accessibilityLabel="View today's reminders schedule"
-            />
-          </HealthCard>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { fontSize: scale(14), color: colors.textDark }]}>
-            {t('home.recommendedForYou') || 'TODAY’S MIND EXERCISE'}
-          </Text>
-          <HealthCard style={[styles.activityCard, hcStyles.cardBorder]}>
-            <View style={styles.activityBadgeRow}>
-              <View style={[styles.activityPill, { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' }]}>
-                <Brain size={16} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 6 }} />
-                <Text style={[styles.activityPillText, { fontSize: scale(14), color: colors.primary, fontWeight: '700' }]}>
-                  5-minute gentle activity
-                </Text>
-              </View>
-            </View>
-
-            <Text style={[styles.activityTitle, { fontSize: scale(22), lineHeight: scale(28), color: colors.textDark, fontWeight: '800' }]}>
-              {nextActivityTitle}
-            </Text>
-            <Text style={[styles.activityDesc, { fontSize: scale(16), lineHeight: scale(24), color: colors.textSecondary, marginTop: 4 }]}>
-              A relaxing activity designed to keep your memory sharp and clear.
-            </Text>
-
-            <PrimaryButton
-              title={t('home.startActivity') || 'Start Activity ➔'}
-              size="large"
-              onPress={() => navigation.navigate('Games')}
-              accessibilityLabel={`Start today's activity: ${nextActivityTitle}`}
-              style={{ marginTop: spacing.lg, minHeight: 56 }}
-            />
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Games')}
-              style={styles.moreActivitiesLink}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Explore all activities"
-            >
-              <Text style={[styles.moreActivitiesText, { fontSize: scale(16), color: colors.primary, fontWeight: '700' }]}>
-                {t('home.moreActivities') || 'Explore All Mind Activities'}
-              </Text>
-              <ChevronRight size={18} color={colors.primary} strokeWidth={2.4} />
-            </TouchableOpacity>
-          </HealthCard>
-        </View>
-
-        {/* ── Who Am I? Identity Card ── */}
-        <View style={styles.section}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('PatientIdentityStory')}
-            activeOpacity={0.85}
+            style={styles.avatarButton}
+            onPress={() => navigation.navigate('Settings')}
+            activeOpacity={0.82}
             accessibilityRole="button"
-            accessibilityLabel="Who Am I? — Tap to see your life story"
-            style={styles.whoAmICard}
+            accessibilityLabel="Settings and Preferences"
           >
-            <View style={styles.whoAmILeft}>
-              <Text style={styles.whoAmIEmoji}>👤</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.whoAmITitle}>Feeling confused?</Text>
-                <Text style={styles.whoAmISubtitle}>Tap to read "Who Am I? — My Life Story"</Text>
-              </View>
-            </View>
-            <ChevronRight size={22} color={colors.white} strokeWidth={2.5} />
+            <Image
+              source={require('../../../assets/elderly_avatar.png')}
+              style={styles.avatarImg}
+            />
           </TouchableOpacity>
         </View>
 
-        {/* ── Quick Help (Elder-Friendly Semantic Colors) ── */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { fontSize: scale(14), color: colors.textDark }]}>
-            {t('home.quickHelp') || 'NEED ASSISTANCE?'}
-          </Text>
-          <View style={styles.helpRow}>
-            {/* Call Family: Warm Amber */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('FamilyCorner')}
-              style={[styles.quickHelpButton, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A', borderWidth: 1.5 }]}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Call caregiver for help"
-            >
-              <View style={[styles.quickHelpIconWrap, { backgroundColor: '#FEF3C7' }]}>
-                <Phone size={24} color="#D97706" strokeWidth={2.4} />
-              </View>
-              <View style={styles.quickHelpTextGroup}>
-                <Text style={[styles.quickHelpTitle, { fontSize: scale(18), color: '#92400E', fontWeight: '800' }]}>
-                  {t('home.callCaregiver') || 'Call Family'}
-                </Text>
-                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(15), color: '#B45309', marginTop: 2 }]}>
-                  1-tap phone call
-                </Text>
-              </View>
-              <ChevronRight size={20} color="#D97706" strokeWidth={2.4} />
-            </TouchableOpacity>
+        {error ? <SMRITIErrorState message={error} onRetry={fetchSummary} /> : null}
 
-            {/* Talk to SMRITI+: Ocean Azure */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('VoiceAssistant')}
-              style={[styles.quickHelpButton, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderWidth: 1.5 }]}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Voice assistant help"
-            >
-              <View style={[styles.quickHelpIconWrap, { backgroundColor: '#DBEAFE' }]}>
-                <Mic size={24} color="#1D4ED8" strokeWidth={2.4} />
-              </View>
-              <View style={styles.quickHelpTextGroup}>
-                <Text style={[styles.quickHelpTitle, { fontSize: scale(18), color: '#1E40AF', fontWeight: '800' }]}>
-                  {t('home.talkSmriti') || 'Voice Helper'}
-                </Text>
-                <Text style={[styles.quickHelpSubtitle, { fontSize: scale(15), color: '#2563EB', marginTop: 2 }]}>
-                  Speak naturally to ask
-                </Text>
-              </View>
-              <ChevronRight size={20} color="#1D4ED8" strokeWidth={2.4} />
-            </TouchableOpacity>
-          </View>
+        {/* ── 2. HERO: SMRITI Voice Assistant Orb ── */}
+        <View style={styles.heroSection}>
+          <SMRITIVoiceOrb
+            state={voiceState}
+            transcript={transcript}
+            responseMessage={companionReply || undefined}
+            onPressOrb={handleOrbPress}
+            onStop={handleStopVoice}
+            onRepeat={handleRepeatVoice}
+            onSlowDown={handleSlowDownVoice}
+            actionSuggestion={actionSuggestion}
+          />
         </View>
 
-        {/* Serene Heritage Daily Whisper Footer Banner */}
-        <View style={styles.serenityFooter}>
-          <Text style={styles.serenityQuoteMark}>“</Text>
-          <Text style={[styles.serenityQuoteText, { fontSize: scale(17), lineHeight: scale(25) }]}>
-            A calm mind is a healthy mind. Take your time, there is no hurry.
-          </Text>
-          <Text style={[styles.serenityAuthorText, { fontSize: scale(15), marginTop: 6 }]}>— SMRITI+ Daily Companion</Text>
-        </View>
+        {/* ── 3. TODAY'S PLAN: Clear Tabular Timeline ── */}
+        <SMRITITimeline
+          items={timelineItems}
+          onViewAll={() => navigation.navigate('Reminders')}
+        />
 
-        <View style={styles.privacyNote}>
-          <ShieldCheck size={16} color={colors.muted} strokeWidth={2} style={{ marginRight: 6 }} />
-          <Text style={[styles.privacyNoteText, { fontSize: scale(13), color: colors.muted }]}>
-            Your health details are strictly private.
-          </Text>
-        </View>
+        {/* ── 4. CONTINUE: Recommended Cognitive Exercise ── */}
+        <SMRITIActivityCard
+          title={summary?.next_action?.game_name || 'Picture Memory'}
+          category="Memory & Recognition"
+          durationMinutes={5}
+          level={summary?.next_action?.difficulty || 2}
+          description="A calm, enjoyable picture exercise designed to strengthen memory recognition."
+          onStart={() => navigation.navigate('Games')}
+          onExploreAll={() => navigation.navigate('Games')}
+        />
+
+        {/* ── 5. QUICK ACTIONS: Exactly 4 Clear Destinations ── */}
+        <SMRITIQuickActions
+          onPlay={() => navigation.navigate('Games')}
+          onReminders={() => navigation.navigate('Reminders')}
+          onJournal={() => navigation.navigate('PatientIdentityStory')}
+          onFamily={() => navigation.navigate('FamilyCorner')}
+        />
       </ScrollView>
     </View>
   );
@@ -494,391 +356,102 @@ export default function ElderHomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   center: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  content: {
-    width: '100%',
-    maxWidth: 520,
-    alignSelf: 'center',
-    paddingHorizontal: spacing.screenMargin,
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingBottom: Platform.OS === 'ios' ? 160 : 135,
+    padding: spacing.xl,
   },
   loadingText: {
-    ...typography.elderly.body,
-    color: colors.textSecondary,
+    fontFamily: fontFamily.text,
     marginTop: spacing.md,
+    fontWeight: '600',
   },
-
-  // ── Header Section ──
-  header: {
-    marginBottom: spacing.xl,
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 56 : 36,
+    paddingBottom: 60,
   },
-  dateRow: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.lg,
   },
-  dateWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateLabel: {
-    fontFamily: fontFamily.text,
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  readAloudButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: borderRadius.pill,
-    backgroundColor: colors.surfaceSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  readAloudText: {
-    fontFamily: fontFamily.text,
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  readAloudActive: {
-    color: colors.primary,
-  },
-  greetingTitle: {
-    ...typography.elderly.screenTitle,
-    marginTop: 4,
-  },
-  greetingSubtitle: {
-    ...typography.elderly.body,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-
-  // ── Sections ──
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionHeading: {
-    fontFamily: fontFamily.display,
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.muted,
-    letterSpacing: 0,
-    textTransform: 'uppercase',
-    marginBottom: spacing.xs + 2,
-    paddingHorizontal: 4,
-  },
-
-  // ── Routine Card ──
-  routineCard: {
-    padding: spacing.lg,
-  },
-  routineHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  routineIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.successBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  routineTextGroup: {
+  headerTextGroup: {
     flex: 1,
+    marginRight: 12,
   },
-  routineTitle: {
-    ...typography.elderly.cardHeading,
-  },
-  routineSubtitle: {
-    ...typography.elderly.secondary,
-    marginTop: 2,
-  },
-  interactiveReminderBox: {
+  dateBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: borderRadius.md,
-    padding: 12,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+    marginBottom: 6,
   },
-  reminderPillLabel: {
-    fontFamily: fontFamily.display,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0,
-    marginBottom: 2,
-  },
-  reminderItemTitle: {
-    fontFamily: fontFamily.display,
-    fontWeight: '700',
-  },
-  markTakenBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: borderRadius.pill,
-    minHeight: 42,
-    ...shadows.subtle,
-  },
-  markTakenBtnText: {
-    fontFamily: fontFamily.display,
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  reminderSuccessBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.md,
-  },
-  reminderSuccessText: {
-    fontFamily: fontFamily.display,
-    fontWeight: '700',
-    flex: 1,
-  },
-
-  // ── Activity Card ──
-  activityCard: {
-    padding: spacing.lg,
-  },
-  activityBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  activityPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primaryMuted,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: borderRadius.pill,
-  },
-  activityPillText: {
-    fontFamily: fontFamily.display,
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  activityTitle: {
-    ...typography.elderly.cardHeading,
-    fontSize: 22,
-    lineHeight: 28,
-  },
-  activityDesc: {
-    ...typography.elderly.body,
-    color: colors.textSecondary,
-    marginTop: 4,
-    lineHeight: 24,
-  },
-  moreActivitiesLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-    paddingVertical: 8,
-  },
-  moreActivitiesText: {
-    fontFamily: fontFamily.display,
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.primary,
-    marginRight: 4,
-  },
-
-  // ── Quick Help Buttons ──
-  helpRow: {
-    gap: 12,
-  },
-  quickHelpButton: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.card,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    minHeight: 64,
-    ...shadows.subtle,
-  },
-  quickHelpIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  quickHelpTextGroup: {
-    flex: 1,
-  },
-  quickHelpTitle: {
-    fontFamily: fontFamily.display,
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.textDark,
-  },
-  quickHelpSubtitle: {
+  dateText: {
     fontFamily: fontFamily.text,
     fontSize: 14,
+    fontWeight: '700',
     color: colors.textSecondary,
-    marginTop: 2,
+    letterSpacing: -0.1,
   },
-
-  // ── Privacy Note ──
-  privacyNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  privacyNoteText: {
-    fontFamily: fontFamily.text,
-    fontSize: 13,
-    color: colors.muted,
-    textAlign: 'center',
-    lineHeight: 18,
-    maxWidth: 320,
-  },
-
-  // ── Serene Heritage Design Additions ──
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  brandLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandEmblem: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-  },
-  brandTitle: {
+  greetingTitle: {
     fontFamily: fontFamily.display,
-    fontSize: 18,
+    fontSize: 28,
     fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: 0,
-    lineHeight: 20,
+    letterSpacing: -0.6,
+    color: colors.textDark,
   },
-  culturalPackTag: {
-    fontFamily: fontFamily.display,
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.teal,
-    letterSpacing: 0,
-  },
-  avatarWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  avatarButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: colors.teal,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+      },
+    }),
   },
   avatarImg: {
     width: '100%',
     height: '100%',
   },
-  serenityFooter: {
-    backgroundColor: colors.surface,
-    borderRadius: 22,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+  heroSection: {
     alignItems: 'center',
-    marginTop: spacing.xl,
-    marginBottom: spacing.xs,
-    ...shadows.card,
-  },
-  serenityQuoteMark: {
-    fontFamily: fontFamily.display,
-    fontSize: 28,
-    lineHeight: 28,
-    color: colors.teal,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  serenityQuoteText: {
-    fontFamily: fontFamily.text,
-    fontSize: 15,
-    fontStyle: 'italic',
-    color: colors.textDark,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 4,
-    letterSpacing: 0,
-  },
-  serenityAuthorText: {
-    fontFamily: fontFamily.display,
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.teal,
-    letterSpacing: 0,
-  },
-  // Who Am I card
-  whoAmICard: {
-    backgroundColor: colors.navy,
-    borderRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    ...shadows.card,
-  },
-  whoAmILeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
-    marginRight: 8,
-  },
-  whoAmIEmoji: {
-    fontSize: 36,
-  },
-  whoAmITitle: {
-    fontFamily: fontFamily.display,
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.white,
-    marginBottom: 3,
-  },
-  whoAmISubtitle: {
-    fontFamily: fontFamily.text,
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.75)',
-    lineHeight: 22,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    padding: spacing.xl,
+    marginVertical: spacing.sm,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.05,
+        shadowRadius: 14,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.04)',
+      },
+    }),
   },
 });

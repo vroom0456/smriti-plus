@@ -2,22 +2,137 @@
   "languageCode": "te-IN",
   "languageName": "Telugu",
   "nativeName": "తెలుగు",
-  "honorifics": ["అండి", "గారు", "అమ్మ", "తాతయ్య", "అయ్యా"],
+  "dialects": ["Coastal Andhra", "Rayalaseema", "Telangana", "Tenglish"],
+  "evaluationStatus": "requires_native_speaker_review",
+  "honorifics": {
+    "elder_male": "నాన్నగారు",
+    "elder_female": "అమ్మగారు",
+    "respected_male": "అయ్యా",
+    "respected_female": "అమ్మా",
+    "general": "గారు",
+    "very_respectful": "అండి"
+  },
   "familyTerms": {
-    "amma": "Mother",
-    "nanna": "Father",
-    "akka": "Elder Sister",
-    "anna": "Elder Brother",
-    "thammudu": "Younger Brother",
-    "chelli": "Younger Sister"
+    "amma": "అమ్మ (Mother)",
+    "nanna": "నాన్న (Father)",
+    "thatha": "తాత (Grandfather)",
+    "avva": "అవ్వ (Grandmother)",
+    "anna": "అన్న (Elder Brother)",
+    "akka": "అక్క (Elder Sister)",
+    "thammudu": "తమ్ముడు (Younger Brother)",
+    "chelli": "చెల్లి (Younger Sister)",
+    "maava": "మావ (Uncle/Father-in-law)",
+    "attayya": "అత్తయ్య (Aunt)"
+  },
+  "culturalTerms": {
+    "bathukamma": "బతుకమ్మ (Telangana floral festival)",
+    "ugadi": "ఉగాది (Telugu New Year)",
+    "sankranti": "సంక్రాంతి (harvest festival)",
+    "kalamkari": "కలంకారీ (traditional cloth art)",
+    "kondapalli": "కొండపల్లి (wooden toy craft)",
+    "ikat": "ఇక్కత్ (traditional woven fabric)",
+    "chepalas_pulusu": "చేపల పులుసు (fish curry)",
+    "pesarattu": "పెసరట్టు (moong dal crepe)",
+    "gongura": "గోంగూర (sorrel leaf)",
+    "pulihora": "పులిహోర (tamarind rice)"
+  },
+  "dialectSlang": {
+    "Telangana": {
+      "cheyyi": "చేయి (do it, Telangana dialect)",
+      "raada": "రాదా? (won't come/not possible?)",
+      "emo": "ఏమో (I don't know/maybe)",
+      "kadaa": "కదా (right?/isn't it?)",
+      "ante": "అంటే (meaning/i.e.)",
+      "endukante": "ఎందుకంటే (because)",
+      "ekkada": "ఎక్కడ (where)",
+      "ela": "ఎలా (how)",
+      "evadu": "ఎవడు (who, informal male)",
+      "evaru": "ఎవరు (who, polite)"
+    },
+    "Coastal Andhra": {
+      "ayye": "అయ్యే (it will happen)",
+      "naaku": "నాకు (to me)",
+      "meeru": "మీరు (you, formal)",
+      "mana": "మన (ours/our)"
+    }
+  },
+  "pronunciationHints": {
+    "Hyderabad": "Hei-da-ra-baad",
+    "Vijayawada": "Vi-ja-ya-wa-da",
+    "Visakhapatnam": "Vi-saa-kha-pat-nam",
+    "Tirupati": "Ti-ru-pa-ti",
+    "Warangal": "Wa-rang-al",
+    "Karimnagar": "Ka-rim-na-gar",
+    "Guntur": "Gun-tur",
+    "Nellore": "Nel-lore",
+    "Ongole": "On-go-le",
+    "Kurnool": "Kur-nool"
+  },
+  "medicinePronounciation": {
+    "Metformin": "Met-for-min",
+    "Amlodipine": "Am-lo-di-peen",
+    "Paracetamol": "Pa-ra-see-ta-mol",
+    "Aspirin": "As-pi-rin",
+    "Losartan": "Lo-sar-tan",
+    "Atorvastatin": "A-tor-va-sta-tin",
+    "Glimepiride": "Gli-me-pi-ride",
+    "Lisinopril": "Li-si-no-pril"
   },
   "slangAndColloquial": {
-    "cheyyi": "చేయి",
-    "pettu": "పెట్టు",
-    "gurtu cheyyi": "గుర్తు చేయి",
-    "malli cheppu": "మళ్ళీ చెప్పు",
-    "nemmadiga matladu": "నెమ్మదిగా మాట్లాడు"
+    "mandulu vesukunnava": "మందు వేసుకున్నావా (Did you take medicine?)",
+    "mandulu vesukunnara": "మందు వేసుకున్నారా (Did you take medicine? - formal)",
+    "puvvu vacchindha": "పువ్వు వచ్చిందా (Has the flower come?)",
+    "neellu thaagale": "నీళ్లు తాగాలే (need to drink water)",
+    "neellu thaaganuka": "నీళ్లు తాగనుకా (haven't drunk water)",
+    "aata aadaniki": "ఆట ఆడాడానికి (for playing a game)",
+    "choodandi": "చూడండి (please look/see, filler word)",
+    "malli cheppandi": "మళ్ళీ చెప్పండి (please say again)",
+    "nemmadiga matladandi": "నెమ్మదిగా మాట్లాడండి (please speak slowly)",
+    "kaadu kaadu": "కాదు కాదు (no no, emphatic)",
+    "ayyo": "అయ్యో (oh no, expression)",
+    "arre": "అరే (hey, informal attention-getter)",
+    "ee pani cheyyakandi": "ఈ పని చేయకండి (don't do this)",
+    "teliyadu": "తెలియదు (I don't know)",
+    "gurtu ledhu": "గుర్తు లేదు (I don't remember)"
   },
-  "affirmations": ["అవును", "సరే", "అలాగే", "చేయి"],
-  "negations": ["లేదు", "వద్దు", "ఆపు", "రద్దు చేయి"]
+  "affirmations": ["అవును", "సరే", "అలాగే", "చేస్తాను", "ఒప్పుకుంటున్నాను", "సరే గారూ"],
+  "negations": ["లేదు", "వద్దు", "ఆపండి", "అక్కరలేదు", "కావాలని లేదు"],
+  "greetings": {
+    "morning": "శుభోదయం",
+    "afternoon": "శుభ మధ్యాహ్నం",
+    "evening": "శుభ సాయంత్రం",
+    "general": "నమస్కారం",
+    "goodbye": "వెళ్ళొస్తాను"
+  },
+  "timeExpressions": {
+    "today": "ఈరోజు",
+    "tomorrow": "రేపు",
+    "day_after": "ఎల్లుండి",
+    "morning": "ఉదయం",
+    "afternoon": "మధ్యాహ్నం",
+    "evening": "సాయంత్రం",
+    "night": "రాత్రి",
+    "now": "ఇప్పుడే",
+    "later": "తర్వాత"
+  },
+  "elderlySpeechPatterns": {
+    "fillerWords": ["అంటే", "చూడండి", "ఏమో", "ఉం", "అది", "ఆ", "అయ్యో"],
+    "slowdowns": ["నెమ్మదిగా చెప్పండి", "మళ్ళీ చెప్పండి", "అర్థం కాలేదు"],
+    "confirmations": ["అలాగే చేస్తారు", "సరే నండి", "ధన్యవాదాలు"],
+    "confusion": ["ఏమి చెప్పారు?", "అర్థమవలేదు", "మళ్ళీ చెప్పండి"]
+  },
+  "recordingScript": [
+    "నమస్కారం. నేను స్మృతి ప్లస్. మీకు సహాయం చేయడానికి ఇక్కడ ఉన్నాను.",
+    "అమ్మా, ఈరోజు ఎలా ఉన్నారు?",
+    "ఈరోజు మీ మెమరీ గేమ్ ఆడదామా?",
+    "మీకు ఇప్పుడు విశ్రాంతి కావాలా?",
+    "రేపు ఉదయం మీకు ఒక రిమైండర్ ఉంది.",
+    "రవి గారికి ఫోన్ చేయమంటారా?",
+    "మీరు చెప్పింది నాకు పూర్తిగా అర్థం కాలేదు. మరోసారి చెప్పగలరా?",
+    "సరే. మీరు సిద్ధంగా ఉన్నప్పుడు మనం మొదలుపెడదాం.",
+    "ఈరోజు తేదీ సెప్టెంబర్ ఇరవై నాలుగు, రెండు వేల ఇరవై ఆరు.",
+    "మీరు నెమ్మదిగా మాట్లాడమంటే నేను నెమ్మదిగా మాట్లాడతాను.",
+    "హైదరాబాద్, కరీంనగర్, గుంటూరు వంటి పేర్లను సరిగ్గా పలకాలి.",
+    "మీకు కావాలంటే నేను ఆ మాటను మళ్లీ చెబుతాను."
+  ]
 }

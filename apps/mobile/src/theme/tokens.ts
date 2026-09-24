@@ -35,86 +35,98 @@ export const fontFamily = {
 };
 
 export const colors = {
-  // ── Core Healthcare Palette (Section 17: Restrained, calm, trustworthy) ──
-  primary: '#0071E3',          // Apple System Blue (Calm trust / primary action)
-  primaryDark: '#0055B3',
-  primaryLight: '#EBF5FF',
-  primaryMuted: 'rgba(0, 113, 227, 0.08)',
+  // ── SMRITI+ Warm Cream Design System (Elderly-First) ──
+  // Background: Warm cream — soft on elderly eyes, not clinical white
+  primary: '#D98B6C',          // Muted peach — warm trust, not cold blue
+  primaryDark: '#C07050',
+  primaryLight: '#F5E6DE',
+  primaryMuted: 'rgba(217, 139, 108, 0.12)',
+
+  // Secondary: Soft sage green — nature, calm, progress
+  secondary: '#A8B89A',
+  secondaryDark: '#7A9068',
+  secondaryLight: '#EDF2E9',
+  secondaryMuted: 'rgba(168, 184, 154, 0.15)',
+
+  // Accent: Warm golden yellow — highlights, attention, joy
+  accentGold: '#D9B44A',
+  accentGoldDark: '#B8941A',
+  accentGoldBg: 'rgba(217, 180, 74, 0.14)',
 
   // Supporting status
-  success: '#34C759',          // Soft Green (Positive / completed)
-  successBg: 'rgba(52, 199, 89, 0.10)',
-  successDark: '#248A3D',
+  success: '#6BAA7A',          // Earthy green (Positive / completed)
+  successBg: 'rgba(107, 170, 122, 0.14)',
+  successDark: '#4A8A5A',
 
-  warning: '#FF9500',          // Warm Amber (Attention needed)
-  warningBg: 'rgba(255, 149, 0, 0.10)',
-  warningDark: '#C77700',
+  warning: '#D9A84A',          // Warm amber (Attention needed)
+  warningBg: 'rgba(217, 168, 74, 0.14)',
+  warningDark: '#B88830',
 
-  danger: '#FF3B30',           // Accessible Red (Critical / destructive)
-  dangerBg: 'rgba(255, 59, 48, 0.08)',
-  dangerDark: '#D70015',
+  danger: '#C5614A',           // Terracotta red (Critical — not alarming)
+  dangerBg: 'rgba(197, 97, 74, 0.12)',
+  dangerDark: '#A04030',
 
-  // Surfaces & Backgrounds (Section 14: Small, clear surface hierarchy)
-  background: '#F8F9FA',       // Warm neutral / near-white canvas
-  surface: '#FFFFFF',          // Primary surface (white)
-  surfaceSecondary: '#F2F2F7', // Slightly tinted neutral surface
-  surfaceElevated: '#FFFFFF',  // Elevated surface + subtle shadow
+  // Surfaces & Backgrounds — Warm, never cold clinical white
+  background: '#F7F1E5',       // Warm cream canvas (main background)
+  surface: '#FDF9F3',          // Warm white surface
+  surfaceSecondary: '#F2EAD9', // Slightly toasted surface
+  surfaceElevated: '#FFFFFF',  // Elevated card surface
 
-  // Typography (Section 3: Deep charcoal, never pure black everywhere)
-  textDark: '#1C1C1E',         // Deep charcoal primary text
-  textMed: '#3A3A3C',          // Intermediate body
-  textSecondary: '#636366',    // Secondary body text
-  muted: '#8E8E93',            // Tertiary text / captions
-  mutedLight: '#AEAEB2',
+  // Typography — Charcoal, warm, comfortable contrast
+  textDark: '#333333',         // Dark charcoal (main text)
+  textMed: '#4A3F35',          // Medium warm charcoal
+  textSecondary: '#7A6E63',    // Warm secondary text
+  muted: '#9E9085',            // Warm muted / captions
+  mutedLight: '#BDB0A5',
 
-  // Hairlines & Borders (Section 13: 1px subtle borders)
-  border: '#E5E5EA',           // Standard iOS separator
-  borderLight: '#F2F2F7',      // Subtle separator
-  borderActive: '#0071E3',
+  // Hairlines & Borders — Warm beige separators
+  border: '#E0D5C5',           // Warm beige border
+  borderLight: '#EDE6D8',      // Subtle warm separator
+  borderActive: '#D98B6C',     // Active/focused border = primary
 
   // System & Neutral
   white: '#FFFFFF',
-  black: '#000000',
-  overlay: 'rgba(0, 0, 0, 0.35)',
+  black: '#333333',
+  overlay: 'rgba(51, 40, 30, 0.40)',
 
   // Legacy aliases for backward compatibility across components
-  teal: '#0071E3',
-  tealLight: '#EBF5FF',
-  tealDeep: '#0055B3',
-  tealBg: 'rgba(0, 113, 227, 0.08)',
-  navy: '#1C1C1E',
-  navyDark: '#000000',
-  navyMid: '#2C2C2E',
-  accent: '#FF3B30',
-  accentLight: '#FF453A',
-  accentBg: 'rgba(255, 59, 48, 0.08)',
-  error: '#FF3B30',
-  errorBg: 'rgba(255, 59, 48, 0.08)',
-  gold: '#FF9500',
-  goldBg: 'rgba(255, 149, 0, 0.10)',
-  cardBackground: '#FFFFFF',
-  cardBg: '#FFFFFF',
-  surfaceAlt: '#F2F2F7',
+  teal: '#D98B6C',
+  tealLight: '#F5E6DE',
+  tealDeep: '#C07050',
+  tealBg: 'rgba(217, 139, 108, 0.12)',
+  navy: '#333333',
+  navyDark: '#1A1310',
+  navyMid: '#4A3F35',
+  accent: '#C5614A',
+  accentLight: '#D9896C',
+  accentBg: 'rgba(197, 97, 74, 0.12)',
+  error: '#C5614A',
+  errorBg: 'rgba(197, 97, 74, 0.12)',
+  gold: '#D9B44A',
+  goldBg: 'rgba(217, 180, 74, 0.14)',
+  cardBackground: '#FDF9F3',
+  cardBg: '#FDF9F3',
+  surfaceAlt: '#F2EAD9',
 
-  // Calm Companion Tokens (Elderly First)
-  cream: '#FAF9F6',
-  creamWarm: '#F5F3EF',
-  tealCalm: '#0E7490',
-  tealCalmBg: 'rgba(14, 116, 144, 0.08)',
-  greenCalm: '#15803D',
-  greenCalmBg: 'rgba(21, 128, 61, 0.10)',
-  amberWarm: '#D97706',
-  amberWarmBg: 'rgba(217, 119, 6, 0.10)',
+  // Warm Companion Tokens (Elderly First)
+  cream: '#F7F1E5',
+  creamWarm: '#EDE6D8',
+  tealCalm: '#A8B89A',
+  tealCalmBg: 'rgba(168, 184, 154, 0.15)',
+  greenCalm: '#6BAA7A',
+  greenCalmBg: 'rgba(107, 170, 122, 0.14)',
+  amberWarm: '#D9A84A',
+  amberWarmBg: 'rgba(217, 168, 74, 0.14)',
 
   // Extended compatibility aliases
-  coral: '#FF6B6B',
-  systemBlue: '#0071E3',
-  mintBg: 'rgba(52, 199, 89, 0.10)',
-  glassCard: '#FFFFFF',
-  glassBorder: '#E5E5EA',
-  glassTealBorder: 'rgba(0, 113, 227, 0.25)',
-  systemPurple: '#AF52DE',
-  coralBg: 'rgba(255, 107, 107, 0.12)',
+  coral: '#D98B6C',
+  systemBlue: '#D98B6C',
+  mintBg: 'rgba(107, 170, 122, 0.14)',
+  glassCard: '#FDF9F3',
+  glassBorder: '#E0D5C5',
+  glassTealBorder: 'rgba(217, 139, 108, 0.30)',
+  systemPurple: '#9B8FBF',
+  coralBg: 'rgba(217, 139, 108, 0.15)',
 };
 
 /**

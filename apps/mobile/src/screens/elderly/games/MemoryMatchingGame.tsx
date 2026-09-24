@@ -13,8 +13,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Animated,
-  Alert,
   Platform,
 } from 'react-native';
 import { v4 as uuidv4 } from '../../../utils/uuid';

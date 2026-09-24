@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.models import FamilyContact, AuditLog, ElderlyProfile
+from app.db.models import FamilyContact, AuditLog
 from app.core.auth import get_current_user, CurrentUser, verify_elder_access
 from app.api.schemas import (
     FamilyContactCreate,

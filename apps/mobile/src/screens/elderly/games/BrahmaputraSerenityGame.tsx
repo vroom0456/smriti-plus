@@ -18,10 +18,9 @@ import {
   Animated,
   Platform,
 } from 'react-native';
-import { ArrowLeft, Sparkles, Waves, Heart, Trophy, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, Waves, Heart, CheckCircle2 } from 'lucide-react-native';
 import {
   colors,
-  typography,
   spacing,
   borderRadius,
   shadows,

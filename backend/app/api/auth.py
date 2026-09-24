@@ -8,13 +8,12 @@ POST /auth/link-caregiver — caregiver enters elder's share code
 import secrets
 import hashlib
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.models import User, ElderlyProfile, AuditLog, ConsentLog, PersonalizationPreference
+from app.db.models import User, ElderlyProfile, AuditLog, PersonalizationPreference
 from app.core.auth import (
     hash_password, verify_password, create_access_token,
     get_current_user, CurrentUser,
@@ -22,7 +21,6 @@ from app.core.auth import (
 from app.api.schemas import (
     LoginRequest, LoginResponse, UserResponse,
     SignupRequest, LinkCaregiverRequest, LinkCaregiverResponse,
-    ElderProfileSetupRequest,
 )
 from app.core.config import get_settings
 

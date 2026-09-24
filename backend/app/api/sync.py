@@ -6,7 +6,6 @@ GET  /sync/pull  — cursor-based incremental sync
 """
 
 import base64
-import json
 from uuid import UUID
 from datetime import datetime, timezone
 
@@ -14,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.models import GameSession, ReminderLog, Reminder, AuditLog
+from app.db.models import GameSession, ReminderLog, Reminder
 from app.core.auth import get_current_user, CurrentUser
 from app.api.schemas import (
     SyncPushRequest, SyncPushResponse, SyncEventResult, SyncPullResponse,

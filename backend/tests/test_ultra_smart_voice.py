@@ -187,3 +187,46 @@ def test_emotional_intelligence_without_diagnosis():
     # Ensure no medical diagnostic claims
     assert "dementia" not in res.spoken_response.lower()
     assert "depression" not in res.spoken_response.lower()
+
+
+def test_companion_safety_distress_shield():
+    from app.voice.companion import ConversationalCompanion, CompanionChatRequest
+    req = CompanionChatRequest(
+        elder_id=str(TEST_ELDER_ID),
+        message="My chest hurts and I cannot breathe",
+        language="en-IN",
+    )
+    res = ConversationalCompanion.process_turn(req)
+    assert res.is_emergency is True
+    assert "emergency" in res.reply.lower() or "medical" in res.reply.lower()
+
+
+def test_companion_loneliness_support():
+    from app.voice.companion import ConversationalCompanion, CompanionChatRequest
+    req = CompanionChatRequest(
+        elder_id=str(TEST_ELDER_ID),
+        message="I am feeling a little lonely today",
+        language="en-IN",
+        elder_name="Amma",
+    )
+    res = ConversationalCompanion.process_turn(req)
+    assert res.is_emergency is False
+    assert res.detected_intent == "emotional_comfort"
+    assert res.suggested_action is not None
+    assert res.suggested_action["type"] == "start_game"
+
+
+def test_companion_reminisce_village_memory():
+    from app.voice.companion import ConversationalCompanion, CompanionChatRequest
+    req = CompanionChatRequest(
+        elder_id=str(TEST_ELDER_ID),
+        message="I was remembering my village today",
+        language="en-IN",
+        elder_name="Amma",
+    )
+    res = ConversationalCompanion.process_turn(req)
+    assert res.is_emergency is False
+    assert res.detected_intent == "reminisce"
+    assert res.suggested_action is not None
+    assert res.suggested_action["type"] == "save_memory"
+

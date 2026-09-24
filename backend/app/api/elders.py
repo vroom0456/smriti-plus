@@ -10,7 +10,7 @@ from datetime import datetime, timezone, date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, func
+from sqlalchemy import desc
 
 from app.db.database import get_db
 from app.db.models import User, ElderlyProfile, GameSession, Reminder, ReminderLog, DifficultyState, Game

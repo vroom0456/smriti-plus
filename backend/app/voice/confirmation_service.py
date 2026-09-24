@@ -7,7 +7,7 @@ Rules:
 - Formulates single-sentence, respectful localized confirmation prompts.
 """
 
-from typing import Tuple, Optional
+from typing import Optional
 from app.voice.schemas import VoiceIntent, ExtractedEntities
 
 

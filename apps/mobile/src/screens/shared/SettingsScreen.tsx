@@ -24,17 +24,14 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import {
   colors,
-  typography,
   spacing,
   borderRadius,
   shadows,
   fontFamily,
 } from '../../theme/tokens';
 import { useAuthStore } from '../../state/authStore';
-import { useSettingsStore, TextSize } from '../../state/settingsStore';
+import { useSettingsStore } from '../../state/settingsStore';
 import { useTranslation, SupportedLanguage } from '../../i18n';
-import { useAppTheme } from '../../theme/useAppTheme';
-import { languageRegistry } from '../../services/languageRegistry';
 import { voiceIntelligence } from '../../services/voiceIntelligence';
 import { voicePackManager, VoicePackInfo } from '../../services/voicePackManager';
 import {
@@ -47,7 +44,6 @@ import {
   LogOut,
   ChevronRight,
   X,
-  Sparkles,
   DownloadCloud,
   Download,
   Trash2,
@@ -105,6 +101,10 @@ export default function SettingsScreen() {
   const [voicePacks, setVoicePacks] = useState<VoicePackInfo[]>(voicePackManager.getVoicePacks());
   const [isDownloadingAll, setIsDownloadingAll] = useState<boolean>(false);
 
+  // Caregiver-only control: elderly patients CANNOT change language or settings
+  const isCaregiver = user?.role === 'caregiver' || user?.role === 'health_worker';
+  const isElderly = user?.role === 'elderly';
+
   useEffect(() => {
     const unsub = voicePackManager.subscribe(() => {
       setVoicePacks(voicePackManager.getVoicePacks());
@@ -161,11 +161,26 @@ export default function SettingsScreen() {
           activeOpacity={0.75}
         >
           <ArrowLeft size={18} color={colors.textDark} strokeWidth={2.4} style={{ marginRight: 6 }} />
-          <Text style={styles.backButtonText}>Home</Text>
+          <Text style={styles.backButtonText}>{t('nav.home') || 'Home'}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Settings</Text>
-        <Text style={styles.subtitle}>Personalize your voice, display, and comfort</Text>
+        <Text style={styles.title}>{t('settings.title') || 'Settings'}</Text>
+        <Text style={styles.subtitle}>{t('settings.subtitle') || 'Personalize your voice, display, and comfort'}</Text>
+
+        {/* Caregiver-managed banner for elderly */}
+        {isElderly && (
+          <View style={styles.caregiverBanner}>
+            <Heart size={20} color={colors.primary} strokeWidth={2.2} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.caregiverBannerTitle}>
+                {t('settings.caregiverManaged') || 'Settings managed by your caregiver'}
+              </Text>
+              <Text style={styles.caregiverBannerSub}>
+                {t('settings.caregiverManagedSub') || 'Your caregiver or family member can change language and accessibility settings for you.'}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* ── 1. VOICE & LANGUAGE SECTION ── */}
         <View style={styles.section}>
@@ -174,27 +189,34 @@ export default function SettingsScreen() {
             <Text style={styles.sectionTitle}>Voice & Language</Text>
           </View>
 
-          {/* Clean Single Language Card */}
+          {/* Clean Single Language Card — caregiver only */}
           <TouchableOpacity
-            style={[styles.card, shadows.subtle]}
-            onPress={() => setShowLangModal(true)}
-            activeOpacity={0.78}
+            style={[styles.card, shadows.subtle, isElderly && styles.lockedCard]}
+            onPress={() => { if (isCaregiver) setShowLangModal(true); }}
+            activeOpacity={isCaregiver ? 0.78 : 1}
             accessibilityRole="button"
-            accessibilityLabel={`Change language, currently ${currentLangObj.name}`}
+            accessibilityLabel={isCaregiver ? `Change language, currently ${currentLangObj.name}` : 'Language managed by caregiver'}
+            disabled={isElderly}
           >
             <View style={styles.cardIconWrap}>
-              <Globe size={22} color={colors.primary} strokeWidth={2.2} />
+              <Globe size={22} color={isElderly ? colors.muted : colors.primary} strokeWidth={2.2} />
             </View>
             <View style={styles.cardMain}>
-              <Text style={styles.cardLabel}>Language</Text>
+              <Text style={[styles.cardLabel, isElderly && { color: colors.muted }]}>{t('settings.language') || 'Language'}</Text>
               <Text style={styles.cardValue}>
                 {currentLangObj.native} ({currentLangObj.name})
               </Text>
             </View>
-            <View style={styles.changePill}>
-              <Text style={styles.changePillText}>Change</Text>
-              <ChevronRight size={16} color={colors.primary} strokeWidth={2.2} />
-            </View>
+            {isCaregiver ? (
+              <View style={styles.changePill}>
+                <Text style={styles.changePillText}>{t('settings.change') || 'Change'}</Text>
+                <ChevronRight size={16} color={colors.primary} strokeWidth={2.2} />
+              </View>
+            ) : (
+              <View style={[styles.changePill, { backgroundColor: colors.borderLight }]}>
+                <Text style={[styles.changePillText, { color: colors.muted }]}>🔒</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           {/* Offline Regional Voice Packs Card */}
@@ -252,36 +274,35 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          {/* Voice Guidance Toggle */}
-          <View style={[styles.toggleRow, shadows.subtle]}>
+          {/* Voice Guidance Toggle — elderly read-only */}
+          <View style={[styles.toggleRow, shadows.subtle, isElderly && styles.lockedCard]}>
             <View style={{ flex: 1, paddingRight: spacing.md }}>
-              <Text style={styles.toggleTitle}>Voice Guidance</Text>
+              <Text style={styles.toggleTitle}>{t('settings.voiceGuidance') || 'Voice Guidance'}</Text>
               <Text style={styles.toggleSub}>
-                Speak reminders and screen directions aloud
+                {t('settings.voiceGuidanceSub') || 'Speak reminders and screen directions aloud'}
               </Text>
             </View>
             <Switch
               value={voiceGuidance}
-              onValueChange={setVoiceGuidance}
+              onValueChange={isCaregiver ? setVoiceGuidance : undefined}
+              disabled={isElderly}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#FFFFFF"
             />
           </View>
 
-          {/* Private Voice Mode Toggle */}
-          <View style={[styles.toggleRow, shadows.subtle]}>
+          {/* Private Voice Mode Toggle — elderly read-only */}
+          <View style={[styles.toggleRow, shadows.subtle, isElderly && styles.lockedCard]}>
             <View style={{ flex: 1, paddingRight: spacing.md }}>
-              <Text style={styles.toggleTitle}>Private Mode</Text>
+              <Text style={styles.toggleTitle}>{t('settings.privateMode') || 'Private Mode'}</Text>
               <Text style={styles.toggleSub}>
-                Mask medicine details aloud when in public
+                {t('settings.privateModeSub') || 'Mask medicine details aloud when in public'}
               </Text>
             </View>
             <Switch
               value={privateVoiceMode}
-              onValueChange={(val) => {
-                setPrivateVoiceMode(val);
-                voiceIntelligence.updateContext({ privateVoiceMode: val });
-              }}
+              onValueChange={isCaregiver ? (val) => { setPrivateVoiceMode(val); voiceIntelligence.updateContext({ privateVoiceMode: val }); } : undefined}
+              disabled={isElderly}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#FFFFFF"
             />
@@ -1094,5 +1115,35 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+
+  // Caregiver banner (shown to elderly — settings are managed by caregiver)
+  caregiverBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.primaryLight,
+    borderWidth: 1.5,
+    borderColor: colors.primaryMuted,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: spacing.lg,
+  },
+  caregiverBannerTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.primaryDark,
+    marginBottom: 4,
+  },
+  caregiverBannerSub: {
+    fontFamily: fontFamily.text,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+
+  // Locked card (settings that elderly cannot change)
+  lockedCard: {
+    opacity: 0.55,
   },
 });

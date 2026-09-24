@@ -7,17 +7,15 @@ RBAC enforced server-side on every endpoint.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Literal
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.db.database import get_db
 from app.db.models import User, ElderlyProfile
 
 import bcrypt

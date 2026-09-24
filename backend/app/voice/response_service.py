@@ -6,7 +6,7 @@ for all canonical intents across Indian languages.
 Preserves adult dignity; avoids robotic and childish tone.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 from app.voice.schemas import VoiceIntent, ExtractedEntities
 
 

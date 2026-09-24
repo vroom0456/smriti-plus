@@ -1,0 +1,115 @@
+{
+  "languageCode": "as-IN",
+  "languageName": "Assamese",
+  "nativeName": "অসমীয়া",
+  "dialects": ["Eastern Assamese", "Kamrupi", "Goalpariya"],
+  "evaluationStatus": "requires_native_speaker_review",
+  "honorifics": {
+    "elder_male": "দেউতা",
+    "elder_female": "আইতা",
+    "respected_male": "মহাশয়",
+    "respected_female": "আপোনি",
+    "general": "বাৰু",
+    "caregiver": "ককাবাবু"
+  },
+  "familyTerms": {
+    "deuta": "দেউতা (Father)",
+    "maa": "মা (Mother)",
+    "aita": "আইতা (Grandmother)",
+    "akou": "আকৌ (Grandfather)",
+    "bhai": "ভাই (Brother)",
+    "bhoni": "ভনী (Sister)",
+    "puta": "পুত (Son)",
+    "jiya": "জীয়া (Daughter)",
+    "bou": "বোৱাৰী (Daughter-in-law)",
+    "zhua": "জুৱাঁই (Son-in-law)"
+  },
+  "culturalTerms": {
+    "gamosa": "গামোছা (traditional Assamese towel/symbol)",
+    "bihu": "বিহু (Assamese harvest festival)",
+    "brahmaputra": "ব্ৰহ্মপুত্ৰ (sacred river)",
+    "majuli": "মাজুলী (world's largest river island)",
+    "muga": "মুগা (golden silk of Assam)",
+    "mekhela_chador": "মেখেলা চাদৰ (traditional Assamese dress)",
+    "borgeet": "বৰগীত (devotional song of Shankardev)",
+    "kopou_phool": "কপৌ ফুল (foxtail orchid, state flower)"
+  },
+  "pronunciationHints": {
+    "Gamosa": "Ga-mo-saa",
+    "Bihu": "Bee-hoo",
+    "Brahmaputra": "Broh-mo-pu-tro",
+    "Majuli": "Maa-ju-li",
+    "Tezpur": "Tez-pur",
+    "Jorhat": "Jor-hat",
+    "Kamrup": "Kaam-rup",
+    "Dibrugarh": "Di-bru-garh",
+    "Silchar": "Sil-char"
+  },
+  "medicinePronounciation": {
+    "Metformin": "Met-for-min",
+    "Amlodipine": "Am-lo-di-peen",
+    "Paracetamol": "Pa-ra-see-ta-mol",
+    "Aspirin": "As-pi-rin",
+    "Atorvastatin": "A-tor-va-sta-tin"
+  },
+  "slangAndColloquial": {
+    "oukhodh": "ঔষধ (medicine, colloquial spoken form)",
+    "dawai": "ঔষধ (Hindi-influenced, widely used in Assam)",
+    "pani": "পানী (water)",
+    "khao": "খাওক (please eat)",
+    "aah": "আহক (please come)",
+    "jai": "যাওক (please go)",
+    "laag": "লাগে (needed)",
+    "nalaage": "নালাগে (not needed)",
+    "eti": "এটি (this one)",
+    "xei": "সেই (that one, Eastern dialect)",
+    "ase": "আছে (is there)",
+    "nai": "নাই (not there)",
+    "kiman": "কিমান (how much)",
+    "konetia": "কোনেতিয়া (when, colloquial)",
+    "kote": "কোতে (where, colloquial)",
+    "aare": "আৰে (hey, attention-getter)",
+    "mane": "মানে (I mean, filler)",
+    "ek minute": "এক মিনিট (one minute, filler)",
+    "bhal": "ভাল (good)",
+    "bhalpai": "ভালপাই (love)",
+    "kotha": "কথা (words/talk)",
+    "geet": "গীত (song)"
+  },
+  "affirmations": ["হয়", "বাৰু", "আচ্ছা", "সৈমান", "নিশ্চয়", "ঠিকেই", "হয় হয়"],
+  "negations": ["নহয়", "নাই", "নালাগে", "নকৰিব", "বন্ধ কৰক"],
+  "greetings": {
+    "morning": "শুভ প্ৰভাত",
+    "afternoon": "নমস্কাৰ",
+    "evening": "শুভ সন্ধিয়া",
+    "general": "নমস্কাৰ",
+    "goodbye": "বিদায়"
+  },
+  "timeExpressions": {
+    "today": "আজি",
+    "tomorrow": "কালি",
+    "day_after": "পৰহি",
+    "morning": "পুৱা",
+    "afternoon": "দুপৰীয়া",
+    "evening": "সন্ধিয়া",
+    "night": "নিশা",
+    "now": "এতিয়াই",
+    "later": "পাছত"
+  },
+  "elderlySpeechPatterns": {
+    "fillerWords": ["মানে", "আৰে", "এক মিনিট", "উম", "আহ", "ঠিকেই"],
+    "slowdowns": ["লাহে লাহে কওক", "আকৌ কওক", "বুজা নাই"],
+    "confirmations": ["বাৰু হ'ল", "ঠিক আছে", "সৈমান হ'লোঁ"],
+    "confusion": ["কি কৈছে?", "বুজা নাই", "আকৌ কওক"]
+  },
+  "recordingScript": [
+    "নমস্কাৰ। মই স্মৃতি প্লাছ। আপোনাক সহায় কৰিবলৈ ইয়াত আছোঁ।",
+    "আইতা, আজি আপুনি কেনেকৈ আছে?",
+    "আজি আপোনাৰ মনত ৰখা খেল এটি খেলি চাওঁ নেকি?",
+    "এতিয়া আপোনাৰ জিৰণিৰ প্ৰয়োজন নেকি?",
+    "কালি পুৱা আপোনাৰ এটি কাম আছে।",
+    "ৰবিলৈ ফোন কৰিবনে?",
+    "মই ভালকৈ বুজা নাই। আকৌ কওক।",
+    "ঠিক আছে। আপুনি সাজু হ'লে আৰম্ভ কৰোঁ।"
+  ]
+}

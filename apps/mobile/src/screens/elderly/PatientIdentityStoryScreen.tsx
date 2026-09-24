@@ -15,13 +15,11 @@ import {
   TouchableOpacity,
   Platform,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import {
   ArrowLeft,
   Volume2,
   Phone,
-  User,
   Heart,
   BookOpen,
   Users,
@@ -30,7 +28,7 @@ import {
   Smile,
   ShieldCheck,
 } from 'lucide-react-native';
-import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
+import { colors, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { useAuthStore } from '../../state/authStore';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';

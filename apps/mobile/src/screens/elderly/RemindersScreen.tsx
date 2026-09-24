@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { ArrowLeft, Clock, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { v4 as uuidv4 } from '../../utils/uuid';
 import {
   colors,

@@ -41,7 +41,7 @@ import {
   ShieldCheck,
   Filter,
 } from 'lucide-react-native';
-import { colors, typography, spacing, shadows, fontFamily, borderRadius } from '../../theme/tokens';
+import { colors, spacing, shadows, fontFamily, borderRadius } from '../../theme/tokens';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { useAuthStore } from '../../state/authStore';

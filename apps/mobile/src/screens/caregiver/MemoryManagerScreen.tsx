@@ -21,7 +21,7 @@ import {
   Platform,
 } from 'react-native';
 import { Mic, Image as ImageIcon, Plus } from 'lucide-react-native';
-import { colors, typography, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
+import { colors, spacing, borderRadius, shadows, fontFamily } from '../../theme/tokens';
 import { api } from '../../services/api';
 import { offlineStore } from '../../services/offlineStore';
 import { useAuthStore } from '../../state/authStore';

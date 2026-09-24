@@ -13,14 +13,12 @@ Complete pipeline:
 """
 
 import uuid
-from typing import Dict, Any, Optional
-from uuid import UUID
+from typing import Optional
 
 from app.voice.schemas import (
     VoiceIntent,
     VoiceParseRequest,
     VoiceParseResponse,
-    ExtractedEntities,
 )
 from app.voice.language_service import LanguageService
 from app.voice.intent_service import IntentService

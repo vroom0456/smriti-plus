@@ -5,7 +5,7 @@ Request/response models for all API endpoints.
 Every endpoint has explicit Pydantic schemas per Section 7.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from typing import Optional, Literal
 from datetime import datetime
 from uuid import UUID
