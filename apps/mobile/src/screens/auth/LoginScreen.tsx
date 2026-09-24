@@ -723,7 +723,7 @@ export default function LoginScreen() {
                   title="Sign In to Clinical Workspace"
                   onPress={handleSignIn}
                   loading={isLoading}
-                  style={[styles.actionButton, { backgroundColor: '#9333EA' }]}
+                  style={{ ...styles.actionButton, backgroundColor: '#9333EA' }}
                 />
 
                 {/* 1-Tap Quick Demo */}
