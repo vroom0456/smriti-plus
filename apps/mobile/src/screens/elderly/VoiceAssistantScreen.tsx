@@ -38,6 +38,7 @@ import { offlineStore } from '../../services/offlineStore';
 import { VoiceTools, ToolResult } from '../../services/voiceTools';
 import { LanguageProfileManager } from '../../services/languageProfiles';
 import { defaultVoiceOrchestrator } from '../../services/voice/VoiceOrchestrator';
+import { playEarconChime } from '../../services/voice/SpeechSynthesizer';
 import { useAuthStore } from '../../state/authStore';
 import { useTranslation, getLanguage } from '../../i18n';
 import { useBackNavigation } from '../../navigation/useBackNavigation';
@@ -318,16 +319,19 @@ export default function VoiceAssistantScreen() {
 
   const handleMicPress = async () => {
     if (voiceState === 'SPEAKING') {
+      playEarconChime('stop');
       await voiceIntelligence.stopSpeech();
       setVoiceState('IDLE');
       return;
     }
     if (voiceState === 'LISTENING') {
+      playEarconChime('stop');
       if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
       setVoiceState('IDLE');
       return;
     }
 
+    playEarconChime('listen');
     setVoiceState('LISTENING');
     setTranscript('');
     setCurrentIntent(null);
@@ -499,6 +503,7 @@ export default function VoiceAssistantScreen() {
   };
 
   const handleStopSpeech = async () => {
+    playEarconChime('stop');
     await voiceIntelligence.stopSpeech();
     setVoiceState('IDLE');
   };
@@ -506,7 +511,7 @@ export default function VoiceAssistantScreen() {
   const handleRepeatSpeech = async () => {
     setVoiceState('SPEAKING');
     await voiceIntelligence.repeatLastResponse();
-    setTimeout(() => setVoiceState('IDLE'), 2800);
+    setVoiceState('IDLE');
   };
 
   const handleSlowerSpeech = async () => {
@@ -516,11 +521,12 @@ export default function VoiceAssistantScreen() {
     syncPersona();
     setVoiceState('SPEAKING');
     await voiceIntelligence.repeatLastResponse();
-    setTimeout(() => setVoiceState('IDLE'), 3200);
+    setVoiceState('IDLE');
   };
 
   const handleConfirmAction = async () => {
     if (!currentIntent) return;
+    playEarconChime('confirm');
     adaptivePersonaEngine.recordBehavioralSignal('success');
     syncPersona();
 
@@ -568,10 +574,11 @@ export default function VoiceAssistantScreen() {
     setChatHistory((prev) => [...prev, confirmTurn]);
     setVoiceState('SPEAKING');
     await voiceIntelligence.speak(msg, currentLang);
-    setTimeout(() => setVoiceState('IDLE'), 2800);
+    setVoiceState('IDLE');
   };
 
   const handleCancelAction = async () => {
+    playEarconChime('stop');
     await voiceIntelligence.stopSpeech();
     setVoiceState('IDLE');
     setTranscript('');

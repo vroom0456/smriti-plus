@@ -341,7 +341,10 @@ export default function CaregiverDashboardScreen() {
                   ]}
                 />
                 <Text style={styles.barLabel}>
-                  {new Date(t.date).getDate()}
+                  {(() => {
+                    const d = new Date(t.date);
+                    return isNaN(d.getDate()) ? String(i + 1) : String(d.getDate());
+                  })()}
                 </Text>
               </View>
             ))}

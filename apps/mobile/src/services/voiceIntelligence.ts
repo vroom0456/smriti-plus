@@ -18,6 +18,7 @@ import { languageRegistry } from './languageRegistry';
 import { adaptivePersonaEngine } from './adaptivePersonaEngine';
 import { VoiceTools, ToolResult } from './voiceTools';
 import { LanguageProfileManager } from './languageProfiles';
+import { defaultSpeechSynthesizer } from './voice/SpeechSynthesizer';
 
 export type VoiceState =
   | 'IDLE'
@@ -106,22 +107,7 @@ class DefaultSpeechSynthesizer implements SpeechSynthesizer {
     options?: { rate?: number; pitch?: number }
   ): Promise<void> {
     try {
-      const isSpeaking = await Speech.isSpeakingAsync();
-      if (isSpeaking) {
-        await Speech.stop();
-      }
-
-      const cleanText = stripEmojis(text);
-      if (!cleanText) return;
-
-      const cap = languageRegistry.getCapability(language);
-      const speechLang = cap.bcp47 || 'en-IN';
-
-      await Speech.speak(cleanText, {
-        language: speechLang,
-        pitch: options?.pitch ?? 1.0,
-        rate: options?.rate ?? 0.85, // Elder-friendly comfortable rate
-      });
+      await defaultSpeechSynthesizer.speak(text, language, options);
     } catch (err) {
       console.warn('[VoiceIntelligence] TTS speak error:', err);
     }
@@ -129,7 +115,7 @@ class DefaultSpeechSynthesizer implements SpeechSynthesizer {
 
   async stop(): Promise<void> {
     try {
-      await Speech.stop();
+      await defaultSpeechSynthesizer.stop();
     } catch (err) {
       // Ignored
     }
@@ -137,7 +123,7 @@ class DefaultSpeechSynthesizer implements SpeechSynthesizer {
 
   async isSpeaking(): Promise<boolean> {
     try {
-      return await Speech.isSpeakingAsync();
+      return await defaultSpeechSynthesizer.isSpeaking();
     } catch {
       return false;
     }
